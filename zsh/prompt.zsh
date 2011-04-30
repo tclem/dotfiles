@@ -22,13 +22,13 @@ git_dirty() {
 }
 
 git_prompt_info () {
- ref=$(git symbolic-ref HEAD 2>/dev/null) || return
+  ref=$(git symbolic-ref HEAD 2>/dev/null) || return
 # echo "(%{\e[0;33m%}${ref#refs/heads/}%{\e[0m%})"
- echo "${ref#refs/heads/}"
+  echo "${ref#refs/heads/}"
 }
 
 project_name () {
-  name=$(pwd | awk -F'Development/' '{print $2}' | awk -F/ '{print $1}')
+  name=$(pwd | awk -F'GitHub/' '{print $2}' | awk -F/ '{print $1}')
   echo $name
 }
 
@@ -44,9 +44,9 @@ unpushed () {
 need_push () {
   if [[ $(unpushed) == "" ]]
   then
-    echo " "
+    echo ""
   else
-    echo "with %{$fg_bold[magenta]%}unpushed%{$reset_color%}"
+    echo " with %{$fg_bold[magenta]%}unpushed%{$reset_color%}"
   fi
 }
 
@@ -63,11 +63,9 @@ directory_name(){
   echo "%{$fg_bold[cyan]%}%1/%\/%{$reset_color%}"
 }
 
-export PROMPT=$'\n$(rvm_prompt) in $(directory_name) $(project_name_color)$(git_dirty) $(need_push)\n› '
-set_prompt () {
-  export RPROMPT=""
-}
+date_time='%D{%m.%d.%Y} %@'
 
-precmd() {
-  set_prompt
-}
+export PROMPT=$'$(rvm_prompt) in $(directory_name) $(project_name_color)$(git_dirty)$(need_push)\n%% '
+#export RPROMPT=$'$date_time'
+export RPROMPT=""
+
