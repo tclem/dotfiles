@@ -4,6 +4,8 @@ alias sc='script/console'
 alias ss='script/server -p `available_rails_port`'
 alias sg='script/generate'
 alias sd='script/destroy'
+alias st='script/test_server'
+alias str='script/test_runner'
 
 alias migrate='rake db:migrate db:test:clone'
 
