@@ -1,4 +1,4 @@
 #!/bin/sh
-ps aux | grep nginx | awk '{print }' | xargs sudo kill -9
+ps aux | grep nginx | awk '{print $2}' | xargs sudo kill -9
 sudo nginx
 script/unicorn_dev

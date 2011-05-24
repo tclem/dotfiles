@@ -4,8 +4,11 @@ else
   export PS1='%3~$(git_info_for_prompt)%# '
 fi
 
-export LSCOLORS="exfxcxdxbxegedabagacad"
+# export TERM='xterm-color'
+# export LSCOLORS='cat ~/.dir_colors'
+# export LSCOLORS="exfxcxdxbxegedabagacad"
 export CLICOLOR=true
+# export ZLSCOLORS="${LS_COLORS}"
 
 fpath=($ZSH/zsh/functions $fpath)
 

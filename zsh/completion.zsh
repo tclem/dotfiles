@@ -6,4 +6,6 @@ zstyle ':completion:*' insert-tab pending
 
 # tab completion colors
 zstyle ':completion:*' list-colors ''
-#zstyle ':completion:*' list-colors ${(s.:.)LSCOLORS}
+# zstyle ':completion:*' list-colors ${(s.:.)LSCOLORS}
+# zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
+# zstyle ':completion:*:*:kill:*:processes' list-colors '=(#b) #([0-9]#)*=0=01;31'
