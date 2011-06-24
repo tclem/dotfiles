@@ -1,0 +1,11 @@
+curl \
+-F "key=downloads/tclem/tclem.github.com/new_file.jpg" \
+-F "acl=public-read" \
+-F "success_action_redirect=https://github.com/tclem/tclem.github.com/downloads/refresh" \
+-F "Filename=new_file.jpg" \
+-F "AWSAccessKeyId=1DWESVTPGHQVTX38V182" \
+-F "Policy=ewogICAgJ2V4cGlyYXRpb24nOiAnMjExMS0wNi0yNFQyMDowODo0OC4wMDBaJywKICAgICdjb25kaXRpb25zJzogWwogICAgICAgIHsnYnVja2V0JzogJ2dpdGh1Yid9LAogICAgICAgIHsna2V5JzogJ2Rvd25sb2Fkcy90Y2xlbS90Y2xlbS5naXRodWIuY29tL25ld19maWxlLmpwZyd9LAogICAgICAgIHsnYWNsJzogJ3B1YmxpYy1yZWFkJ30sCiAgICAgICAgeydzdWNjZXNzX2FjdGlvbl9yZWRpcmVjdCc6ICdodHRwczovL2dpdGh1Yi5jb20vdGNsZW0vdGNsZW0uZ2l0aHViLmNvbS9kb3dubG9hZHMvcmVmcmVzaCd9LAogICAgICAgIFsnc3RhcnRzLXdpdGgnLCAnJEZpbGVuYW1lJywgJyddLAogICAgICAgIFsnc3RhcnRzLXdpdGgnLCAnJENvbnRlbnQtVHlwZScsICcnXQogICAgXQp9" \
+-F "Signature=mwnFDCoRgkYh9/k88nj3kUQ50n4=" \
+-F "Content-Type=image/jpeg" \
+-F "file=@new_file.jpg" \
+https://github.s3.amazonaws.com/
