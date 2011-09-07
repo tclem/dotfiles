@@ -50,12 +50,16 @@ need_push () {
   fi
 }
 
-rvm_prompt(){
-  if $(which rvm &> /dev/null)
+ruby_prompt(){
+  rv=$(rbenv version-name)
+  if (echo $rv &> /dev/null)
   then
-	  echo "%{$fg_bold[yellow]%}$(rvm tools identifier)%{$reset_color%}"
-	else
-	  echo ""
+    echo "%{$fg_bold[yellow]%}ruby $rv%{$reset_color%}"
+  elif $(which rvm &> /dev/null)
+  then
+    echo "%{$fg_bold[yellow]%}$(rvm tools identifier)%{$reset_color%}"
+  else
+    echo ""
   fi
 }
 
@@ -65,7 +69,7 @@ directory_name(){
 
 date_time='%D{%m.%d.%Y} %@'
 
-export PROMPT=$'$(rvm_prompt) in $(directory_name) $(project_name_color)$(git_dirty)$(need_push)\n%% '
+export PROMPT=$'$(ruby_prompt) in $(directory_name) $(project_name_color)$(git_dirty)$(need_push)\n%% '
 #export RPROMPT=$'$date_time'
 export RPROMPT=""
 
