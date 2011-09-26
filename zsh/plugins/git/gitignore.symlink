@@ -3,3 +3,5 @@
 .tissues
 *~
 *.swp
+tags
+NERD_tree*
