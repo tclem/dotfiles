@@ -1,0 +1,25 @@
+#!/bin/sh
+#/ Usage: issue-to-pull <user/repo> <issue_id>
+#/ Converts an issue into a pull request
+
+# show usage
+[ $# -eq 0 -o "$1" = "--help" ] && {
+    grep '^#/'< "$0" |
+    cut -c4-
+    exit 2
+}
+
+# grab the current branch
+branch=$(git symbolic-ref HEAD | sed 's/^refs\/heads\///')
+[ -z "$branch" ] && {
+    echo "could not determine current branch" 1>&2
+    false
+}
+
+echo "This will turn issue $2 on $1 into a pull request for branch '$branch'"
+read -s -p "GitHub Password: " pwd
+
+curl -u "tclem:$pwd" https://api.github.com/repos/$1/pulls \
+  -d '{"issue":'$2', "head":"'$branch'", "base":"master"}'
+
+echo

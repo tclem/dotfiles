@@ -32,7 +32,8 @@ setopt COMPLETE_IN_WORD
 setopt IGNORE_EOF
 
 setopt APPEND_HISTORY # adds history
-setopt INC_APPEND_HISTORY SHARE_HISTORY  # adds history incrementally and share it across sessions
+setopt INC_APPEND_HISTORY # adds history incrementally
+# setopt SHARE_HISTORY  # share it across sessions
 setopt HIST_IGNORE_ALL_DUPS  # don't record dupes in history
 setopt HIST_REDUCE_BLANKS
 
@@ -45,3 +46,16 @@ bindkey '^[[5C' end-of-line
 bindkey '^[[3~' delete-char
 bindkey '^[^N' newtab
 bindkey '^?' backward-delete-char
+
+# GRC colorizes nifty unix tools all over the place
+if $(gls &>/dev/null)
+then
+  source `brew --prefix`/etc/grc.bashrc
+fi
+
+# Color grep results
+export GREP_OPTIONS='--color=auto'
+
+# key bindings
+bindkey ' ' magic-space    # also do history expansion on space
+
