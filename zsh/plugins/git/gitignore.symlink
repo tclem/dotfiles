@@ -5,3 +5,5 @@
 *.swp
 tags
 NERD_tree*
+.rbenv-version
+config/solr*
