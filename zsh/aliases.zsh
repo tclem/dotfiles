@@ -1,9 +1,14 @@
 alias dotmate='mate $ZSH'
 alias dotcd='cd $ZSH'
-alias be='bundle exec'
 
 alias reload!='. ~/.zshrc'
 alias v=mvim
+alias emacs="/usr/local/Cellar/emacs/23.3a/Emacs.app/Contents/MacOS/Emacs -nw"
+
+# mvim()
+# {
+  # (unset GEM_PATH GEM_HOME; command mvim "$@")
+# }
 
 alias pu='pushd'
 alias po='popd'
