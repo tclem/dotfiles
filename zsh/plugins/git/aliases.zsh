@@ -1,9 +1,3 @@
-# Use `hub` as our git wrapper:
-#   http://defunkt.github.com/hub/
-git() {
-  hub "$@"
-}
-
 ga() {
  git add .
  git add -u
