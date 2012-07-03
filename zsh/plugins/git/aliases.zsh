@@ -11,7 +11,7 @@ ga() {
 
 alias g='git'
 alias gp='git pull --rebase --prune'
-alias gpush='git push origin HEAD'
+alias gpush='git push -u origin HEAD'
 alias gd='git diff'
 alias gc='git commit'
 alias gitc='git commit -m'
