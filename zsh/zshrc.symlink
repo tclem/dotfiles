@@ -2,7 +2,7 @@
 export ZSH=$HOME/.dotfiles
 
 # your project folder that we can `c [tab]` to
-export PROJECTS=/Volumes/GitHub
+export PROJECTS=~/github
 
 # source every .zsh file in this rep
 for config_file ($ZSH/**/*.zsh) source $config_file
@@ -14,6 +14,11 @@ then
   source ~/.localrc
 fi
 
+# Load up The GitHub Setup's environment.
+if [ -f "/opt/github/env.sh" ]
+  then source "/opt/github/env.sh"
+fi
+
 # initialize autocomplete here, otherwise functions won't be loaded
 autoload -U compinit
 compinit
@@ -23,6 +28,5 @@ setopt autolist
 autoload -U edit-command-line
 zle -N edit-command-line
 bindkey '^Xe' edit-command-line
-# bindkey -M vicmd v edit-command-line
 
 eval `direnv hook $0`
