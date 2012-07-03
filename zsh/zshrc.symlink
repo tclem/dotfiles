@@ -14,11 +14,6 @@ then
   source ~/.localrc
 fi
 
-# Load up The GitHub Setup's environment.
-if [ -f "/opt/github/env.sh" ]
-  then source "/opt/github/env.sh"
-fi
-
 # initialize autocomplete here, otherwise functions won't be loaded
 autoload -U compinit
 compinit
@@ -28,5 +23,10 @@ setopt autolist
 autoload -U edit-command-line
 zle -N edit-command-line
 bindkey '^Xe' edit-command-line
+
+# Load up The GitHub Setup's environment.
+if [ -f "/opt/github/env.sh" ]
+  then source "/opt/github/env.sh"
+fi
 
 eval `direnv hook $0`
