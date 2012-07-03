@@ -20,3 +20,13 @@ alias lsa='ls -lah'
 alias l='ls -la'
 alias ll='ls -l'
 
+# https://gist.github.com/b00f68b40e3ebcc1269c
+function find_rake {
+  if [[ -f Gemfile && -x bin/rake ]]; then
+    bin/rake "$@"
+  else
+    rake "$@"
+  fi
+}
+
+alias rake=find_rake
