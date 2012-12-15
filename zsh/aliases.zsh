@@ -4,6 +4,7 @@ alias dotcd='cd $ZSH'
 alias reload!='. ~/.zshrc'
 alias v=mvim
 alias emacs="/usr/local/Cellar/emacs/23.3a/Emacs.app/Contents/MacOS/Emacs -nw"
+alias e="subl -n ."
 
 # mvim()
 # {
