@@ -30,3 +30,4 @@ if [ -f "/opt/github/env.sh" ]
 fi
 
 eval `direnv hook $0`
+source "`brew --prefix`/etc/grc.bashrc"
