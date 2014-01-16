@@ -7,23 +7,23 @@ git_branch() {
 }
 
 git_dirty() {
+  # if [[ $st == "" ]]
   st=$(git status 2>/dev/null | tail -n 1)
-  if [[ $st == "" ]]
+  if [[ $st =~ 'fatal: Not a git repository' ]]
   then
     echo ""
   else
-    if expr $st : 'nothing to commit'>/dev/null
+    if [[ $st =~ 'nothing to commit' ]]
     then
-      echo "on %{$fg_bold[green]%}$(git_prompt_info)%{$reset_color%}"
+      echo "on %{$fg[green]%}$(git_prompt_info)%{$reset_color%}"
     else
-      echo "on %{$fg_bold[red]%}$(git_prompt_info)%{$reset_color%}"
+      echo "on %{$fg[red]%}$(git_prompt_info)%{$reset_color%}"
     fi
   fi
 }
 
 git_prompt_info () {
   ref=$(git symbolic-ref HEAD 2>/dev/null) || return
-# echo "(%{\e[0;33m%}${ref#refs/heads/}%{\e[0m%})"
   echo "${ref#refs/heads/}"
 }
 
@@ -33,7 +33,6 @@ project_name () {
 }
 
 project_name_color () {
-#  name=$(project_name)
   echo "%{\e[0;35m%}${name}%{\e[0m%}"
 }
 
@@ -46,7 +45,7 @@ need_push () {
   then
     echo ""
   else
-    echo " with %{$fg_bold[magenta]%}unpushed%{$reset_color%}"
+    echo " with %{$fg[magenta]%}unpushed%{$reset_color%}"
   fi
 }
 
@@ -54,22 +53,20 @@ ruby_prompt(){
   rv=$(rbenv version-name)
   if (echo $rv &> /dev/null)
   then
-    echo "%{$fg_bold[yellow]%}ruby $rv%{$reset_color%}"
+    echo "%{$fg[yellow]%}ruby $rv%{$reset_color%}"
   elif $(which rvm &> /dev/null)
   then
-    echo "%{$fg_bold[yellow]%}$(rvm tools identifier)%{$reset_color%}"
+    echo "%{$fg[yellow]%}$(rvm tools identifier)%{$reset_color%}"
   else
     echo ""
   fi
 }
 
 directory_name(){
-  echo "%{$fg_bold[cyan]%}%1/%\/%{$reset_color%}"
+  echo "%{$fg[cyan]%}%1/%\/%{$reset_color%}"
 }
 
 date_time='%D{%m.%d.%Y} %@'
 
-export PROMPT=$'$(ruby_prompt) in $(directory_name) $(project_name_color)$(git_dirty)$(need_push)\n%% '
-#export RPROMPT=$'$date_time'
-export RPROMPT=""
-
+export PROMPT=$'$(ruby_prompt) ⑁ $(directory_name) $(project_name_color)$(git_dirty)$(need_push) ❯ '
+# export RPROMPT=""

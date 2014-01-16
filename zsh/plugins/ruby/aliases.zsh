@@ -1,12 +1,6 @@
-# alias r='rvm use 1.8.7'
-
 alias sc='script/console'
-#alias ss='script/server -p `available_rails_port`'
 alias ss='script/server'
-alias sg='script/generate'
-alias sd='script/destroy'
-alias st='script/test_server'
-alias str='script/test_runner'
+alias st='script/test'
 
 alias migrate='rake db:migrate db:test:clone'
 

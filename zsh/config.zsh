@@ -59,3 +59,5 @@ export GREP_OPTIONS='--color=auto'
 # key bindings
 bindkey ' ' magic-space    # also do history expansion on space
 
+export HOMEBREW_GITHUB_API_TOKEN=a3cc25e4d2ea60a3301d67bb56fa2519f9bda770
+
