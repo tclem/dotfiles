@@ -1,11 +1,16 @@
 # shortcut to this dotfiles path is $ZSH
 export ZSH=$HOME/.dotfiles
 
+export SHELL=/bin/zsh
+
 # your project folder that we can `c [tab]` to
 export PROJECTS=~/github
 
 # source every .zsh file in this rep
 for config_file ($ZSH/**/*.zsh) source $config_file
+
+# ZSH tab completions for git and hub. This is janky
+fpath=(/opt/boxen/homebrew/share/zsh/site-functions $fpath)
 
 # use .localrc for SUPER SECRET CRAP that you don't
 # want in your public, versioned repo.
@@ -24,10 +29,13 @@ autoload -U edit-command-line
 zle -N edit-command-line
 bindkey '^Xe' edit-command-line
 
-# Load up The GitHub Setup's environment.
+# Load up Boxen's environment.
 if [ -f "/opt/boxen/env.sh" ]
   then source "/opt/boxen/env.sh"
 fi
 
-eval `direnv hook $0`
-source "`brew --prefix`/etc/grc.bashrc"
+# direnv
+eval "$(direnv hook zsh)"
+
+# Setup go
+export GOPATH=~/go
