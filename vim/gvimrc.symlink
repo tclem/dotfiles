@@ -26,6 +26,9 @@ if has("gui_macvim")
   " Command-e for ConqueTerm
   map <D-e> :call StartTerm()<CR>
 
+  " Open NERDTree on enter
+  autocmd vimenter * NERDTree
+
   " Command-/ to toggle comments
   map <D-/> <plug>NERDCommenterToggle<CR>
   imap <D-/> <Esc><plug>NERDCommenterToggle<CR>i

@@ -46,7 +46,6 @@ let mapleader=","
 " NERDTree configuration
 let NERDTreeIgnore=['\.pyc$', '\.rbc$', '\~$']
 map <Leader>n :NERDTreeToggle<CR>
-autocmd vimenter * NERDTree
 
 " Command-T configuration
 let g:CommandTMaxHeight=20
@@ -211,3 +210,6 @@ map <Leader>kd :Align =><CR>
 
 " Code folding for coffeescript
 au BufNewFile,BufReadPost *.coffee setl foldmethod=indent
+
+" Disable code folding for markdown
+let g:vim_markdown_folding_disabled=1

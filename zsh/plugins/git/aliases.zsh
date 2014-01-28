@@ -1,8 +1,9 @@
-ga() {
- git add .
- git add -u
-}
+#ga() {
+ #git add .
+ #git add -u
+#}
 
+alias ga='git add --all'
 alias g='git'
 alias gp='git pull --rebase --prune'
 alias gpush='git push -u origin HEAD'
