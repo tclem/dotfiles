@@ -48,7 +48,9 @@ task :vim do
     "vim-repeat"           => "git://github.com/tpope/vim-repeat.git",
     "vim-fugitive"         => "git://github.com/tpope/vim-fugitive.git",
     "vim-ctrlp"            => "https://github.com/kien/ctrlp.vim.git",
-    "vim-markdown"         => "https://github.com/plasticboy/vim-markdown"
+    "vim-markdown"         => "https://github.com/plasticboy/vim-markdown",
+    "vim-rails"            => "https://github.com/tpope/vim-rails",
+    "vim-ragtag"           => "https://github.com/tpope/vim-ragtag.git",
 
     # 'ZoomWin'              => 'git://github.com/vim-scripts/ZoomWin.git',
     # 'ack.vim'              => 'git://github.com/mileszs/ack.vim.git',
@@ -57,8 +59,6 @@ task :vim do
 
     # 'vim-indent-object'    => 'git://github.com/michaeljsmith/vim-indent-object.git',
     # 'vim-javascript'       => 'git://github.com/pangloss/vim-javascript.git',
-    # 'vim-ragtag'           => 'https://github.com/tpope/vim-ragtag.git',
-    # 'vim-rails'            => 'git://github.com/tpope/vim-rails.git',
     # 'vim-align'            => 'git://github.com/tsaleh/vim-align.git',
     # 'syntastic'            => 'git://github.com/scrooloose/syntastic.git',
     # 'vim-arduino.vim'      => 'git@github.com:tclem/vim-arduino.git',
