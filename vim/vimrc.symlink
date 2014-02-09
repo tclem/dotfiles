@@ -56,7 +56,7 @@ map <Leader><Leader> :ZoomWin<CR>
 " CTags
 " Because I'm using zsh, I have issues with the default OSX path_helper.
 " Youd need to do this to fix: sudo mv /etc/zshenv /etc/zprofile
-map <Leader>rt :!opt/boxen/homebrew/bin/ctags --extra=+f -R -f ./.git/tags .<CR><CR>
+map <Leader>rt :!/opt/boxen/homebrew/bin/ctags --extra=+f -R .<CR><CR>
 map <C-\> :tnext<CR>
 nnoremap <leader>. :CtrlPTag<cr>
 
@@ -213,3 +213,6 @@ au BufNewFile,BufReadPost *.coffee setl foldmethod=indent
 
 " Disable code folding for markdown
 let g:vim_markdown_folding_disabled=1
+
+" vim-json: don't hide quotes
+let g:vim_json_syntax_conceal = 0
