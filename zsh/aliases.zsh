@@ -5,6 +5,7 @@ alias reload!='. ~/.zshrc'
 alias v=mvim
 alias emacs="/usr/local/Cellar/emacs/23.3a/Emacs.app/Contents/MacOS/Emacs -nw"
 alias e="subl -n ."
+alias clean-local-branches='git branch --merged master | grep -v '\''master$'\'' | xargs git branch -d'
 
 # mvim()
 # {
