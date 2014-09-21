@@ -56,7 +56,7 @@ map <Leader><Leader> :ZoomWin<CR>
 " CTags
 " Because I'm using zsh, I have issues with the default OSX path_helper.
 " Youd need to do this to fix: sudo mv /etc/zshenv /etc/zprofile
-map <Leader>rt :!/opt/boxen/homebrew/bin/ctags --extra=+f -R .<CR><CR>
+map <Leader>rt :Dispatch!/opt/boxen/homebrew/bin/ctags --extra=+f -R .<CR><CR>
 map <C-\> :tnext<CR>
 nnoremap <leader>. :CtrlPTag<cr>
 

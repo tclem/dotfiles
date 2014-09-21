@@ -3,6 +3,9 @@
  map <D-t> :CtrlP<CR>
  imap <D-t> <Esc>:CtrlP<CR>
 
+ "map <Leader>t :CtrlPBuffer<CR>
+ "imap <Leader>t <Esc>:CtrlPBuffer<CR>
+
  let g:ctrlp_prompt_mappings = {
       \ 'PrtSelectMove("j")':   ['<c-n>', '<down>'],
       \ 'PrtSelectMove("k")':   ['<c-p>', '<up>'],
@@ -20,8 +23,8 @@ if has("gui_macvim")
   " Command-Return for fullscreen
   macmenu Window.Toggle\ Full\ Screen\ Mode key=<D-CR>
 
-  " Command-Shift-F for Ack
-  map <D-F> :Ack<space>
+  " Command-Shift-F for Ag
+  map <D-F> :Ag<space>
 
   " Command-e for ConqueTerm
   map <D-e> :call StartTerm()<CR>
@@ -256,7 +259,7 @@ set et
 " set sw=2
 set ruler
 syntax enable
-set background=light
+set background=dark
 colorscheme solarized
 set guioptions-=T
 set guioptions-=r
