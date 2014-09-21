@@ -52,18 +52,21 @@ task :vim do
     "vim-rails"            => "https://github.com/tpope/vim-rails",
     "vim-ragtag"           => "https://github.com/tpope/vim-ragtag",
     "vim-json"             => "https://github.com/elzr/vim-json",
-    "supertab"             => "https://github.com/ervandew/supertab"
+    "supertab"             => "https://github.com/ervandew/supertab",
+    "vim-golang"           => "https://github.com/jnwhiteh/vim-golang",
+    "vim-dispatch"         => "https://github.com/tpope/vim-dispatch",
+    "ag.vim"               => "https://github.com/rking/ag.vim",
+    "vim-align"            => "https://github.com/tsaleh/vim-align",
 
+    #"ack.vim"              => "https://github.com/mileszs/ack.vim",
     #"vim-pencil"           => "https://github.com/reedes/vim-pencil.git",
     #"vim-colors-pencil"    => "https://github.com/reedes/vim-colors-pencil",
     # 'ZoomWin'              => 'git://github.com/vim-scripts/ZoomWin.git',
-    # 'ack.vim'              => 'git://github.com/mileszs/ack.vim.git',
     # 'scss-syntax'          => 'https://github.com/cakebaker/scss-syntax.vim.git',
     # 'taglist.vim'          => 'git://github.com/vim-scripts/taglist.vim.git',
 
     # 'vim-indent-object'    => 'git://github.com/michaeljsmith/vim-indent-object.git',
     # 'vim-javascript'       => 'git://github.com/pangloss/vim-javascript.git',
-    # 'vim-align'            => 'git://github.com/tsaleh/vim-align.git',
     # 'syntastic'            => 'git://github.com/scrooloose/syntastic.git',
     # 'vim-arduino.vim'      => 'git@github.com:tclem/vim-arduino.git',
     # 'xmledit'              => 'git://github.com/sukima/xmledit.git',
@@ -73,7 +76,6 @@ task :vim do
     # 'pyflakes-pathogen'    => 'https://github.com/mitechie/pyflakes-pathogen.git',
     # 'pydoc'                => 'https://github.com/fs111/pydoc.vim.git',
     # 'rope-vim'             => 'https://github.com/sontek/rope-vim.git',
-    # 'vim-golang'           => 'https://github.com/jnwhiteh/vim-golang',
 
     # 'mustache.vim'         => 'git://github.com/juvenn/mustache.vim.git',
     # 'hammer.vim'           => 'git://github.com/matthias-guenther/hammer.vim.git',
@@ -82,7 +84,7 @@ task :vim do
   }
 
   # Install each plugin by cloning into pathogen's bundle dir
-  plugins.each do |k, v|
+  plugins.reverse_each do |k, v|
     dest = "#{ENV["HOME"]}/.vim/bundle/#{k}"
     if File.directory?(dest) || File.exist?(dest)
       puts "### updating #{dest}"

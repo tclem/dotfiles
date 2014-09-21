@@ -1,6 +1,7 @@
 alias sc='script/console'
 alias ss='script/server'
 alias st='script/test'
+alias t='bin/testrb'
 
 alias migrate='rake db:migrate db:test:clone'
 
