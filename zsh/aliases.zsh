@@ -7,10 +7,8 @@ alias emacs="/usr/local/Cellar/emacs/23.3a/Emacs.app/Contents/MacOS/Emacs -nw"
 alias e="subl -n ."
 alias clean-local-branches='git branch --merged master | grep -v '\''master$'\'' | xargs git branch -d'
 
-# mvim()
-# {
-  # (unset GEM_PATH GEM_HOME; command mvim "$@")
-# }
+alias mxk="tmux kill-session -t"
+
 
 alias pu='pushd'
 alias po='popd'
@@ -21,6 +19,8 @@ alias history='fc -l 1'
 alias lsa='ls -lah'
 alias l='ls -la'
 alias ll='ls -l'
+
+alias tags='ctags --extra=+f -R .'
 
 # https://gist.github.com/b00f68b40e3ebcc1269c
 function find_rake {
