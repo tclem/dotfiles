@@ -61,3 +61,4 @@ bindkey ' ' magic-space    # also do history expansion on space
 
 export HOMEBREW_GITHUB_API_TOKEN=3eeae596d01109aebc1109382b67d518dab19f16
 export EDITOR=vi
+export LETTER_OPENER=1
