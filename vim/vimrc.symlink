@@ -1,60 +1,180 @@
-call pathogen#infect()
+" call pathogen#infect()
 
 set nocompatible
+filetype off
 
-set number
-set ruler
+" set the runtime path to include Vundle and initialize
+set rtp+=~/.vim/bundle/Vundle.vim
+call vundle#begin()
+Plugin 'gmarik/Vundle.vim'
+
+Bundle 'altercation/vim-colors-solarized'
+Bundle 'elzr/vim-json'
+Bundle 'kien/ctrlp.vim'
+Bundle 'gh:vim-ruby/vim-ruby'
+Bundle 'plasticboy/vim-markdown'
+Bundle 'rking/ag.vim'
+Bundle 'scrooloose/nerdtree'
+Bundle 'scrooloose/nerdcommenter'
+Bundle 'tpope/vim-endwise'
+Bundle 'tpope/vim-fugitive'
+Bundle 'tpope/vim-repeat'
+Bundle 'tpope/vim-surround'
+Bundle 'tpope/vim-ragtag'
+Bundle 'tpope/vim-rails'
+Bundle 'tsaleh/vim-align'
+
+" All of your Plugins must be added before the following line
+call vundle#end()            " required
+filetype plugin indent on    " required
+
+" Syntax
+" ======
 syntax on
+syntax enable
+"set t_Co=256
 
-" Set encoding
+" General Config
+" ==============
+let mapleader=","
+set gfn=Menlo:h14
 set encoding=utf-8
+set number                      " Line numbers
+set backspace=indent,eol,start  " allow backspacing over everything in insert mode
+set history=1000                " Store lots of :cmdline history
+set showcmd                     " Show incomplete cmds down the bottom
+set showmode                    " Show current mode down the bottom
+set gcr=a:blinkon0              " Disable cursor blink
+set autoread                    " Reload files changed outside vim
+set laststatus=2                " Always show status line
+set clipboard=unnamed           " Use system clipboard
+set hidden                      " Buffers can exist in the background
 
-" Whitespace stuff
-set nowrap
-set tabstop=2
-set shiftwidth=2
-set softtabstop=2
-set expandtab
-set list listchars=tab:\ \ ,trail:·
 
-" Searching
-set hlsearch
-set incsearch
+" Mouse
+" ======
+set ttyfast                     " Send more characters for redraws
+set mouse=a                     " Enable mouse use in all modes
+set ttymouse=xterm
+
+
+" Search Settings
+" ===============
+set incsearch        " Find the next match as we type the search
+set hlsearch         " Hilight searches by default
 set ignorecase
 set smartcase
+set viminfo='100,f1  " Save up to 100 marks, enable capital marks
 
-" Tab completion
-set wildmode=list:longest,list:full
-set wildignore+=*.o,*.obj,.git,*.rbc,*.class,.svn
+
+" Turn Off Swap Files
+" ===================
+set noswapfile
+set nobackup
+set nowritebackup
+set backupdir=~/.vim/backup,~/.tmp,~/tmp,/var/tmp,/tmp
+set directory=~/.vim/backup,~/.tmp,~/tmp,/var/tmp,/tmp
+
+" Indentation and Display
+" =======================
+set autoindent
+set smartindent
+set smarttab
+set shiftwidth=2
+set softtabstop=2
+set tabstop=2
+set expandtab
+
+filetype plugin on
+filetype indent on
+
+set list listchars=tab:\ \ ,trail:·   " Display tabs and trailing spaces visually
+set nowrap                            " Don't wrap lines
+set linebreak                         " Wrap lines at convenient points
+
+" Folds
+" =====
+set foldmethod=indent                 " Fold based on indent
+set foldnestmax=3                     " Deepest fold is 3 levels
+set nofoldenable                      " Don't fold by default
+let g:vim_markdown_folding_disabled=1 " Disable code folding for markdown
+
+" Completion
+" ==========
+set wildmode=longest,list,full
+set wildmenu                    " Enable ctrl-n and ctrl-p to scroll thru matches
+set wildignore=*.o,*.obj,*~     " Stuff to ignore when tab completing
+set wildignore+=.git,*.rbc,*.class,.svn
 set wildignore+=.DS_Store
 set wildignore+=tmp/**,*.so,*.swp,*.zip
+set wildignore+=*vim/backups*
 let g:ctrlp_custom_ignore = {
   \ 'dir':  'vendor\/(cache|bundle)$\|\.bundle$\|\.tags$'
   \ }
 
-" Send more characters for redraws
-set ttyfast
+" Scrolling
+" =========
+" Start scrolling when we're getting close to margins
+set scrolloff=10
+set sidescrolloff=15
+set sidescroll=1
 
-" Status bar
-set laststatus=2
+" Status Line
+" " ===========
+set statusline=                                 " Override default
+set statusline+=%{fugitive#statusline()[4:-2]}  " Show fugitive git info
+set statusline+=\ %f\ %m\ %r                    " Show filename/path
+set statusline+=%=                              " Set right-side status info after this line
+set statusline+=%l/%L:%v                        " Set <line number>/<total lines>:<column>
+set statusline+=DTree
 
-" Without setting this, ZoomWin restores windows in a way that causes
-" equalalways behavior to be triggered the next time CommandT is used.
-" This is likely a bludgeon to solve some other issue, but it works
-set noequalalways
+" NERDTree
+" ========
+function! ShowFileInNERDTree()
+  if exists("t:NERDTreeBufName")
+    NERDTreeFind
+  else
+    NERDTree
+    wincmd l
+    NERDTreeFind
+  endif
+endfunction
+map <leader>f :call ShowFileInNERDTree()<cr>
 
-" use comma as <Leader> key instead of backslash
-let mapleader=","
-
-" NERDTree configuration
 let NERDTreeIgnore=['\.pyc$', '\.rbc$', '\~$']
 map <Leader>n :NERDTreeToggle<CR>
 
-" Command-T configuration
-let g:CommandTMaxHeight=20
 
-" ZoomWin configuration
-map <Leader><Leader> :ZoomWin<CR>
+
+" Plugin overrides
+" ========
+" source ~/.vim/autocmd.vim
+" source ~/.vim/format.vim
+" source ~/.vim/rails.vim
+" source ~/.vim/ruby.vim
+" source ~/.vim/common.vim
+" source ~/.vim/tmux.vim
+" source ~/.vim/colors.vim
+" source ~/.vim/ctrlp.vim
+
+
+" Color scheme (solarized of course)
+" ========
+let g:solarized_termtrans = 1
+color solarized
+
+" Git Gutter
+" ==========
+let g:gitgutter_sign_column_always = 1
+let g:gitgutter_eager = 0
+
+
+
+hi StatusLine ctermfg=5 ctermbg=10 guifg=#6c71c4 guibg=#073642
+
+
+
+
 
 " CTags
 " Because I'm using zsh, I have issues with the default OSX path_helper.
@@ -62,10 +182,6 @@ map <Leader><Leader> :ZoomWin<CR>
 map <Leader>rt :Dispatch!/opt/boxen/homebrew/bin/ctags --extra=+f -R .<CR><CR>
 map <C-\> :tnext<CR>
 nnoremap <leader>. :CtrlPTag<cr>
-
-" Gundo configuration
-nmap <F5> :GundoToggle<CR>
-imap <F5> <ESC>:GundoToggle<CR>
 
 " Remember last location in file
 if has("autocmd")
@@ -95,15 +211,11 @@ au BufNewFile,BufRead *.json set ft=javascript
 
 au BufRead,BufNewFile *.txt call s:setupWrapping()
 
-" allow backspacing over everything in insert mode
-set backspace=indent,eol,start
-
 " Golang
 filetype off
 filetype plugin indent off
 set runtimepath+=$GOROOT/misc/vim
 filetype plugin indent on
-syntax on
 
 " load the plugin and indent settings for the detected filetype
 filetype plugin indent on
@@ -132,33 +244,9 @@ vmap <C-Down> ]egv
 vmap <C-k> [egv
 vmap <C-j> ]egv
 
-" Enable syntastic syntax checking
-let g:syntastic_enable_signs=1
-let g:syntastic_quiet_warnings=1
-
-" gist-vim defaults
-if has("mac")
-  let g:gist_clip_command = 'pbcopy'
-elseif has("unix")
-  let g:gist_clip_command = 'xclip -selection clipboard'
-endif
-let g:gist_detect_filetype = 1
-let g:gist_open_browser_after_post = 1
-
 " Use modeline overrides
 set modeline
 set modelines=10
-
-" Default color scheme (solarized of course)
-" let g:solarized_termcolors = 16
-" let g:solarized_visibility = "high"
-" let g:solarized_contrast = "high"
-let g:solarized_termtrans = 1
-color solarized
-
-" Directories for swp files
-set backupdir=~/.vim/backup
-set directory=~/.vim/backup
 
 " Turn off jslint errors by default
 let g:JSLintHighlightErrorLine = 0
@@ -168,9 +256,6 @@ let macvim_hig_shift_movement = 1
 
 " % to bounce from do to end etc.
 runtime! macros/matchit.vim
-
-" Show (partial) command in the status line
-set showcmd
 
 if has("gui_running")
   " Automatically resize splits when resizing MacVim window
@@ -185,37 +270,15 @@ nmap <leader>gl :Glog<CR>
 nmap <leader>gc :Gcommit<CR>
 nmap <leader>gp :Git push<CR>
 
-" These are custom
-" let ruby_fold=1
-" set foldlevelstart=99
-
-" Allow moving away from unsaved buffers
-set hidden
-
-" folding settings
-set foldmethod=indent   "fold based on indent
-" set foldnestmax=10      "deepest fold is 10 levels
-set nofoldenable        "dont fold by default
-set foldlevel=99
-
 map <Leader>k :Align
 map <Leader>kd :Align =><CR>
 
 " Auto save when focus is lost like textmate does
 :au FocusLost * silent! wa
 
-" Go back to insert mode when focus is lost
-":au FocusLost * stopinsert
-
 " Arduino files are treated like c++ files
 :au BufNewFile,BufRead *.pde set filetype=cpp
 :au BufNewFile,BufRead *.ino set filetype=cpp
-
-" Code folding for coffeescript
-au BufNewFile,BufReadPost *.coffee setl foldmethod=indent
-
-" Disable code folding for markdown
-let g:vim_markdown_folding_disabled=1
 
 " vim-json: don't hide quotes
 let g:vim_json_syntax_conceal = 0
