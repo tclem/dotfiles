@@ -1,8 +1,0 @@
-#!/bin/sh
-verb="buzz"
-if [ $1 ]
-then
-  verb=$1
-fi
-curl "http://github.dyndns.biz:9998/$verb?token=EtyKZxq9KuBC4prFayAtgXC" -i
-
