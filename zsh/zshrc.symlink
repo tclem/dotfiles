@@ -4,13 +4,14 @@ export ZSH=$HOME/.dotfiles
 export SHELL=/bin/zsh
 
 # your project folder that we can `c [tab]` to
-export PROJECTS=~/github
+export PROJECTS=~/GitHub
 
 # source every .zsh file in this rep
 for config_file ($ZSH/**/*.zsh) source $config_file
 
-# ZSH tab completions for git and hub. This is janky
-fpath=(/opt/boxen/homebrew/share/zsh/site-functions $fpath)
+# ZSH tab completions for git and hub.
+fpath=(/usr/local/share/zsh-completions $fpath)
+fpath=(/usr/local/share/zsh/site-functions $fpath)
 
 # use .localrc for SUPER SECRET CRAP that you don't
 # want in your public, versioned repo.
@@ -37,5 +38,9 @@ fi
 # direnv
 eval "$(direnv hook zsh)"
 
+# rbenv
+eval "$(rbenv init -)"
+
 # Setup go
-export GOPATH=~/go
+# export GOPATH=~/go
+
