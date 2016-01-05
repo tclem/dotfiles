@@ -11,7 +11,6 @@ export CLICOLOR=true
 # export ZLSCOLORS="${LS_COLORS}"
 
 fpath=($ZSH/zsh/functions $fpath)
-
 autoload -U $ZSH/zsh/functions/*(:t)
 
 HISTFILE=~/.zsh_history
@@ -59,6 +58,5 @@ export GREP_OPTIONS='--color=auto'
 # key bindings
 bindkey ' ' magic-space    # also do history expansion on space
 
-export HOMEBREW_GITHUB_API_TOKEN=3eeae596d01109aebc1109382b67d518dab19f16
 export EDITOR=vi
 export LETTER_OPENER=1
