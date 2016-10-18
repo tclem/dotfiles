@@ -38,24 +38,26 @@ end
 
 desc "Install or update all vim plugins"
 task :vim do
+  `mkdir -p ~/.vim/autoload ~/.vim/bundle && \
+  curl -LSso ~/.vim/autoload/pathogen.vim https://tpo.pe/pathogen.vim`
   plugins = {
     "vim-colors-solarized" => "https://github.com/altercation/vim-colors-solarized",
     "nerdcommenter"        => "https://github.com/scrooloose/nerdcommenter",
     "nerdtree"             => "https://github.com/scrooloose/nerdtree",
-    "vim-coffee-script"    => "https://github.com/kchmck/vim-coffee-script",
+    # "vim-coffee-script"    => "https://github.com/kchmck/vim-coffee-script",
     "vim-surround"         => "https://github.com/tpope/vim-surround",
     "vim-endwise"          => "https://github.com/tpope/vim-endwise",
     "vim-repeat"           => "https://github.com/tpope/vim-repeat",
     "vim-fugitive"         => "https://github.com/tpope/vim-fugitive",
-    "vim-ctrlp"            => "https://github.com/kien/ctrlp.vim",
-    "vim-markdown"         => "https://github.com/plasticboy/vim-markdown",
-    "vim-rails"            => "https://github.com/tpope/vim-rails",
+    # "vim-ctrlp"            => "https://github.com/kien/ctrlp.vim",
+    # "vim-markdown"         => "https://github.com/plasticboy/vim-markdown",
+    # "vim-rails"            => "https://github.com/tpope/vim-rails",
     "vim-ragtag"           => "https://github.com/tpope/vim-ragtag",
-    "vim-json"             => "https://github.com/elzr/vim-json",
+    # "vim-json"             => "https://github.com/elzr/vim-json",
     "supertab"             => "https://github.com/ervandew/supertab",
-    "vim-golang"           => "https://github.com/jnwhiteh/vim-golang",
+    # "vim-golang"           => "https://github.com/jnwhiteh/vim-golang",
     "vim-dispatch"         => "https://github.com/tpope/vim-dispatch",
-    "ag.vim"               => "https://github.com/rking/ag.vim",
+    # "ag.vim"               => "https://github.com/rking/ag.vim",
     "vim-align"            => "https://github.com/tsaleh/vim-align",
 
     #"ack.vim"              => "https://github.com/mileszs/ack.vim",
