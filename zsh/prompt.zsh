@@ -68,5 +68,6 @@ directory_name(){
 
 date_time='%D{%m.%d.%Y} %@'
 
-export PROMPT=$'$(ruby_prompt) ⑁ $(directory_name) $(project_name_color)$(git_dirty)$(need_push) ❯ '
+export PROMPT=$'⑁ $(directory_name) $(project_name_color)$(git_dirty)$(need_push) ❯ '
+# export PROMPT=$'$(ruby_prompt) ⑁ $(directory_name) $(project_name_color)$(git_dirty)$(need_push) ❯ '
 # export RPROMPT=""
