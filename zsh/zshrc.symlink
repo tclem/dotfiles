@@ -44,6 +44,7 @@ eval "$(rbenv init -)"
 #nvm
 export NVM_DIR="$HOME/.nvm"
 . "$(brew --prefix nvm)/nvm.sh"
+export PATH="./node_modules/.bin:$PATH"
 
 # Setup go
 # export GOPATH=~/go
