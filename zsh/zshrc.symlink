@@ -47,4 +47,8 @@ export NVM_DIR="$HOME/.nvm"
 export PATH="./node_modules/.bin:$PATH"
 
 # Setup go
-# export GOPATH=~/go
+export GOPATH=$HOME/go
+export GOBIN=$GOPATH/bin
+export GOROOT=/usr/local/opt/go/libexec
+export PATH=$PATH:$GOPATH/bin
+export PATH=$PATH:$GOROOT/bin
