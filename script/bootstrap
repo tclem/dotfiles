@@ -2,11 +2,9 @@
 #
 # bootstrap installs things.
 
-DOTFILES_ROOT="`pwd`"
-
 set -e
 
-echo ''
+DOTFILES_ROOT="`pwd`"
 
 info () {
   printf "  [ \033[00;34m..\033[0m ] $1"
@@ -24,22 +22,6 @@ fail () {
   printf "\r\033[2K  [\033[0;31mFAIL\033[0m] $1\n"
   echo ''
   exit
-}
-
-setup_gitconfig () {
-  if ! [ -f git/gitconfig.symlink ]
-  then
-    info 'setup gitconfig'
-
-    user ' - What is your github author name?'
-    read -e git_authorname
-    user ' - What is your github author email?'
-    read -e git_authoremail
-
-    sed -e "s/AUTHORNAME/$git_authorname/g" -e "s/AUTHOREMAIL/$git_authoremail/g" git/gitconfig.symlink.example > git/gitconfig.symlink
-
-    success 'gitconfig'
-  fi
 }
 
 link_files () {
@@ -114,20 +96,18 @@ install_dotfiles () {
   done
 }
 
-setup_gitconfig
+# Symlink in our dotfiles
 install_dotfiles
 
-# If we are on a mac, lets install and setup homebrew
-if [ "$(uname -s)" == "Darwin" ]
-then
-  info "installing dependencies"
-  if . bin/dot > /tmp/dotfiles-dot 2>&1
-  then
-    success "dependencies installed"
-  else
-    fail "error installing dependencies"
-  fi
-fi
+# Fast keyrepeat
+defaults write -g InitialKeyRepeat -int 15 # normal minimum is 15 (225 ms)
+defaults write -g KeyRepeat -int 1 # normal minimum is 2 (30 ms)
 
-echo ''
-echo '  All installed!'
+# Disable Accent Menu when you hold down a key
+defaults write -g ApplePressAndHoldEnabled -bool false
+
+# Hide desktop icons
+defaults write com.apple.finder CreateDesktop false; killall Finder
+
+# Use the new zshrc to brew bundle
+zsh -c 'brew bundle'

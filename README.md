@@ -7,7 +7,7 @@ These are my dotfiles.
 ``` sh
 git clone git://github.com/tclem/dotfiles ~/.dotfiles
 cd ~/.dotfiles
-rake install
+script/bootstrap
 ```
 
 A .zshrc is setup for you, but it will look for and source a .localrc
