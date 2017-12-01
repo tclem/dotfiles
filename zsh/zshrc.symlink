@@ -30,11 +30,6 @@ autoload -U edit-command-line
 zle -N edit-command-line
 bindkey '^Xe' edit-command-line
 
-# Load up Boxen's environment.
-if [ -f "/opt/boxen/env.sh" ]
-  then source "/opt/boxen/env.sh"
-fi
-
 # direnv
 eval "$(direnv hook zsh)"
 
