@@ -1,6 +1,0 @@
-#!/bin/zsh
-#/ Usage: tree-sitter-parse-paths <path>
-#/ Parse all ruby files in the specified path
-
-# for f in $(ls $1/**/*.rb); do echo $f && tree-sitter parse $f -q; done
-for f in $(find $1 -name "*.rb"); do echo $f && tree-sitter parse $f -q; done
