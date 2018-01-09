@@ -109,5 +109,11 @@ defaults write -g ApplePressAndHoldEnabled -bool false
 # Hide desktop icons
 defaults write com.apple.finder CreateDesktop false; killall Finder
 
+# iTerm2 will load settings from a shared directory
+# Specify the preferences directory
+defaults write com.googlecode.iterm2.plist PrefsCustomFolder -string "~/.dotfiles/iterm2"
+# Tell iTerm2 to use the custom preferences in the directory
+defaults write com.googlecode.iterm2.plist LoadPrefsFromCustomFolder -bool true
+
 # Use the new zshrc to brew bundle
 zsh -c 'brew bundle'
