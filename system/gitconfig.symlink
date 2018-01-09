@@ -1,0 +1,19 @@
+[user]
+	name = Timothy Clem
+	email = timothy.clem@gmail.com
+[github]
+	user = tclem
+[push]
+	default = simple
+[credential]
+	helper = osxkeychain
+[alias]
+	co = checkout
+	lo = log --oneline --decorate
+	lol = log --oneline --graph --decorate
+	last = log -1 HEAD
+[filter "lfs"]
+	clean = git-lfs clean -- %f
+	smudge = git-lfs smudge -- %f
+	process = git-lfs filter-process
+	required = true
