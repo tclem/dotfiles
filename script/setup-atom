@@ -1,0 +1,20 @@
+#!/bin/bash
+
+# General editor setup
+apm install \
+  editor-settings \
+  file-icons \
+  vim-mode-plus \
+  vim-mode-plus-keymaps-for-surround \
+  sort-lines \
+  minimap \
+  atom-ide-ui \
+
+# Haskell hacking
+apm install \
+  language-haskell \
+  ide-haskell-hie \
+
+# Go hacking
+apm install
+  go-plus \
