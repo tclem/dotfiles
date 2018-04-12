@@ -35,14 +35,5 @@ alias t='bin/testrb'
 alias migrate='rake db:migrate db:test:clone'
 alias s="ps aux | grep \"[r]uby\" | grep script/server || echo \"You're not running any, dawg.\""
 alias killnginx="ps aux | grep nginx | awk '{print $2}' | xargs sudo kill -9"
+alias lint='git status -s | cut -d" " -f3 | xargs rubocop -a'
 
-# https://gist.github.com/b00f68b40e3ebcc1269c
-function find_rake {
-  if [[ -f Gemfile && -x bin/rake ]]; then
-    bin/rake "$@"
-  else
-    rake "$@"
-  fi
-}
-
-alias rake=find_rake
