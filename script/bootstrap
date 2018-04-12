@@ -116,4 +116,5 @@ defaults write com.googlecode.iterm2.plist PrefsCustomFolder -string "~/.dotfile
 defaults write com.googlecode.iterm2.plist LoadPrefsFromCustomFolder -bool true
 
 # Use the new zshrc to brew bundle
+# bash -c '/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"'
 zsh -c 'brew bundle'
