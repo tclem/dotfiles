@@ -2,19 +2,19 @@
 
 # General editor setup
 apm install \
+  align-regexp \
+  atom-beautify \
+  atom-ide-ui \
   editor-settings \
   file-icons \
+  hyperclick \
+  minimap \
+  sort-lines \
+  teletype \
   vim-mode-plus \
   vim-mode-plus-keymaps-for-surround \
-  sort-lines \
-  minimap \
-  atom-ide-ui \
 
 # Haskell hacking
 apm install \
   language-haskell \
   ide-haskell-hie \
-
-# Go hacking
-apm install
-  go-plus \
