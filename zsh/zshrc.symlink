@@ -20,6 +20,13 @@ then
   source ~/.localrc
 fi
 
+# iTerm window title
+DISABLE_AUTO_TITLE="true"
+function precmd () {
+  window_title="\033]0;${PWD##*/}\007"
+  echo -ne "$window_title"
+}
+
 # initialize autocomplete here, otherwise functions won't be loaded
 autoload -U compinit
 compinit

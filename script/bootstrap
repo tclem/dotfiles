@@ -135,3 +135,8 @@ bash -c '/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebr
 
 # Use the new zshrc to brew bundle
 zsh -c 'brew bundle'
+
+# Fonts I like: Hasklig, Meslo, SF Mono
+
+# Can fix zsh compaudit issues:
+# compaudit | xargs chmod g-w
