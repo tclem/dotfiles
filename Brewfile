@@ -6,6 +6,7 @@ brew "node"
 brew "graphviz" # for dot & tree-sitter grammar development
 brew "jq"
 brew "git"
+brew "zsh"
 
 cask "atom"
 cask "github"
