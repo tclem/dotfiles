@@ -138,5 +138,11 @@ zsh -c 'brew bundle'
 
 # Fonts I like: Hasklig, Meslo, SF Mono
 
-# Can fix zsh compaudit issues:
+# Setup osxkeychain for pushing to https with a personal access token
+# printf "protocol=https\\nhost=github.com\\n" | git credential-osxkeychain erase
+# printf "protocol=https\\nhost=github.com\\nusername=%s\\npassword=%s\\n" \
+#       "$(whoami)" "$GITHUB_TOKEN" \
+#       | git credential-osxkeychain store
+
+# Fix zsh compaudit issues:
 # compaudit | xargs chmod g-w
