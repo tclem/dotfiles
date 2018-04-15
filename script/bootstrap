@@ -109,6 +109,9 @@ defaults write -g ApplePressAndHoldEnabled -bool false
 # Hide desktop icons
 defaults write com.apple.finder CreateDesktop false; killall Finder
 
+# Dock on the right
+defaults write com.apple.dock autohide -int 1; defaults write com.apple.dock orientation -string right; killall Dock
+
 # iTerm2 will load settings from a shared directory
 # Specify the preferences directory
 defaults write com.googlecode.iterm2.plist PrefsCustomFolder -string "~/.dotfiles/iterm2"
