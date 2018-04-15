@@ -139,6 +139,9 @@ bash -c '/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebr
 # Use the new zshrc to brew bundle
 zsh -c 'brew bundle'
 
+# Fix zsh compaudit issues:
+zsh -c 'compaudit | xargs chmod g-w'
+
 # Fonts I like: Hasklig, Meslo, SF Mono
 
 # Setup osxkeychain for pushing to https with a personal access token
@@ -146,6 +149,3 @@ zsh -c 'brew bundle'
 # printf "protocol=https\\nhost=github.com\\nusername=%s\\npassword=%s\\n" \
 #       "$(whoami)" "$GITHUB_TOKEN" \
 #       | git credential-osxkeychain store
-
-# Fix zsh compaudit issues:
-# compaudit | xargs chmod g-w
