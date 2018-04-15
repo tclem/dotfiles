@@ -1,0 +1,20 @@
+"*":
+  "atom-ide-ui":
+    use: {}
+  autosave:
+    enabled: true
+  core:
+    telemetryConsent: "no"
+    titleBar: "custom"
+    useTreeSitterParsers: true
+  editor:
+    showIndentGuide: true
+    showInvisibles: true
+  "exception-reporting":
+    userId: "bac65447-0c1f-4116-b740-d128f12e4c81"
+  "ide-haskell-hie":
+    useHieWrapper: true
+  "vim-mode-plus":
+    keymapYToYankToLastCharacterOfLine: true
+  welcome:
+    showOnStartup: false

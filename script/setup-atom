@@ -18,3 +18,9 @@ apm install \
 apm install \
   language-haskell \
   ide-haskell-hie \
+
+# Link in editor and package settings
+if [ -f ~/.atom/config.cson ]; then
+  rm ~/.atom/config.cson
+fi
+ln -s "$(pwd)/atom/config.cson" ~/.atom/config.cson
