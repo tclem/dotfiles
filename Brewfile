@@ -5,6 +5,7 @@ brew "hub"
 brew "node"
 brew "graphviz" # for dot & tree-sitter grammar development
 brew "jq"
+brew "tree"
 brew "git"
 brew "zsh"
 
