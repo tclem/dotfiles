@@ -44,11 +44,13 @@ eval "$(direnv hook zsh)"
 eval "$(rbenv init -)"
 
 
-#nvm
+# nvm
 export NVM_DIR="$HOME/.nvm"
 # Slow - turn on when you need it
 # . "$(brew --prefix nvm)/nvm.sh"
-export PATH="./node_modules/.bin:$PATH"
+
+# npm
+export PATH="$PATH:./node_modules/.bin"
 
 # Setup go
 export GOPATH=$HOME/go
