@@ -8,6 +8,7 @@
     titleBar: "custom"
     useTreeSitterParsers: true
   editor:
+    fontFamily: "SF Mono, Menlo, Consolas, DejaVu Sans Mono, monospace"
     showIndentGuide: true
     showInvisibles: true
   "exception-reporting":
