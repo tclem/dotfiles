@@ -12,6 +12,7 @@
 	lo = log --oneline --decorate
 	lol = log --oneline --graph --decorate
 	last = log -1 HEAD
+  first = git log --reverse --pretty=format:"%h %ad%x09%an%x09%s" --date=short | grep Clem | head -1
 [filter "lfs"]
 	clean = git-lfs clean -- %f
 	smudge = git-lfs smudge -- %f
