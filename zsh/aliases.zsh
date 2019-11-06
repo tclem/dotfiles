@@ -9,8 +9,8 @@ alias ...='cd ../..'
 alias -- -='cd -'
 alias history='fc -l 1'
 alias lsa='ls -lah'
-alias l='ls -la'
-alias ll='ls -l'
+alias l='ls -lha'
+alias ll='ls -lh'
 alias tags='ctags --extra=+f -R .'
 
 # Git
@@ -32,8 +32,7 @@ alias sc='script/console'
 alias ss='script/server'
 alias st='script/test'
 alias t='bin/testrb'
-alias migrate='rake db:migrate db:test:clone'
+alias migrate='rake db:migrate db:test:prepare'
 alias s="ps aux | grep \"[r]uby\" | grep script/server || echo \"You're not running any, dawg.\""
 alias killnginx="ps aux | grep nginx | awk '{print $2}' | xargs sudo kill -9"
 alias lint='git status -s | cut -d" " -f3 | xargs rubocop -a'
-

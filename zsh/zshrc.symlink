@@ -43,19 +43,16 @@ eval "$(direnv hook zsh)"
 # rbenv
 eval "$(rbenv init -)"
 
-
-# nvm
-export NVM_DIR="$HOME/.nvm"
-# Slow - turn on when you need it
-# . "$(brew --prefix nvm)/nvm.sh"
-
-# npm
+# node and npm, specifically not using a version manager as I only work with
+# node in the tree-sitter project.
+export PATH="/usr/local/opt/node@10/bin:$PATH"
 export PATH="$PATH:./node_modules/.bin"
 
 # Setup go
 export GOPATH=$HOME/go
 export GOBIN=$GOPATH/bin
 export GOROOT=/usr/local/opt/go/libexec
+#export GOFLAGS=-mod=vendor
 export PATH=$PATH:$GOPATH/bin
 export PATH=$PATH:$GOROOT/bin
 
