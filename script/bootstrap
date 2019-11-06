@@ -142,6 +142,9 @@ zsh -c 'brew bundle'
 # Fix zsh compaudit issues:
 zsh -c 'compaudit | xargs chmod g-w'
 
+# Enable font smoothing for external displays
+defaults write -g CGFontRenderingFontSmoothingDisabled -bool FALSE
+
 # Fonts I like: Hasklig, Meslo, SF Mono
 
 # Setup osxkeychain for pushing to https with a personal access token
@@ -149,3 +152,7 @@ zsh -c 'compaudit | xargs chmod g-w'
 # printf "protocol=https\\nhost=github.com\\nusername=%s\\npassword=%s\\n" \
 #       "$(whoami)" "$GITHUB_TOKEN" \
 #       | git credential-osxkeychain store
+
+# VSCode Vim
+defaults write com.microsoft.VSCode ApplePressAndHoldEnabled -bool false
+defaults delete -g ApplePressAndHoldEnabled
