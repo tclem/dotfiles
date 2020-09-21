@@ -13,6 +13,9 @@ for config_file ($ZSH/**/*.zsh) source $config_file
 fpath=(/usr/local/share/zsh-completions $fpath)
 fpath=(/usr/local/share/zsh/site-functions $fpath)
 
+# Completions for gh
+eval "$(gh completion -s zsh)"
+
 # use .localrc for SUPER SECRET CRAP that you don't
 # want in your public, versioned repo.
 if [[ -a ~/.localrc ]]
