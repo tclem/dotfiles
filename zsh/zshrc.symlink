@@ -45,15 +45,35 @@ eval "$(rbenv init -)"
 
 # node and npm, specifically not using a version manager as I only work with
 # node in the tree-sitter project.
-export PATH="/usr/local/opt/node@10/bin:$PATH"
+# export PATH="/usr/local/opt/node@10/bin:$PATH"
 export PATH="$PATH:./node_modules/.bin"
 
 # Setup go
-export GOPATH=$HOME/go
-export GOBIN=$GOPATH/bin
-export GOROOT=/usr/local/opt/go/libexec
+# export GOPATH=$HOME/go
+# export GOBIN=$GOPATH/bin
+# export GOROOT=/usr/local/opt/go/libexec
 #export GOFLAGS=-mod=vendor
-export PATH=$PATH:$GOPATH/bin
-export PATH=$PATH:$GOROOT/bin
+# export PATH=$PATH:$GOPATH/bin
+# export PATH=$PATH:$GOROOT/bin
+export PATH=$PATH:$HOME/go/bin
 
 test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
+
+# For donkey self driving car only
+# >>> conda initialize >>>
+# !! Contents within this block are managed by 'conda init' !!
+# __conda_setup="$('/usr/local/Caskroom/miniconda/base/bin/conda' 'shell.zsh' 'hook' 2> /dev/null)"
+# if [ $? -eq 0 ]; then
+#    eval "$__conda_setup"
+# else
+#    if [ -f "/usr/local/Caskroom/miniconda/base/etc/profile.d/conda.sh" ]; then
+#        . "/usr/local/Caskroom/miniconda/base/etc/profile.d/conda.sh"
+#    else
+#        export PATH="/usr/local/Caskroom/miniconda/base/bin:$PATH"
+#    fi
+# fi
+# unset __conda_setup
+# <<< conda initialize <<<
+
+# Build semantic with bazel
+export BAZEL_USE_CPP_ONLY_TOOLCHAIN=1
