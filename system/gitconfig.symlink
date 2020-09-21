@@ -5,8 +5,6 @@
 	user = tclem
 [push]
 	default = simple
-[credential]
-	helper = osxkeychain
 [alias]
 	co = checkout
 	lo = log --oneline --decorate
@@ -18,3 +16,7 @@
 	smudge = git-lfs smudge -- %f
 	process = git-lfs filter-process
 	required = true
+[credential]
+	helper = osxkeychain
+[core]
+	excludesfile = /Users/tclem/.gitignore
