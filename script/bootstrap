@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # bootstrap installs things.
 
@@ -102,6 +102,6 @@ install_dotfiles
 
 if [[ "$(uname -s)" = "Darwin" ]]; then
   script/bootstrap-macos
-fi
+else
   script/bootstrap-linux
 fi
