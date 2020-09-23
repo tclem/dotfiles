@@ -1,0 +1,5 @@
+#!/bin/sh
+#
+# Linux specific bootstrap
+
+echo "TODO: bootstrap on linux"
