@@ -2,4 +2,5 @@
 #
 # Linux specific bootstrap
 
+set -ex
 echo "TODO: bootstrap on linux"

@@ -2,6 +2,8 @@
 #
 # macOS specific bootstrap
 
+set -ex
+
 # Fast keyrepeat
 defaults write -g InitialKeyRepeat -int 15 # normal minimum is 15 (225 ms)
 defaults write -g KeyRepeat -int 1 # normal minimum is 2 (30 ms)
@@ -17,7 +19,7 @@ defaults write com.apple.dock autohide -int 1; defaults write com.apple.dock ori
 
 # iTerm2 will load settings from a shared directory
 # Specify the preferences directory
-defaults write com.googlecode.iterm2.plist PrefsCustomFolder -string "~/.dotfiles/iterm2"
+defaults write com.googlecode.iterm2.plist PrefsCustomFolder -string "~/dotfiles/iterm2"
 # Tell iTerm2 to use the custom preferences in the directory
 defaults write com.googlecode.iterm2.plist LoadPrefsFromCustomFolder -bool true
 
@@ -30,14 +32,16 @@ defaults write com.apple.Safari \
   -bool false
 defaults write com.apple.screensaver askForPassword -int 1
 defaults write com.apple.screensaver askForPasswordDelay -int 0
-sudo defaults write /Library/Preferences/com.apple.alf globalstate -int 1
-sudo launchctl load /System/Library/LaunchDaemons/com.apple.alf.agent.plist 2>/dev/null
-sudo defaults write /Library/Preferences/com.apple.loginwindow \
-    LoginwindowText \
-    "Found this computer? Please contact $(id -F) at $(git config --global user.email)."
+# sudo defaults write /Library/Preferences/com.apple.alf globalstate -int 1
+# sudo launchctl load /System/Library/LaunchDaemons/com.apple.alf.agent.plist 2>/dev/null
+# sudo defaults write /Library/Preferences/com.apple.loginwindow \
+#     LoginwindowText \
+#     "Found this computer? Please contact $(id -F) at $(git config --global user.email)."
 
 # Install Homebrew
-bash -c '/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"'
+if [ ! -f $(which brew) ]; then
+  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
+fi
 
 # Use the new zshrc to brew bundle
 zsh -c 'brew bundle'

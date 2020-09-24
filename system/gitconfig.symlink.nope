@@ -20,3 +20,5 @@
 	helper = osxkeychain
 [core]
 	excludesfile = /Users/tclem/.gitignore
+[pull]
+	rebase = true
