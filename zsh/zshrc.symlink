@@ -14,7 +14,7 @@ fpath=(/usr/local/share/zsh-completions $fpath)
 fpath=(/usr/local/share/zsh/site-functions $fpath)
 
 # Completions for gh
-eval "$(gh completion -s zsh)"
+test -e $(which gh) && eval "$(gh completion -s zsh)"
 
 # use .localrc for SUPER SECRET CRAP that you don't
 # want in your public, versioned repo.
@@ -44,7 +44,7 @@ bindkey '^Xe' edit-command-line
 test -e "$(which direnv)" && eval "$(direnv hook zsh)"
 
 # rbenv
-test -e "$(which direnv)" && eval "$(rbenv init -)"
+test -e "$(which rbenv)" && eval "$(rbenv init -)"
 
 # node and npm, specifically not using a version manager as I only work with
 # node in the tree-sitter project.
