@@ -35,7 +35,11 @@ install_dotfiles () {
 
   overwrite_all=false
   backup_all=false
-  skip_all=true
+  if [ "$-" == "i" ]; then
+    skip_all=true
+  else
+    skip_all=false
+  fi
 
   for source in `find $DOTFILES_ROOT -maxdepth 2 -name \*.symlink`
   do
@@ -97,8 +101,9 @@ install_dotfiles () {
   done
 }
 
-# Symlink in our dotfiles
 install_dotfiles
+script/bootstrap-git
+script/bootstrap-vim
 
 if [[ "$(uname -s)" = "Darwin" ]]; then
   script/bootstrap-macos

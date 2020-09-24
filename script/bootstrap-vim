@@ -1,0 +1,56 @@
+#!/bin/bash
+
+set -e
+
+update=$1
+
+if [ ! -f "$HOME/.vim/autoload/pathogen.vim" ]; then
+  echo "installing pathogen"
+  mkdir -p ~/.vim/autoload ~/.vim/bundle \
+    && curl -LSso ~/.vim/autoload/pathogen.vim https://tpo.pe/pathogen.vim
+  update=update
+fi
+
+if [ "$update" == "update" ]; then
+
+  PLUGINS=(
+    "https://github.com/altercation/vim-colors-solarized"
+    "https://github.com/scrooloose/nerdcommenter"
+    "https://github.com/scrooloose/nerdtree"
+    # "https://github.com/kchmck/vim-coffee-script"
+    "https://github.com/tpope/vim-surround"
+    "https://github.com/tpope/vim-endwise"
+    "https://github.com/tpope/vim-repeat"
+    "https://github.com/tpope/vim-fugitive"
+    "https://github.com/kien/ctrlp.vim"
+    "https://github.com/plasticboy/vim-markdown"
+    "https://github.com/tpope/vim-rails"
+    "https://github.com/tpope/vim-ragtag"
+    "https://github.com/elzr/vim-json"
+    "https://github.com/ervandew/supertab"
+    "https://github.com/jnwhiteh/vim-golang"
+    "https://github.com/tpope/vim-dispatch"
+    # "https://github.com/rking/ag.vim"
+    "https://github.com/tsaleh/vim-align"
+    # "https://github.com/mileszs/ack.vim"
+    # "https://github.com/reedes/vim-pencil"
+    # "https://github.com/reedes/vim-colors-pencil"
+    # "https://github.com/cakebaker/scss-syntax.vim"
+    # "https://github.com/mitechie/pyflakes-pathogen"
+    # "https://github.com/fs111/pydoc.vim"
+  )
+
+  for p in "${PLUGINS[@]}"; do
+    base=$(basename $p)
+    dir="$HOME/.vim/bundle/$base"
+    if [[ -f "$dir" || -d "$dir" ]]; then
+      echo "updating $base in $dir"
+      cd "$dir" && git pull
+    else
+      echo "installing $base in $dir"
+      git clone "$p" "$dir"
+    fi
+  done
+else
+  echo "already installed"
+fi
