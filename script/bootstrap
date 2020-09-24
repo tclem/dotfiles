@@ -34,11 +34,6 @@ install_dotfiles () {
   info 'installing dotfiles'
 
   overwrite_all=false
-  if [ "$-" == "i" ]; then
-    # no interactive shell, overwrite everything
-    overwrite_all=true
-  fi
-
   backup_all=false
   skip_all=false
 
@@ -56,7 +51,9 @@ install_dotfiles () {
       if [ "$overwrite_all" == "false" ] && [ "$backup_all" == "false" ] && [ "$skip_all" == "false" ]
       then
         user "File already exists: `basename $source`, what do you want to do? [s]kip, [S]kip all, [o]verwrite, [O]verwrite all, [b]ackup, [B]ackup all?"
-        read -n 1 action
+        set +e
+        read -n 1 -t 20 action || action=O
+        set -e
 
         case "$action" in
           o )
