@@ -2,6 +2,7 @@ brew "direnv"
 brew "rbenv"
 brew "grc"
 brew "hub"
+brew "gh"
 brew "node"
 brew "graphviz" # for dot & tree-sitter grammar development
 brew "jq"
