@@ -34,12 +34,13 @@ install_dotfiles () {
   info 'installing dotfiles'
 
   overwrite_all=false
-  backup_all=false
   if [ "$-" == "i" ]; then
-    skip_all=true
-  else
-    skip_all=false
+    # no interactive shell, overwrite everything
+    overwrite_all=true
   fi
+
+  backup_all=false
+  skip_all=false
 
   for source in `find $DOTFILES_ROOT -maxdepth 2 -name \*.symlink`
   do
