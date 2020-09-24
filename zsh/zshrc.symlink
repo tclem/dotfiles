@@ -41,10 +41,10 @@ zle -N edit-command-line
 bindkey '^Xe' edit-command-line
 
 # direnv
-eval "$(direnv hook zsh)"
+test -e "$(which direnv)" && eval "$(direnv hook zsh)"
 
 # rbenv
-eval "$(rbenv init -)"
+test -e "$(which direnv)" && eval "$(rbenv init -)"
 
 # node and npm, specifically not using a version manager as I only work with
 # node in the tree-sitter project.
