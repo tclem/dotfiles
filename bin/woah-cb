@@ -1,0 +1,6 @@
+#!/bin/bash
+
+set -ex
+
+# renice Carbon Black to the lowest priority (-20 is the highest, 19 is the lowest)
+sudo renice -n 19 -p $(pidof CbOsxSensorServi)
