@@ -48,7 +48,7 @@ test -e "$(which rbenv)" && eval "$(rbenv init -)"
 
 # node and npm, specifically not using a version manager as I only work with
 # node in the tree-sitter project.
-# export PATH="/usr/local/opt/node@10/bin:$PATH"
+export PATH="/usr/local/opt/node@10/bin:$PATH"
 export PATH="$PATH:./node_modules/.bin"
 
 # Setup go
