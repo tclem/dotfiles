@@ -1,10 +1,10 @@
-# shortcut to this dotfiles path is $ZSH
-export ZSH=$HOME/dotfiles
-
-export SHELL=/bin/zsh
+export SHELL=/usr/local/bin/zsh
 
 # your project folder that we can `c [tab]` to
 export PROJECTS=~/github
+
+# shortcut to this dotfiles path is $ZSH
+export ZSH=$PROJECTS/dotfiles
 
 # source every .zsh file in this rep
 for config_file ($ZSH/**/*.zsh) source $config_file

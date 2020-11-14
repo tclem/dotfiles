@@ -17,21 +17,15 @@ defaults write com.apple.finder CreateDesktop false; killall Finder
 # Dock on the right
 defaults write com.apple.dock autohide -int 1; defaults write com.apple.dock orientation -string right; killall Dock
 
-# iTerm2 will load settings from a shared directory
-# Specify the preferences directory
-defaults write com.googlecode.iterm2.plist PrefsCustomFolder -string "~/dotfiles/iterm2"
-# Tell iTerm2 to use the custom preferences in the directory
-defaults write com.googlecode.iterm2.plist LoadPrefsFromCustomFolder -bool true
-
 # Set some basic security settings.
-defaults write com.apple.Safari \
-  com.apple.Safari.ContentPageGroupIdentifier.WebKit2JavaEnabled \
-  -bool false
-defaults write com.apple.Safari \
-  com.apple.Safari.ContentPageGroupIdentifier.WebKit2JavaEnabledForLocalFiles \
-  -bool false
-defaults write com.apple.screensaver askForPassword -int 1
-defaults write com.apple.screensaver askForPasswordDelay -int 0
+# defaults write com.apple.Safari \
+#  com.apple.Safari.ContentPageGroupIdentifier.WebKit2JavaEnabled \
+#  -bool false
+#defaults write com.apple.Safari \
+#  com.apple.Safari.ContentPageGroupIdentifier.WebKit2JavaEnabledForLocalFiles \
+#  -bool false
+#defaults write com.apple.screensaver askForPassword -int 1
+#defaults write com.apple.screensaver askForPasswordDelay -int 0
 # sudo defaults write /Library/Preferences/com.apple.alf globalstate -int 1
 # sudo launchctl load /System/Library/LaunchDaemons/com.apple.alf.agent.plist 2>/dev/null
 # sudo defaults write /Library/Preferences/com.apple.loginwindow \
@@ -39,7 +33,7 @@ defaults write com.apple.screensaver askForPasswordDelay -int 0
 #     "Found this computer? Please contact $(id -F) at $(git config --global user.email)."
 
 # Install Homebrew
-if [ ! -f $(which brew) ]; then
+if ! brew --version; then
   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
 fi
 
@@ -50,7 +44,7 @@ zsh -c 'brew bundle'
 zsh -c 'compaudit | xargs chmod g-w'
 
 # Enable font smoothing for external displays
-defaults write -g CGFontRenderingFontSmoothingDisabled -bool FALSE
+# defaults write -g CGFontRenderingFontSmoothingDisabled -bool FALSE
 
 # Fonts I like: Hasklig, Meslo, SF Mono
 
@@ -63,3 +57,9 @@ defaults write -g CGFontRenderingFontSmoothingDisabled -bool FALSE
 # VSCode Vim
 defaults write com.microsoft.VSCode ApplePressAndHoldEnabled -bool false
 defaults delete -g ApplePressAndHoldEnabled
+
+# iTerm2 will load settings from a shared directory
+# Specify the preferences directory
+defaults write com.googlecode.iterm2.plist PrefsCustomFolder -string "~/github/dotfiles/iterm2"
+# Tell iTerm2 to use the custom preferences in the directory
+defaults write com.googlecode.iterm2.plist LoadPrefsFromCustomFolder -bool true

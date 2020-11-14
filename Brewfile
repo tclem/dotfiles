@@ -19,8 +19,8 @@ cask "sequel-pro"
 cask "visual-studio-code"
 
 # General apps
-cask "1Password"
-cask "arq"
+# cask "1Password"
+# cask "arq" # note: need arq 5 for now
 cask "divvy"
 cask "Dropbox"
 cask "google-chrome"
