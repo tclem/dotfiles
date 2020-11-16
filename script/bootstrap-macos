@@ -43,8 +43,9 @@ zsh -c 'brew bundle'
 # Fix zsh compaudit issues:
 zsh -c 'compaudit | xargs chmod g-w'
 
-# Enable font smoothing for external displays
-# defaults write -g CGFontRenderingFontSmoothingDisabled -bool FALSE
+# Enable font smoothing for external displays (by default this key is not set)
+# https://dev.to/mrahmadawais/onedevminute-fixing-terrible-blurry-font-rendering-issue-in-macos-mojave--lck
+defaults write -g CGFontRenderingFontSmoothingDisabled -bool FALSE
 
 # Fonts I like: Hasklig, Meslo, SF Mono
 
