@@ -83,7 +83,11 @@ directory_name() {
 
 date_time='%D{%m.%d.%Y} %@'
 
-export PROMPT=$'⑁ $(directory_name) $(project_name_color)$(git_dirty)$(need_push) ❯ '
+if [[ "$(uname -s)" != "Darwin" ]]; then
+  platform="$(uname -s) "
+fi
+
+export PROMPT=$'⑁ $platform$(directory_name) $(project_name_color)$(git_dirty)$(need_push) ❯ '
 # export PROMPT=$'$(ruby_prompt) ⑁ $(directory_name) $(project_name_color)$(git_dirty)$(need_push) ❯ '
 # export RPROMPT=""
 RPROMPT='$(check_last_exit_code)'
