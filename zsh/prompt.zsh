@@ -8,13 +8,13 @@ git_branch() {
 }
 
 git_dirty() {
-  if [[ $(git remote get-url origin) == "git@github.com:github/github" ]]; then
+  if [[ $(git remote get-url origin 2>/dev/null) == "git@github.com:github/github" ]]; then
     st=$(git status --no-ahead-behind 2>/dev/null | tail -n 1)
   else
     st=$(git status 2>/dev/null | tail -n 1)
   fi
 
-  if [[ $st =~ 'fatal: Not a git repository' ]]; then
+  if [[ $st =~ 'fatal: not a git repository' ]]; then
     echo ""
   else
     if [[ $st =~ 'nothing to commit' ]]; then
@@ -83,11 +83,13 @@ directory_name() {
 
 date_time='%D{%m.%d.%Y} %@'
 
-if [[ "$(uname -s)" != "Darwin" ]]; then
-  platform="$(uname -s) "
+if [[ "$(uname -s)" == "Darwin" ]]; then
+  platform="%{$fg[purple]%}$(scutil --get ComputerName)%{$reset_color%}"
+else
+  platform="[$(uname -s)]"
 fi
 
-export PROMPT=$'⑁ $platform$(directory_name) $(project_name_color)$(git_dirty)$(need_push) ❯ '
+export PROMPT=$'⑁ $platform $(directory_name) $(project_name_color)$(git_dirty)$(need_push) ❯ '
 # export PROMPT=$'$(ruby_prompt) ⑁ $(directory_name) $(project_name_color)$(git_dirty)$(need_push) ❯ '
 # export RPROMPT=""
 RPROMPT='$(check_last_exit_code)'
