@@ -813,7 +813,7 @@
 			<key>Show Status Bar</key>
 			<false/>
 			<key>Silence Bell</key>
-			<false/>
+			<true/>
 			<key>Status Bar Layout</key>
 			<dict>
 				<key>advanced configuration</key>
@@ -1622,6 +1622,8 @@
 	<false/>
 	<key>OpenTmuxWindowsIn</key>
 	<integer>2</integer>
+	<key>OpenUntitledFile</key>
+	<true/>
 	<key>PMPrintingExpandedStateForPrint2</key>
 	<false/>
 	<key>PasteSpecialRegex</key>
