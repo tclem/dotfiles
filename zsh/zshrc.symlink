@@ -63,15 +63,12 @@ test -e "$(which rbenv)" && eval "$(rbenv init -)"
 export PATH="/usr/local/opt/node@10/bin:$PATH"
 export PATH="$PATH:./node_modules/.bin"
 
-# Setup go
-# export GOPROXYUSER=X Set in private config
-# export GOPROXYPASS=X Set in private config
-# export GOPROXY="https://${GOPROXYUSER}:${GOPROXYPASS}@octofactory.githubapp.com/api/go/github-go,https://proxy.golang.org,direct"
-# export GOPRIVATE='*github.com/github/*'
-# export GONOPROXY='*github.com/github/go*'
-# export GONOPROXY='none'
+# Setup go (github specific)
+export GOPROXY=https://goproxy.githubapp.com/mod,https://proxy.golang.org/,direct
+export GOPRIVATE=
+export GONOPROXY=
+export GONOSUMDB=github.com/github/*
 
-# export GOPRIVATE=github.com
 export PATH=$PATH:$HOME/go/bin
 
 test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
