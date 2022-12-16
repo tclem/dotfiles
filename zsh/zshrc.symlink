@@ -5,18 +5,20 @@ case `uname` in
   Darwin)
     # commands for OS X go here
     export PROJECTS=~/github
+# shortcut to this dotfiles path is $ZSH
+export ZSH=$PROJECTS/dotfiles
   ;;
   Linux)
     # commands for Linux go here
     export PROJECTS=/workspaces
+    # shortcut to this dotfiles path is $ZSH
+    export ZSH=/workspaces/.codespaces/.persistedshare/dotfiles
   ;;
   FreeBSD)
     # commands for FreeBSD go here
   ;;
 esac
 
-# shortcut to this dotfiles path is $ZSH
-export ZSH=$PROJECTS/dotfiles
 
 # source every .zsh file in this rep
 for config_file ($ZSH/**/*.zsh) source $config_file
@@ -26,7 +28,7 @@ fpath=(/usr/local/share/zsh-completions $fpath)
 fpath=(/usr/local/share/zsh/site-functions $fpath)
 
 # Completions for gh
-test -e $(which gh) && eval "$(gh completion -s zsh)"
+which gh && test -e $(which gh) && eval "$(gh completion -s zsh)"
 
 # use .localrc for SUPER SECRET CRAP that you don't
 # want in your public, versioned repo.
