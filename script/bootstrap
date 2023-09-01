@@ -103,6 +103,8 @@ install_dotfiles
 script/bootstrap-git
 # script/bootstrap-vim
 
+gh alias import gh/aliases.yml
+
 # if [[ "$(uname -s)" = "Darwin" ]]; then
 #   script/bootstrap-macos
 # else
