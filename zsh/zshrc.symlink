@@ -78,5 +78,5 @@ test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell
 # Build semantic with bazel
 export BAZEL_USE_CPP_ONLY_TOOLCHAIN=1
 
-# For Blackbird/Rust librdkafka
-export PKG_CONFIG_PATH="/usr/local/opt/openssl@1.1/lib/pkgconfig"
+# For Blackbird/Rust librdkafka (2023-08-28: no longer necessary)
+# export PKG_CONFIG_PATH="/usr/local/opt/openssl@1.1/lib/pkgconfig"
