@@ -510,7 +510,7 @@
 			<key>Guid</key>
 			<string>63F33006-0D4A-4300-83F4-7B990863BC90</string>
 			<key>Has Hotkey</key>
-			<true/>
+			<false/>
 			<key>Horizontal Spacing</key>
 			<real>1</real>
 			<key>HotKey Activated By Modifier</key>
@@ -1200,7 +1200,7 @@
 			<key>Guid</key>
 			<string>1AE3B032-F7EB-4C09-ABCC-AE7AC1F42447</string>
 			<key>Has Hotkey</key>
-			<true/>
+			<false/>
 			<key>Horizontal Spacing</key>
 			<real>1</real>
 			<key>HotKey Activated By Modifier</key>
@@ -1468,7 +1468,7 @@
 			<key>Screen</key>
 			<integer>-1</integer>
 			<key>Scrollback Lines</key>
-			<integer>1000</integer>
+			<integer>0</integer>
 			<key>Selected Text Color</key>
 			<dict>
 				<key>Blue Component</key>
@@ -1676,7 +1676,7 @@
 	<key>ShowBookmarkName</key>
 	<false/>
 	<key>ShowFullScreenTabBar</key>
-	<false/>
+	<true/>
 	<key>ShowNewOutputIndicator</key>
 	<true/>
 	<key>SoundForEsc</key>
