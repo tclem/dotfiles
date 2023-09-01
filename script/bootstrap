@@ -100,7 +100,7 @@ install_dotfiles () {
 }
 
 install_dotfiles
-# script/bootstrap-git
+script/bootstrap-git
 # script/bootstrap-vim
 
 # if [[ "$(uname -s)" = "Darwin" ]]; then
