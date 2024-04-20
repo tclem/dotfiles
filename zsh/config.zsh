@@ -51,7 +51,7 @@ bindkey '^?' backward-delete-char
 # GRC colorizes nifty unix tools all over the place
 if $(gls &>/dev/null)
 then
-  source `brew --prefix`/etc/grc.bashrc
+  source `brew --prefix`/etc/grc.zsh
 fi
 
 # Color grep results
