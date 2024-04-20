@@ -5,8 +5,8 @@ case `uname` in
   Darwin)
     # commands for OS X go here
     export PROJECTS=~/github
-# shortcut to this dotfiles path is $ZSH
-export ZSH=$PROJECTS/dotfiles
+    # shortcut to this dotfiles path is $ZSH
+    export ZSH=$PROJECTS/dotfiles
   ;;
   Linux)
     # commands for Linux go here
@@ -19,16 +19,12 @@ export ZSH=$PROJECTS/dotfiles
   ;;
 esac
 
-
 # source every .zsh file in this rep
 for config_file ($ZSH/**/*.zsh) source $config_file
 
 # ZSH tab completions for git and hub.
 fpath=(/usr/local/share/zsh-completions $fpath)
 fpath=(/usr/local/share/zsh/site-functions $fpath)
-
-# Completions for gh
-test -e $(which gh) && eval "$(gh completion -s zsh)"
 
 # use .localrc for SUPER SECRET CRAP that you don't
 # want in your public, versioned repo.
@@ -75,8 +71,11 @@ export PATH=$PATH:$HOME/go/bin
 
 test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
 
-# Build semantic with bazel
-export BAZEL_USE_CPP_ONLY_TOOLCHAIN=1
+export PATH="/usr/local/opt/mysql-client/bin:$PATH"
 
-# For Blackbird/Rust librdkafka (2023-08-28: no longer necessary)
-# export PKG_CONFIG_PATH="/usr/local/opt/openssl@1.1/lib/pkgconfig"
+# Helpful Rust defaults
+export RUST_LOG=info
+export RUST_BACKTRACE=1
+
+# Completions for gh
+test -e $(which gh) && eval "$(gh completion -s zsh)"
