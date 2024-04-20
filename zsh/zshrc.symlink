@@ -56,22 +56,13 @@ test -e "$(which direnv)" && eval "$(direnv hook zsh)"
 # rbenv
 test -e "$(which rbenv)" && eval "$(rbenv init -)"
 
-# node and npm, specifically not using a version manager as I only work with
-# node in the tree-sitter project.
-export PATH="/usr/local/opt/node@10/bin:$PATH"
-export PATH="$PATH:./node_modules/.bin"
-
 # Setup go (github specific)
 export GOPROXY=https://goproxy.githubapp.com/mod,https://proxy.golang.org/,direct
 export GOPRIVATE=
 export GONOPROXY=
 export GONOSUMDB=github.com/github/*
 
-export PATH=$PATH:$HOME/go/bin
-
 test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
-
-export PATH="/usr/local/opt/mysql-client/bin:$PATH"
 
 # Helpful Rust defaults
 export RUST_LOG=info
