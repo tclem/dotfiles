@@ -68,6 +68,7 @@ setopt INC_APPEND_HISTORY # adds history incrementally
 setopt HIST_IGNORE_ALL_DUPS  # don't record dupes in history
 setopt HIST_REDUCE_BLANKS
 # zle -N newtab
+bindkey -e # emacs
 # bindkey '^[^[[D' backward-word
 # bindkey '^[^[[C' forward-word
 # bindkey '^[[5D' beginning-of-line
@@ -82,6 +83,20 @@ setopt HIST_REDUCE_BLANKS
 # zle -N edit-command-line
 # bindkey '^Xe' edit-command-line
 
+# Enable ls colors
+autoload colors; colors;
+export CLICOLOR=true
+# export LSCOLORS="Gxfxcxdxbxegedabagacad"
+# export LSCOLORS="ExFxBxDxCxegedabagacad"
+# if [ "$DISABLE_LS_COLORS" != "true" ]; then
+#   # Find the option for using colors in ls, depending on the version: Linux or BSD
+#   ls --color -d . &>/dev/null 2>&1 && alias ls='ls --color=tty' || alias ls='ls -G'
+# fi
+# # GRC colorizes nifty unix tools all over the place
+if $(gls &>/dev/null); then
+  source `brew --prefix`/etc/grc.zsh
+fi
+
 # Completions
 zmodload -i zsh/complist
 bindkey -M menuselect '^o' accept-and-infer-next-history
@@ -89,7 +104,8 @@ zstyle ':completion:*:*:*:*:*' menu select                                      
 zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}' 'r:|[._-]=* r:|=*' 'l:|=* r:|=*' # case-insensitive (all),partial-word and then substring completion
 zstyle ':completion:*:cd:*' tag-order local-directories directory-stack path-directories   # disable named-directories autocompletion
 cdpath=(.)
-zstyle ':completion:*' list-colors ''
+# zstyle ':completion:*' list-colors ''
+# zstyle ':completion:*:default' list-colors ${(s.:.)LS_COLORS}
 zstyle ':completion:*:*:*:*:*' menu select
 zstyle ':completion:*:*:kill:*:processes' list-colors '=(#b) #([0-9]#) ([0-9a-z-]#)*=01;34=0=01'
 zstyle ':completion:*:*:*:*:processes' command "ps -u `whoami` -o pid,user,comm -w -w"
@@ -103,19 +119,6 @@ hosts=(
   localhost
 )
 zstyle ':completion:*:hosts' hosts $hosts
-
-# Enable ls colors
-autoload colors; colors;
-# export CLICOLOR=true
-export LSCOLORS="Gxfxcxdxbxegedabagacad"
-if [ "$DISABLE_LS_COLORS" != "true" ]; then
-  # Find the option for using colors in ls, depending on the version: Linux or BSD
-  ls --color -d . &>/dev/null 2>&1 && alias ls='ls --color=tty' || alias ls='ls -G'
-fi
-# GRC colorizes nifty unix tools all over the place
-if $(gls &>/dev/null); then
-  source `brew --prefix`/etc/grc.zsh
-fi
 
 # I don't know what this does...
 # if [[ x$WINDOW != x ]]
