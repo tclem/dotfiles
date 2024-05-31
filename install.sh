@@ -8,10 +8,13 @@ if [[ "$(uname -s)" = "Darwin" ]]; then
     # ./install-macos.sh
     echo "This is a good time to create a GitHub PAT, create ~/.netrc and ~/.localrc"
     read -p "Press enter to continue"
+else
+    echo "Linux install is a WIP"
 fi
 
 # Setup my .zshrc file
-[ ! -f ~/.zshrc ] && ln -s "$pwd/.zshrc" ~/.zshrc
+rm -rf ~/.zshrc
+ln -s "$(pwd)/.zshrc" ~/.zshrc
 
 # Ruby
 # git clone https://github.com/rbenv/ruby-build.git "$(rbenv root)"/plugins/ruby-build
