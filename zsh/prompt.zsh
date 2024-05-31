@@ -4,7 +4,7 @@
 
 platform() {
   if [[ "$(uname -s)" == "Darwin" ]]; then
-    echo "%{$fg[purple]%}$(scutil --get ComputerName)%{$reset_color%}"
+    echo "$(scutil --get ComputerName)"
   else
     echo "[$(uname -s)]"
   fi
@@ -32,9 +32,9 @@ git_dirty() {
     echo ""
   else
     if [[ $st =~ 'nothing to commit' ]]; then
-      echo "on %{$fg[green]%}$(git_prompt_info)%{$reset_color%}"
+      echo "on %F{green}$(git_prompt_info)%{$reset_color%}"
     else
-      echo "on %{$fg[red]%}$(git_prompt_info)%{$reset_color%}"
+      echo "on %F{red}$(git_prompt_info)%{$reset_color%}"
     fi
   fi
 }
@@ -59,7 +59,7 @@ need_push() {
     if [[ $(unpushed) == "" ]]; then
       echo ""
     else
-      echo " with %{$fg[magenta]%}unpushed%{$reset_color%}"
+      echo " with %F{magenta}unpushed%{$reset_color%}"
     fi
   fi
 }
@@ -87,5 +87,5 @@ check_last_exit_code() {
 }
 
 directory_name() {
-  echo "%{$fg[cyan]%}%1/%\/%{$reset_color%}"
+  echo "%F{cyan}%1/%\/%{$reset_color%}"
 }
