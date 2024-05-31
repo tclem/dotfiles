@@ -12,11 +12,11 @@ else
     echo "Linux install is a WIP"
 fi
 
-gh alias import gh/aliases.yml
-
-# Setup my .zshrc file
+# Setup .zshrc
 rm -rf ~/.zshrc
 ln -s "$(pwd)/.zshrc" ~/.zshrc
+
+gh alias import gh/aliases.yml
 
 # Ruby
 # git clone https://github.com/rbenv/ruby-build.git "$(rbenv root)"/plugins/ruby-build
@@ -33,12 +33,10 @@ git config --global github.user 'tclem'
 if [[ "$(uname -s)" = "Darwin" ]]; then
   git config --global credential.helper osxkeychain
 fi
-
 git config --global alias.co checkout
 git config --global alias.lo 'log --oneline --decorate'
 git config --global alias.lol 'log --oneline --graph --decorate'
 git config --global alias.last 'log -1 HEAD'
 git config --global alias.first 'log --reverse --pretty=format:"%h %ad%x09%an%x09%s" --date=short | grep Clem | head -1'
-
 git config --global pull.rebase true
 git config --global push.default simple

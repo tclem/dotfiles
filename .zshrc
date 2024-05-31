@@ -1,15 +1,7 @@
-export SHELL=/usr/local/bin/zsh
-export EDITOR=vi
 export LETTER_OPENER=1
-export MANPATH="/usr/local/man:/usr/local/mysql/man:/usr/local/git/man:$MANPATH"
-export PATH="/usr/local/bin:$ZSH/bin:$PATH" # homebrew
-export PATH=$PATH:$HOME/go/bin # Go binaries
+export PATH=$HOME/go/bin:$PATH # Go binaries
 export PATH="$HOME/.cargo/bin:$PATH" # Rust cargo
 export PATH=":bin:$PATH"
-export PATH="/usr/local/opt/mysql-client/bin:$PATH" # mysql
-# export PATH="/usr/local/opt/python@3.8/libexec/bin:$PATH"
-# export PATH="/usr/local/opt/node@10/bin:$PATH"
-# export PATH="$PATH:./node_modules/.bin"
 
 # your project folder that we can `c [tab]` to
 case `uname` in
@@ -17,13 +9,23 @@ case `uname` in
     # commands for OS X go here
     export PROJECTS=~/github
     export ZSH=$PROJECTS/dotfiles
+    export EDITOR=vi
+    export SHELL=/usr/local/bin/zsh
     # Homebrew's zsh completions (some packages install here too)
     FPATH="$(brew --prefix)/share/zsh/site-functions:${FPATH}"
+
+    export MANPATH="/usr/local/man:/usr/local/mysql/man:/usr/local/git/man:$MANPATH"
+    export PATH="/usr/local/bin:$ZSH/bin:$PATH" # homebrew
+    export PATH="/usr/local/opt/mysql-client/bin:$PATH" # mysql
+    # export PATH="/usr/local/opt/python@3.8/libexec/bin:$PATH"
+    # export PATH="/usr/local/opt/node@10/bin:$PATH"
+    # export PATH="$PATH:./node_modules/.bin"
   ;;
   Linux)
     # commands for Linux go here (mostly codespaces for me)
     export PROJECTS=/workspaces
     export ZSH=/workspaces/.codespaces/.persistedshare/dotfiles
+    export SHELL=/bin/zsh
   ;;
 esac
 
