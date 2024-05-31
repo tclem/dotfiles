@@ -12,6 +12,8 @@ else
     echo "Linux install is a WIP"
 fi
 
+gh alias import gh/aliases.yml
+
 # Setup my .zshrc file
 rm -rf ~/.zshrc
 ln -s "$(pwd)/.zshrc" ~/.zshrc
