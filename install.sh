@@ -4,7 +4,7 @@
 
 set -euo pipefail
 
-if [[ -f ~/.dotfilesv && $(cat ~/.dotfilesv) == $(git rev-parse HEAD) ]]; then
+if [[ -f ~/.dotfilesv && $(cat ~/.dotfilesv) = $(git rev-parse HEAD) ]]; then
   exit 1
 fi
 
