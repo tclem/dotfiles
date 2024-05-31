@@ -12,7 +12,7 @@ case `uname` in
     export EDITOR=vi
     export SHELL=/usr/local/bin/zsh
     # Homebrew's zsh completions (some packages install here too)
-    FPATH="$(brew --prefix)/share/zsh/site-functions:${FPATH}"
+    FPATH="/usr/local/share/zsh/site-functions:${FPATH}"
 
     export MANPATH="/usr/local/man:/usr/local/mysql/man:/usr/local/git/man:$MANPATH"
     export PATH="/usr/local/bin:$ZSH/bin:$PATH" # homebrew
