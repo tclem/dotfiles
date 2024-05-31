@@ -1,14 +1,28 @@
-autoload colors && colors
+#! /bin/zsh
+#
+# Functions for helping construct a nice prompt
+
+platform() {
+  if [[ "$(uname -s)" == "Darwin" ]]; then
+    echo "%{$fg[purple]%}$(scutil --get ComputerName)%{$reset_color%}"
+  else
+    echo "[$(uname -s)]"
+  fi
+}
+
+git_prompt_info() {
+  ref=$(git symbolic-ref HEAD 2>/dev/null) || return
+  echo "${ref#refs/heads/}"
+}
+
 # cheers, @ehrenmurdick
 # http://github.com/ehrenmurdick/config/blob/master/zsh/prompt.zsh
-
 git_branch() {
-  # echo $(git symbolic-ref HEAD 2>/dev/null | awk -F/ {'print $NF'})
   echo $(git symbolic-ref HEAD 2>/dev/null | sed -E 's/refs\/(heads|tags)\///')
 }
 
 git_dirty() {
-  if [[ $(git remote get-url origin 2>/dev/null) == "git@github.com:github/github" ]]; then
+  if [[ $(git remote get-url origin 2>/dev/null) =~ "github/github$" ]]; then
     st=$(git status --no-ahead-behind 2>/dev/null | tail -n 1)
   else
     st=$(git status 2>/dev/null | tail -n 1)
@@ -23,11 +37,6 @@ git_dirty() {
       echo "on %{$fg[red]%}$(git_prompt_info)%{$reset_color%}"
     fi
   fi
-}
-
-git_prompt_info() {
-  ref=$(git symbolic-ref HEAD 2>/dev/null) || return
-  echo "${ref#refs/heads/}"
 }
 
 project_name() {
@@ -66,7 +75,7 @@ ruby_prompt() {
   fi
 }
 
-function check_last_exit_code() {
+check_last_exit_code() {
   local LAST_EXIT_CODE=$?
   if [[ $LAST_EXIT_CODE -ne 0 ]]; then
     local EXIT_CODE_PROMPT=' '
@@ -80,16 +89,3 @@ function check_last_exit_code() {
 directory_name() {
   echo "%{$fg[cyan]%}%1/%\/%{$reset_color%}"
 }
-
-date_time='%D{%m.%d.%Y} %@'
-
-if [[ "$(uname -s)" == "Darwin" ]]; then
-  platform="%{$fg[purple]%}$(scutil --get ComputerName)%{$reset_color%}"
-else
-  platform="[$(uname -s)]"
-fi
-
-export PROMPT=$'⑁ $platform $(directory_name) $(project_name_color)$(git_dirty)$(need_push) ❯ '
-# export PROMPT=$'$(ruby_prompt) ⑁ $(directory_name) $(project_name_color)$(git_dirty)$(need_push) ❯ '
-# export RPROMPT=""
-RPROMPT='$(check_last_exit_code)'
