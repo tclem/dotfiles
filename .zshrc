@@ -16,22 +16,16 @@ case `uname` in
   Darwin)
     # commands for OS X go here
     export PROJECTS=~/github
-    # shortcut to this dotfiles path is $ZSH
     export ZSH=$PROJECTS/dotfiles
+    # Homebrew's zsh completions (some packages install here too)
+    FPATH="$(brew --prefix)/share/zsh/site-functions:${FPATH}"
   ;;
   Linux)
     # commands for Linux go here (mostly codespaces for me)
     export PROJECTS=/workspaces
-    # shortcut to this dotfiles path is $ZSH
     export ZSH=/workspaces/.codespaces/.persistedshare/dotfiles
   ;;
-  FreeBSD)
-    # commands for FreeBSD go here
-  ;;
 esac
-
-# source every .zsh file in this rep
-# for config_file ($ZSH/**/*.zsh) source $config_file
 
 # use .localrc for SUPER SECRET CRAP that you don't want in your public, versioned repo.
 if [[ -a ~/.localrc ]]; then
@@ -42,12 +36,11 @@ HISTFILE=~/.zsh_history
 HISTSIZE=99999
 SAVEHIST=$HISTSIZE
 
-# Homebrew's zsh completions (some packages install here too)
-FPATH="$(brew --prefix)/share/zsh/site-functions:${FPATH}"
 # Custom functions defined in this repo
 FPATH="$ZSH/zsh/functions:${FPATH}"
 autoload -U $ZSH/zsh/functions/*(:t)
 
+# Do this once
 autoload -Uz compinit
 compinit
 
