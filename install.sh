@@ -9,7 +9,7 @@ if [[ -f ~/.dotfilesv && $(cat ~/.dotfilesv) = $(git rev-parse HEAD) ]]; then
 fi
 
 if [[ "$(uname -s)" = "Darwin" ]]; then
-    # ./install-macos.sh
+    ./install-macos.sh
     echo "This is a good time to create a GitHub PAT, create ~/.netrc and ~/.localrc"
     read -p "Press enter to continue"
 else

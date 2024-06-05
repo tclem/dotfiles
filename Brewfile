@@ -2,7 +2,7 @@ brew "direnv"
 brew "gh"
 brew "git"
 brew "grc"
-brew "imagemagick"
+# brew "imagemagick"
 brew "jq"
 brew "mas"
 brew "neovim"
@@ -20,7 +20,7 @@ cask "font-sf-mono-nerd-font"
 
 # Development tools
 cask "divvy"
-cask "github"
+# cask "github"
 cask "iterm2"
 cask "visual-studio-code"
 # cask "zed" # todo
@@ -28,13 +28,13 @@ cask "visual-studio-code"
 # cask "licecap"
 
 # General apps
-# cask "1Password" # todo
-cask "Dropbox"
-cask "arq"
-cask "google-chrome"
-cask "slack"
-cask "spotify"
+cask "1Password"
+# cask "Dropbox"
+# cask "arq"
+# cask "google-chrome"
+# cask "slack"
+# cask "spotify"
 
 # AppStore
-mas "iA Writer", id: 775737590
-mas "Things 3", id: 904280696
+# mas "iA Writer", id: 775737590
+# mas "Things 3", id: 904280696
