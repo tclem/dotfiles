@@ -28,7 +28,7 @@ cask "visual-studio-code"
 # cask "licecap"
 
 # General apps
-cask "1Password"
+# cask "1Password"
 # cask "Dropbox"
 # cask "arq"
 # cask "google-chrome"
