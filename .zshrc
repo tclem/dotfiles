@@ -3,6 +3,9 @@ export PATH=$HOME/go/bin:$PATH # Go binaries
 export PATH="$HOME/.cargo/bin:$PATH" # Rust cargo
 export PATH=":bin:$PATH"
 
+eval "$(/opt/homebrew/bin/brew shellenv)"
+prefix=$(brew --prefix)
+
 # your project folder that we can `c [tab]` to
 case `uname` in
   Darwin)
@@ -10,15 +13,17 @@ case `uname` in
     export PROJECTS=~/github
     export ZSH=$PROJECTS/dotfiles
     export EDITOR=vi
-    export SHELL=/usr/local/bin/zsh
+    export SHELL=$prefix/bin/zsh
     # Homebrew's zsh completions (some packages install here too)
-    FPATH="/usr/local/share/zsh/site-functions:${FPATH}"
+    FPATH="$prefix/share/zsh/site-functions:${FPATH}"
 
-    export MANPATH="/usr/local/man:/usr/local/mysql/man:/usr/local/git/man:$MANPATH"
-    export PATH="/usr/local/bin:$ZSH/bin:$PATH" # homebrew
-    export PATH="/usr/local/opt/mysql-client/bin:$PATH" # mysql
-    # export PATH="/usr/local/opt/python@3.8/libexec/bin:$PATH"
-    # export PATH="/usr/local/opt/node@10/bin:$PATH"
+    export MANPATH="$prefix/man:$prefix/mysql/man:$prefix/git/man:$MANPATH"
+    export PATH="$prefix/bin:$ZSH/bin:$PATH" # homebrew
+    export PATH="$prefix/opt/mysql-client/bin:$PATH" # mysql
+    export PATH="/usr/local/bin:$PATH" # docker and a few other utils
+    # export PATH="$HOME/.docker/bin:$PATH" # docker
+    # export PATH="$prefix/opt/python@3.8/libexec/bin:$PATH"
+    # export PATH="$prefix/opt/node@10/bin:$PATH"
     # export PATH="$PATH:./node_modules/.bin"
   ;;
   Linux)
@@ -134,6 +139,7 @@ export PROMPT='⑁ $(platform) $(directory_name) $(project_name_color)$(git_dirt
 
 test -e "$(which direnv)" && eval "$(direnv hook zsh)"
 test -e "$(which rbenv)" && eval "$(rbenv init -)"
+test -e "$(which nodenv)" && eval "$(nodenv init -)"
 
 test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
 # Put dirname in the iTerm window title
