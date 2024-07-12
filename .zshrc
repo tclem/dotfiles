@@ -3,12 +3,12 @@ export PATH=$HOME/go/bin:$PATH # Go binaries
 export PATH="$HOME/.cargo/bin:$PATH" # Rust cargo
 export PATH=":bin:$PATH"
 
-eval "$(/opt/homebrew/bin/brew shellenv)"
-prefix=$(brew --prefix)
-
 # your project folder that we can `c [tab]` to
 case `uname` in
   Darwin)
+    eval "$(/opt/homebrew/bin/brew shellenv)"
+    prefix=$(brew --prefix)
+
     # commands for OS X go here
     export PROJECTS=~/github
     export ZSH=$PROJECTS/dotfiles
