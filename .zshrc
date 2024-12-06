@@ -1,6 +1,7 @@
 export LETTER_OPENER=1
 export PATH=$HOME/go/bin:$PATH # Go binaries
 export PATH="$HOME/.cargo/bin:$PATH" # Rust cargo
+export PATH="$HOME/.local/bin:$PATH"
 export PATH=":bin:$PATH"
 
 # your project folder that we can `c [tab]` to
