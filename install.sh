@@ -44,6 +44,26 @@ git config --global alias.last 'log -1 HEAD'
 git config --global alias.first 'log --reverse --pretty=format:"%h %ad%x09%an%x09%s" --date=short | grep Clem | head -1'
 git config --global pull.rebase true
 git config --global push.default simple
+git config --global push.autoSetupRemote true
+git config --global push.followTags true
+git config --global branch.sort -committerdate
+git config --global tag.sort version:refname
+git config --global init.defaultBranch main
+git config --global diff.algorithm histogram
+git config --global diff.colorMoved plain
+git config --global diff.mnemonicPrefix true
+git config --global diff.renames true
+git config --global fetch.prune true
+git config --global fetch.pruneTags true
+git config --global fetch.all true
+git config --global commit.verbose true
+
+# Maybe good for big repos or if git status is getting super slow?
+# git config --global core.fsmonitor true
+# git config --global core.untrackedCache true
+
+# Love this post (and stole a few config ideas from it, thanks Scott!):
+# https://blog.gitbutler.com/how-git-core-devs-configure-git/
 
 # write out a manifest of the installed dotfiles version: delete this file to force a re-install
 git rev-parse HEAD > ~/.dotfilesv
