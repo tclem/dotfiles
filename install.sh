@@ -57,6 +57,8 @@ git config --global fetch.prune true
 git config --global fetch.pruneTags true
 git config --global fetch.all true
 git config --global commit.verbose true
+git config --global rerere.enabled true
+git config --global rerere.autoupdate true
 
 # Maybe good for big repos or if git status is getting super slow?
 # git config --global core.fsmonitor true
