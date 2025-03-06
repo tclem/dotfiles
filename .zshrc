@@ -8,7 +8,7 @@ export PATH=":bin:$PATH"
 # your project folder that we can `c [tab]` to
 case `uname` in
   Darwin)
-    eval "$(/opt/homebrew/bin/brew shellenv)"
+    eval "$(/usr/local/bin/brew shellenv)"
     prefix=$(brew --prefix)
 
     # commands for OS X go here
