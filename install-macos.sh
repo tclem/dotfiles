@@ -14,7 +14,8 @@ fi
 # Install everything in the Brewfile
 brew bundle
 
-if [[ ! -f ~/.cargo/config/toml ]]
+if [[ ! -f ~/.cargo/config.toml ]]; then
+    mkdir -p ~/.cargo
     echo "[net]\ngit-fetch-with-cli = true" > ~/.cargo/config.toml
 fi
 
