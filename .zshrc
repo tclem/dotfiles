@@ -22,6 +22,7 @@ case `uname` in
     export PATH="$prefix/bin:$ZSH/bin:$PATH" # homebrew
     export PATH="$prefix/opt/mysql-client/bin:$PATH" # mysql
     export PATH="/usr/local/bin:$PATH" # docker and a few other utils
+    # export PATH="/usr/local/go/bin:$PATH" # Manual install of Go to fix "was built for newer 'macOS' version (15.4) than being linked (15.0)" warnings
     # export PATH="$HOME/.docker/bin:$PATH" # docker
     # export PATH="$prefix/opt/python@3.8/libexec/bin:$PATH"
     # export PATH="$prefix/opt/node@10/bin:$PATH"
@@ -152,8 +153,9 @@ function precmd () {
 
 # Aliases
 alias reload='. ~/.zshrc'
-alias clean-local-branches='git branch --merged main | grep -v ''main$'' | xargs git branch -d'
-alias clean-local-branchesm='git branch --merged master | grep -v '\''master$'\'' | xargs git branch -d'
+alias clean-local-branches="git branch -v | grep '\[gone\]' | awk '{print \$1}' | xargs git branch -D"
+# alias clean-local-branches='git branch --merged main | grep -v ''main$'' | xargs git branch -d'
+# alias clean-local-branchesm='git branch --merged master | grep -v '\''master$'\'' | xargs git branch -d'
 alias ...='cd ../..'
 alias history='fc -l 1'
 alias lsa='ls -lah'
