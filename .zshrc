@@ -171,15 +171,18 @@ alias gca='git commit --amend'
 alias gpm='git checkout main && gp && clean-local-branches'
 alias gs='git status'
 alias grep='grep --color=auto'
+alias tailscale="/Applications/Tailscale.app/Contents/MacOS/Tailscale"
 
 _handoff() {
   echo "Handoff:"
 
   for r in $@; do
     gh pr list --repo $r --author "@me" --state "merged" --search "merged:>=$(date "+%Y-%m-%d")" --json title,url,state | jq -r '.[] | "- :merged: " + .title + ": " + .url'
-    gh pr list --repo $r --author "@me" --state "open" --search "created:>=$(date "+%Y-%m-%d")" --json title,url,state | jq -r '.[] | "- :review: " + .title + ": " + .url'
+    gh pr list --repo $r --author "@me" --state "open" --json title,url,state | jq -r '.[] | "- :review: " + .title + ": " + .url'
   done
 }
+alias handoff='_handoff github/blackbird github/blackbird-mw github/copilot-api github/github'
+
 # Go env settings (GitHub specific)
 export GOPROXY=https://goproxy.githubapp.com/mod,https://proxy.golang.org/,direct
 export GOPRIVATE=
