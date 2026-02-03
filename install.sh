@@ -22,6 +22,11 @@ gh alias import gh/aliases.yml
 rm -rf ~/.zshrc
 ln -s "$(pwd)/.zshrc" ~/.zshrc
 
+# Setup Copilot agents
+mkdir -p ~/.copilot/agents
+ln -sf "$(pwd)/copilot/agents/code-search.agent.md" ~/.copilot/agents/code-search.agent.md
+ln -sf "$(pwd)/copilot/agents/deep-code-research.agent.md" ~/.copilot/agents/deep-code-research.agent.md
+
 # Ruby
 # git clone https://github.com/rbenv/ruby-build.git "$(rbenv root)"/plugins/ruby-build
 # rbenv install 3.3.1
