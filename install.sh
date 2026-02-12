@@ -24,7 +24,7 @@ ln -s "$(pwd)/.zshrc" ~/.zshrc
 
 # Setup Copilot agents
 mkdir -p ~/.copilot/agents
-ln -sf "$(pwd)/copilot/agents/code-search.agent.md" ~/.copilot/agents/code-search.agent.md
+ln -sf "$(pwd)/copilot/agents/staff-engineer.agent.md" ~/.copilot/agents/staff-engineer.agent.md
 ln -sf "$(pwd)/copilot/agents/deep-code-research.agent.md" ~/.copilot/agents/deep-code-research.agent.md
 
 # Ruby
