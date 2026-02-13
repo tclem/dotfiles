@@ -27,6 +27,16 @@ case `uname` in
     # export PATH="$prefix/opt/python@3.8/libexec/bin:$PATH"
     # export PATH="$prefix/opt/node@10/bin:$PATH"
     # export PATH="$PATH:./node_modules/.bin"
+
+    SBX_SETUP_COPILOT=1
+    export PATH="$PROJECTS/sbx:$PATH" # containerized development sandbox manager
+
+    # GRC colorizes nifty unix tools all over the place
+    if $(gls &>/dev/null); then
+      source `brew --prefix`/etc/grc.zsh
+    fi
+
+    alias tailscale="/Applications/Tailscale.app/Contents/MacOS/Tailscale"
   ;;
   Linux)
     # commands for Linux go here (mostly codespaces for me)
@@ -99,10 +109,6 @@ export CLICOLOR=true
 #   # Find the option for using colors in ls, depending on the version: Linux or BSD
 #   ls --color -d . &>/dev/null 2>&1 && alias ls='ls --color=tty' || alias ls='ls -G'
 # fi
-# # GRC colorizes nifty unix tools all over the place
-if $(gls &>/dev/null); then
-  source `brew --prefix`/etc/grc.zsh
-fi
 
 # Completions
 zmodload -i zsh/complist
@@ -171,7 +177,6 @@ alias gca='git commit --amend'
 alias gpm='git checkout main && gp && clean-local-branches'
 alias gs='git status'
 alias grep='grep --color=auto'
-alias tailscale="/Applications/Tailscale.app/Contents/MacOS/Tailscale"
 
 _handoff() {
   echo "Handoff:"
@@ -181,7 +186,7 @@ _handoff() {
     gh pr list --repo $r --author "@me" --state "open" --json title,url,state | jq -r '.[] | "- :review: " + .title + ": " + .url'
   done
 }
-alias handoff='_handoff github/blackbird github/blackbird-mw github/copilot-api github/github'
+alias handoff='_handoff github/blackbird github/blackbird-mw github/copilot-api github/github github/github-ui'
 
 # Go env settings (GitHub specific)
 export GOPROXY=https://goproxy.githubapp.com/mod,https://proxy.golang.org/,direct
@@ -190,5 +195,5 @@ export GONOPROXY=
 export GONOSUMDB=github.com/github/*
 
 # Rust: helpful defaults
-export RUST_LOG=info
+# export RUST_LOG=info
 export RUST_BACKTRACE=1
