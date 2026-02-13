@@ -35,6 +35,7 @@ defaults write com.apple.dock autohide -int 1; defaults write com.apple.dock ori
 
 # VSCode Vim
 defaults write com.microsoft.VSCode ApplePressAndHoldEnabled -bool false
+defaults write com.microsoft.VSCodeInsiders ApplePressAndHoldEnabled -bool false
 defaults delete -g ApplePressAndHoldEnabled
 
 # iTerm2: load settings from a shared directory
