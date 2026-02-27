@@ -147,7 +147,7 @@ export PROMPT='⑁ $(platform) $(directory_name) $(project_name_color)$(git_dirt
 
 test -e "$(which direnv)" && eval "$(direnv hook zsh)"
 test -e "$(which rbenv)" && eval "$(rbenv init -)"
-test -e "$(which nodenv)" && eval "$(nodenv init -)"
+test -e "$(which fnm)" && eval "$(fnm env --use-on-cd --shell zsh)"
 
 test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
 # Put dirname in the iTerm window title
