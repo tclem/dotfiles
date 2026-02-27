@@ -177,6 +177,7 @@ alias gca='git commit --amend'
 alias gpm='git checkout main && gp && clean-local-branches'
 alias gs='git status'
 alias grep='grep --color=auto'
+alias copilot='copilot --add-github-mcp-tool remote_mcp_lexical_search --add-github-mcp-tool remote_mcp_semantic_search'
 
 _handoff() {
   echo "Handoff:"
