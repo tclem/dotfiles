@@ -1,0 +1,89 @@
+#!/bin/bash
+#
+# Sync portable copilot config between this repo and ~/.copilot.
+#
+#   script/copilot-sync install   — symlink repo files into ~/.copilot
+#   script/copilot-sync import    — copy new files from ~/.copilot into the repo, then symlink
+
+set -euo pipefail
+
+DOTFILES_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+COPILOT_HOME="$HOME/.copilot"
+COPILOT_REPO="$DOTFILES_ROOT/copilot"
+
+# Portable paths (relative to copilot root) that we sync.
+# Globs are expanded against the source directory for each direction.
+PORTABLE_GLOBS=(
+  "copilot-instructions.md"
+  "agents/*.agent.md"
+  "skills/*/SKILL.md"
+  "docs/*"
+)
+
+green()  { printf "\033[32m%s\033[0m\n" "$1"; }
+yellow() { printf "\033[33m%s\033[0m\n" "$1"; }
+
+# Expand globs against a root directory, returning paths relative to that root.
+expand_globs() {
+  local root="$1"
+  shift
+  local results=()
+  for glob in "$@"; do
+    # Use find-like expansion via bash globbing
+    for f in "$root"/$glob; do
+      [[ -f "$f" ]] && results+=("${f#$root/}")
+    done
+  done
+  printf '%s\n' "${results[@]}"
+}
+
+cmd_install() {
+  echo "Installing copilot config: $COPILOT_REPO → $COPILOT_HOME"
+  local files
+  files=$(expand_globs "$COPILOT_REPO" "${PORTABLE_GLOBS[@]}")
+
+  while IFS= read -r rel; do
+    [[ -z "$rel" ]] && continue
+    local src="$COPILOT_REPO/$rel"
+    local dst="$COPILOT_HOME/$rel"
+    mkdir -p "$(dirname "$dst")"
+    ln -sf "$src" "$dst"
+    green "  linked $rel"
+  done <<< "$files"
+}
+
+cmd_import() {
+  echo "Importing copilot config: $COPILOT_HOME → $COPILOT_REPO"
+  local files
+  files=$(expand_globs "$COPILOT_HOME" "${PORTABLE_GLOBS[@]}")
+
+  while IFS= read -r rel; do
+    [[ -z "$rel" ]] && continue
+    local src="$COPILOT_HOME/$rel"
+    local dst="$COPILOT_REPO/$rel"
+
+    # Skip if already a symlink pointing into the repo
+    if [[ -L "$src" ]]; then
+      local target
+      target=$(readlink "$src")
+      if [[ "$target" == "$COPILOT_REPO"* ]]; then
+        yellow "  skip $rel (already linked)"
+        continue
+      fi
+    fi
+
+    mkdir -p "$(dirname "$dst")"
+    cp "$src" "$dst"
+    ln -sf "$dst" "$src"
+    green "  imported $rel"
+  done <<< "$files"
+}
+
+case "${1:-}" in
+  install) cmd_install ;;
+  import)  cmd_import ;;
+  *)
+    echo "Usage: script/copilot-sync {install|import}"
+    exit 1
+    ;;
+esac

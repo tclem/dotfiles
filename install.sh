@@ -22,10 +22,8 @@ gh alias import gh/aliases.yml
 rm -rf ~/.zshrc
 ln -s "$(pwd)/.zshrc" ~/.zshrc
 
-# Setup Copilot agents
-mkdir -p ~/.copilot/agents
-ln -sf "$(pwd)/copilot/agents/staff-engineer.agent.md" ~/.copilot/agents/staff-engineer.agent.md
-ln -sf "$(pwd)/copilot/agents/deep-code-research.agent.md" ~/.copilot/agents/deep-code-research.agent.md
+# Sync Copilot config (agents, skills, docs, instructions)
+script/copilot-sync install
 
 # Ruby
 # git clone https://github.com/rbenv/ruby-build.git "$(rbenv root)"/plugins/ruby-build
