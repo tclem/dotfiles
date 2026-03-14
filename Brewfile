@@ -10,6 +10,7 @@ brew "fnm"
 brew "rbenv"
 brew "tmux"
 brew "tree"
+brew "zellij"
 brew "zsh"
 # brew "graphviz" # for dot & tree-sitter grammar development
 

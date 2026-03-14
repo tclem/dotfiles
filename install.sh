@@ -22,6 +22,11 @@ gh alias import gh/aliases.yml
 rm -rf ~/.zshrc
 ln -s "$(pwd)/.zshrc" ~/.zshrc
 
+# Setup zellij config
+mkdir -p ~/.config/zellij
+rm -rf ~/.config/zellij/config.kdl
+ln -s "$(pwd)/zellij/config.kdl" ~/.config/zellij/config.kdl
+
 # Sync Copilot config (agents, skills, docs, instructions)
 script/copilot-sync install
 
