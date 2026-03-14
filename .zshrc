@@ -2,6 +2,7 @@ export LETTER_OPENER=1
 export PATH=$HOME/go/bin:$PATH # Go binaries
 export PATH="$HOME/.cargo/bin:$PATH" # Rust cargo
 export PATH="$HOME/.local/bin:$PATH"
+export PATH="$HOME/.devcontainers/bin:$PATH"
 export PATH=":bin:$PATH"
 
 # your project folder that we can `c [tab]` to
@@ -148,6 +149,7 @@ export PROMPT='⑁ $(platform) $(directory_name) $(project_name_color)$(git_dirt
 test -e "$(which direnv)" && eval "$(direnv hook zsh)"
 test -e "$(which rbenv)" && eval "$(rbenv init -)"
 test -e "$(which fnm)" && eval "$(fnm env --use-on-cd --shell zsh)"
+alias zj='zellij'
 
 test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
 # Put dirname in the iTerm window title
@@ -187,7 +189,7 @@ _handoff() {
     gh pr list --repo $r --author "@me" --state "open" --json title,url,state | jq -r '.[] | "- :review: " + .title + ": " + .url'
   done
 }
-alias handoff='_handoff github/blackbird github/blackbird-mw github/copilot-api github/github github/github-ui'
+alias handoff='_handoff github/blackbird github/blackbird-mw github/copilot-api github/github github/github-ui github/treelights'
 
 # Go env settings (GitHub specific)
 export GOPROXY=https://goproxy.githubapp.com/mod,https://proxy.golang.org/,direct
