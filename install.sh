@@ -26,6 +26,8 @@ ln -s "$(pwd)/.zshrc" ~/.zshrc
 mkdir -p ~/.config/zellij
 rm -rf ~/.config/zellij/config.kdl
 ln -s "$(pwd)/zellij/config.kdl" ~/.config/zellij/config.kdl
+rm -rf ~/.config/zellij/layouts
+ln -s "$(pwd)/zellij/layouts" ~/.config/zellij/layouts
 
 # Sync Copilot config (agents, skills, docs, instructions)
 script/copilot-sync install
