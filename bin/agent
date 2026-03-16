@@ -1,0 +1,191 @@
+#!/bin/bash
+#
+# Launch a tmux session for working with a Copilot agent on a project.
+#
+# Usage: agent [-l] <project> <branch>
+#        agent -l <project>
+#
+#   -l  Local mode: use repos as-is at their current branch (no worktrees)
+#
+# Creates git worktrees for each repo in the project, then opens a tmux
+# session with two windows: a general-purpose shell and a copilot agent
+# running in a docker sandbox.
+
+set -euo pipefail
+
+WORKTREE_ROOT="${WORKTREE_ROOT:-$HOME/github/.worktrees}"
+PROJECTS_DIR="${PROJECTS:-$HOME/github}"
+CONFIG="${COPILOT_AGENT_CONFIG:-$HOME/.config/copilot-agent/projects.conf}"
+LOCAL_MODE=false
+
+usage() {
+  echo "Usage: agent [-l] <project> <branch>"
+  echo "       agent -l <project>"
+  echo ""
+  echo "  -l        Local mode: use repos at current branch (no worktrees)"
+  echo "  project   Project name (section in projects.conf)"
+  echo "  branch    Branch name for worktrees (not needed with -l)"
+  exit 1
+}
+
+# Parse a simple INI config file.
+# Sets: PROJECT_REPOS (array of owner/repo:base entries)
+parse_config() {
+  local project="$1"
+  local config_file="$2"
+  local in_section=false
+
+  PROJECT_REPOS=()
+  PROJECT_LOCAL=false
+
+  if [[ ! -f "$config_file" ]]; then
+    echo "Error: config file not found: $config_file" >&2
+    exit 1
+  fi
+
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    # Strip comments and whitespace
+    line="${line%%#*}"
+    line="${line## }"
+    line="${line%% }"
+    [[ -z "$line" ]] && continue
+
+    # Section header
+    if [[ "$line" =~ ^\[(.+)\]$ ]]; then
+      if [[ "${BASH_REMATCH[1]}" == "$project" ]]; then
+        in_section=true
+      else
+        $in_section && break
+      fi
+      continue
+    fi
+
+    $in_section || continue
+
+    local key="${line%%=*}"
+    local val="${line#*=}"
+    key="${key## }"
+    key="${key%% }"
+    val="${val## }"
+    val="${val%% }"
+
+    case "$key" in
+      repos) read -ra PROJECT_REPOS <<< "$val" ;;
+      local) [[ "$val" == "true" ]] && PROJECT_LOCAL=true ;;
+    esac
+  done < "$config_file"
+
+  if [[ ${#PROJECT_REPOS[@]} -eq 0 ]]; then
+    echo "Error: project '$project' not found or has no repos" >&2
+    exit 1
+  fi
+}
+
+# Extract the short repo name from an owner/repo or owner/repo:base entry
+repo_name() {
+  local entry="${1%%:*}"
+  echo "${entry##*/}"
+}
+
+# Extract the base branch from an owner/repo:base entry (default: main)
+repo_base() {
+  if [[ "$1" == *:* ]]; then
+    echo "${1##*:}"
+  else
+    echo "main"
+  fi
+}
+
+while getopts ":l" opt; do
+  case $opt in
+    l) LOCAL_MODE=true ;;
+    *) usage ;;
+  esac
+done
+shift $((OPTIND - 1))
+
+[[ $# -ge 1 ]] || usage
+project="$1"
+branch="${2:-}"
+
+parse_config "$project" "$CONFIG"
+
+# Config-level local=true overrides the flag
+if $PROJECT_LOCAL; then
+  LOCAL_MODE=true
+fi
+
+if ! $LOCAL_MODE && [[ -z "$branch" ]]; then
+  echo "Error: branch required for non-local project '$project'" >&2
+  usage
+fi
+
+if [[ -z "${COPILOT_GH_TOKEN:-}" ]]; then
+  echo "Error: COPILOT_GH_TOKEN is not set" >&2
+  exit 1
+fi
+
+# If a tmux session already exists, just attach
+if tmux has-session -t "$project" 2>/dev/null; then
+  echo "Attaching to existing session: $project"
+  exec tmux attach -t "$project"
+fi
+
+repo_paths=()
+
+if $LOCAL_MODE; then
+  for repo in "${PROJECT_REPOS[@]}"; do
+    name="$(repo_name "$repo")"
+    repo_dir="$PROJECTS_DIR/$name"
+    if [[ ! -d "$repo_dir/.git" ]]; then
+      echo "Error: repo not cloned at $repo_dir" >&2
+      exit 1
+    fi
+    repo_paths+=("$repo_dir")
+  done
+  sandbox_name="copilot-${project}"
+else
+  for repo in "${PROJECT_REPOS[@]}"; do
+    name="$(repo_name "$repo")"
+    base="$(repo_base "$repo")"
+    repo_dir="$PROJECTS_DIR/$name"
+    wt_dir="$WORKTREE_ROOT/$name/$branch"
+
+    if [[ ! -d "$repo_dir/.git" ]]; then
+      echo "Error: repo not cloned at $repo_dir" >&2
+      exit 1
+    fi
+
+    if [[ -d "$wt_dir" ]]; then
+      echo "Worktree already exists: $wt_dir"
+    else
+      echo "Creating worktree: $wt_dir (branch $branch from $base)"
+      git -C "$repo_dir" fetch origin "$base" --quiet
+      git -C "$repo_dir" worktree add "$wt_dir" -b "$branch" "origin/$base"
+    fi
+
+    repo_paths+=("$wt_dir")
+  done
+  sandbox_name="copilot-${branch}"
+fi
+
+# Create or reuse docker sandbox
+if docker sandbox ls 2>/dev/null | grep -q "^${sandbox_name}\b"; then
+  sandbox_cmd="GH_TOKEN=\$COPILOT_GH_TOKEN docker sandbox run ${sandbox_name}"
+else
+  sandbox_cmd="GH_TOKEN=\$COPILOT_GH_TOKEN docker sandbox create --name ${sandbox_name} copilot ${repo_paths[*]} && GH_TOKEN=\$COPILOT_GH_TOKEN docker sandbox run ${sandbox_name}"
+fi
+
+# Create tmux session — copilot first, then one shell window per repo
+tmux kill-session -t "$project" 2>/dev/null || true
+tmux new-session -d -s "$project" -n copilot
+tmux send-keys -t "$project:copilot" "$sandbox_cmd" Enter
+
+for ((i = 0; i < ${#PROJECT_REPOS[@]}; i++)); do
+  name="$(repo_name "${PROJECT_REPOS[$i]}")"
+  tmux new-window -a -t "$project" -n "$name" -c "${repo_paths[$i]}"
+done
+
+# Focus the copilot window (window 0) and attach
+tmux select-window -t "$project:copilot"
+exec tmux attach -t "$project"
