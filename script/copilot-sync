@@ -4,6 +4,12 @@
 #
 #   script/copilot-sync install   — symlink repo files into ~/.copilot
 #   script/copilot-sync import    — copy new files from ~/.copilot into the repo, then symlink
+#   script/copilot-sync build     — rebuild the copilot-custom docker sandbox template
+#
+# After editing instructions or skills, rebuild the sandbox template so new
+# agent sessions pick up the changes:
+#
+#   script/copilot-sync build
 
 set -euo pipefail
 
@@ -79,11 +85,18 @@ cmd_import() {
   done <<< "$files"
 }
 
+cmd_build() {
+  echo "Building sandbox template: copilot-custom"
+  docker build -t copilot-custom "$COPILOT_REPO"
+  green "  built copilot-custom"
+}
+
 case "${1:-}" in
   install) cmd_install ;;
   import)  cmd_import ;;
+  build)   cmd_build ;;
   *)
-    echo "Usage: script/copilot-sync {install|import}"
+    echo "Usage: script/copilot-sync {install|import|build}"
     exit 1
     ;;
 esac

@@ -16,6 +16,7 @@ set -euo pipefail
 WORKTREE_ROOT="${WORKTREE_ROOT:-$HOME/github/.worktrees}"
 PROJECTS_DIR="${PROJECTS:-$HOME/github}"
 CONFIG="${COPILOT_AGENT_CONFIG:-$HOME/.config/copilot-agent/projects.conf}"
+SANDBOX_TEMPLATE="${SANDBOX_TEMPLATE:-copilot-custom}"
 LOCAL_MODE=false
 
 usage() {
@@ -87,6 +88,12 @@ repo_name() {
   echo "${entry##*/}"
 }
 
+# Extract the owner from an owner/repo or owner/repo:base entry
+repo_owner() {
+  local entry="${1%%:*}"
+  echo "${entry%%/*}"
+}
+
 # Extract the base branch from an owner/repo:base entry (default: main)
 repo_base() {
   if [[ "$1" == *:* ]]; then
@@ -120,8 +127,12 @@ if ! $LOCAL_MODE && [[ -z "$branch" ]]; then
   usage
 fi
 
-if [[ -z "${COPILOT_GH_TOKEN:-}" ]]; then
-  echo "Error: COPILOT_GH_TOKEN is not set" >&2
+# Derive GH token from the repo owner (e.g. github/* → COPILOT_GITHUB_GH_TOKEN)
+owner="$(repo_owner "${PROJECT_REPOS[0]}")"
+token_var="COPILOT_$(echo "$owner" | tr '[:lower:]' '[:upper:]' | tr '-' '_')_GH_TOKEN"
+
+if [[ -z "${!token_var:-}" ]]; then
+  echo "Error: $token_var is not set (needed for $owner repos)" >&2
   exit 1
 fi
 
@@ -132,6 +143,7 @@ if tmux has-session -t "$project" 2>/dev/null; then
 fi
 
 repo_paths=()
+sandbox_paths=()
 
 if $LOCAL_MODE; then
   for repo in "${PROJECT_REPOS[@]}"; do
@@ -143,6 +155,7 @@ if $LOCAL_MODE; then
     fi
     repo_paths+=("$repo_dir")
   done
+  sandbox_paths=("${repo_paths[@]}")
   sandbox_name="copilot-${project}"
 else
   for repo in "${PROJECT_REPOS[@]}"; do
@@ -165,20 +178,29 @@ else
     fi
 
     repo_paths+=("$wt_dir")
+    sandbox_paths+=("$wt_dir" "$repo_dir")
   done
   sandbox_name="copilot-${branch}"
 fi
 
-# Create or reuse docker sandbox
+# Create or reuse docker sandbox (parent repos mounted read-only for worktree .git refs)
 if docker sandbox ls 2>/dev/null | grep -q "^${sandbox_name}\b"; then
-  sandbox_cmd="GH_TOKEN=\$COPILOT_GH_TOKEN docker sandbox run ${sandbox_name}"
+  sandbox_cmd="GH_TOKEN=\$${token_var} docker sandbox run ${sandbox_name}"
 else
-  sandbox_cmd="GH_TOKEN=\$COPILOT_GH_TOKEN docker sandbox create --name ${sandbox_name} copilot ${repo_paths[*]} && GH_TOKEN=\$COPILOT_GH_TOKEN docker sandbox run ${sandbox_name}"
+  sandbox_cmd="GH_TOKEN=\$${token_var} docker sandbox create --name ${sandbox_name} --template ${SANDBOX_TEMPLATE} copilot ${sandbox_paths[*]} && GH_TOKEN=\$${token_var} docker sandbox run ${sandbox_name}"
+fi
+
+# Build terminal title
+if $LOCAL_MODE; then
+  agent_title="$project"
+else
+  agent_title="$project [$branch]"
 fi
 
 # Create tmux session — copilot first, then one shell window per repo
 tmux kill-session -t "$project" 2>/dev/null || true
 tmux new-session -d -s "$project" -n copilot
+tmux set-environment -t "$project" AGENT_TITLE "$agent_title"
 tmux send-keys -t "$project:copilot" "$sandbox_cmd" Enter
 
 for ((i = 0; i < ${#PROJECT_REPOS[@]}; i++)); do

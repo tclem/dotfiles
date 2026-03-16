@@ -2,21 +2,23 @@
 #
 # Clean up worktrees and tmux session for a Copilot agent project.
 #
-# Usage: agent-cleanup [-d] <project> <branch>
+# Usage: agent-cleanup <project> [<branch>]
+#        agent-cleanup [-l] <project>
 #
-#   -d  Also delete the branch from each repo after removing worktrees
+#   -l  Local mode: skip worktree/branch cleanup (only tmux + sandbox)
 
 set -euo pipefail
 
 WORKTREE_ROOT="${WORKTREE_ROOT:-$HOME/github/.worktrees}"
 PROJECTS_DIR="${PROJECTS:-$HOME/github}"
 CONFIG="${COPILOT_AGENT_CONFIG:-$HOME/.config/copilot-agent/projects.conf}"
-DELETE_BRANCHES=false
+LOCAL_MODE=false
 
 usage() {
-  echo "Usage: agent-cleanup [-d] <project> <branch>"
+  echo "Usage: agent-cleanup <project> <branch>"
+  echo "       agent-cleanup [-l] <project>"
   echo ""
-  echo "  -d  Also delete the branch from each repo"
+  echo "  -l  Local mode: skip worktree/branch cleanup"
   exit 1
 }
 
@@ -26,6 +28,7 @@ parse_config() {
   local in_section=false
 
   PROJECT_REPOS=()
+  PROJECT_LOCAL=false
 
   if [[ ! -f "$config_file" ]]; then
     echo "Error: config file not found: $config_file" >&2
@@ -58,6 +61,7 @@ parse_config() {
 
     case "$key" in
       repos) read -ra PROJECT_REPOS <<< "$val" ;;
+      local) [[ "$val" == "true" ]] && PROJECT_LOCAL=true ;;
     esac
   done < "$config_file"
 
@@ -72,20 +76,30 @@ repo_name() {
   echo "${entry##*/}"
 }
 
-while getopts ":d" opt; do
+while getopts ":l" opt; do
   case $opt in
-    d) DELETE_BRANCHES=true ;;
+    l) LOCAL_MODE=true ;;
     *) usage ;;
   esac
 done
 shift $((OPTIND - 1))
 
-[[ $# -ge 2 ]] || usage
+[[ $# -ge 1 ]] || usage
 
 project="$1"
-branch="$2"
+branch="${2:-}"
 
 parse_config "$project" "$CONFIG"
+
+# Config-level local=true overrides the flag
+if $PROJECT_LOCAL; then
+  LOCAL_MODE=true
+fi
+
+if ! $LOCAL_MODE && [[ -z "$branch" ]]; then
+  echo "Error: branch required for non-local project '$project'" >&2
+  usage
+fi
 
 # Kill tmux session if it exists
 if tmux has-session -t "$project" 2>/dev/null; then
@@ -94,32 +108,36 @@ if tmux has-session -t "$project" 2>/dev/null; then
 fi
 
 # Remove docker sandbox
-sandbox_name="copilot-${branch}"
+if $LOCAL_MODE; then
+  sandbox_name="copilot-${project}"
+else
+  sandbox_name="copilot-${branch}"
+fi
 echo "Removing docker sandbox: $sandbox_name"
 docker sandbox rm "$sandbox_name" 2>/dev/null || true
 
-# Remove worktrees
-for repo in "${PROJECT_REPOS[@]}"; do
-  name="$(repo_name "$repo")"
-  repo_dir="$PROJECTS_DIR/$name"
-  wt_dir="$WORKTREE_ROOT/$name/$branch"
+# Remove worktrees (skip in local mode)
+if ! $LOCAL_MODE; then
+  for repo in "${PROJECT_REPOS[@]}"; do
+    name="$(repo_name "$repo")"
+    repo_dir="$PROJECTS_DIR/$name"
+    wt_dir="$WORKTREE_ROOT/$name/$branch"
 
-  if [[ -d "$wt_dir" ]]; then
-    if [[ -n "$(git -C "$wt_dir" status --porcelain 2>/dev/null)" ]]; then
-      echo "WARNING: $wt_dir has uncommitted changes:"
-      git -C "$wt_dir" status --short
-      read -rp "Remove anyway? [y/N] " confirm
-      [[ "$confirm" =~ ^[Yy]$ ]] || { echo "Skipping $wt_dir"; continue; }
-    fi
-    echo "Removing worktree: $wt_dir"
-    git -C "$repo_dir" worktree remove "$wt_dir" --force
-    if $DELETE_BRANCHES; then
+    if [[ -d "$wt_dir" ]]; then
+      if [[ -n "$(git -C "$wt_dir" status --porcelain 2>/dev/null)" ]]; then
+        echo "WARNING: $wt_dir has uncommitted changes:"
+        git -C "$wt_dir" status --short
+        read -rp "Remove anyway? [y/N] " confirm
+        [[ "$confirm" =~ ^[Yy]$ ]] || { echo "Skipping $wt_dir"; continue; }
+      fi
+      echo "Removing worktree: $wt_dir"
+      git -C "$repo_dir" worktree remove "$wt_dir" --force
       echo "Deleting branch: $branch (in $name)"
       git -C "$repo_dir" branch -D "$branch" 2>/dev/null || true
+    else
+      echo "Worktree not found (skipping): $wt_dir"
     fi
-  else
-    echo "Worktree not found (skipping): $wt_dir"
-  fi
-done
+  done
+fi
 
 echo "Done."
