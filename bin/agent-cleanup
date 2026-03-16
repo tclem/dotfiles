@@ -1,0 +1,125 @@
+#!/bin/bash
+#
+# Clean up worktrees and tmux session for a Copilot agent project.
+#
+# Usage: agent-cleanup [-d] <project> <branch>
+#
+#   -d  Also delete the branch from each repo after removing worktrees
+
+set -euo pipefail
+
+WORKTREE_ROOT="${WORKTREE_ROOT:-$HOME/github/.worktrees}"
+PROJECTS_DIR="${PROJECTS:-$HOME/github}"
+CONFIG="${COPILOT_AGENT_CONFIG:-$HOME/.config/copilot-agent/projects.conf}"
+DELETE_BRANCHES=false
+
+usage() {
+  echo "Usage: agent-cleanup [-d] <project> <branch>"
+  echo ""
+  echo "  -d  Also delete the branch from each repo"
+  exit 1
+}
+
+parse_config() {
+  local project="$1"
+  local config_file="$2"
+  local in_section=false
+
+  PROJECT_REPOS=()
+
+  if [[ ! -f "$config_file" ]]; then
+    echo "Error: config file not found: $config_file" >&2
+    exit 1
+  fi
+
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    line="${line%%#*}"
+    line="${line## }"
+    line="${line%% }"
+    [[ -z "$line" ]] && continue
+
+    if [[ "$line" =~ ^\[(.+)\]$ ]]; then
+      if [[ "${BASH_REMATCH[1]}" == "$project" ]]; then
+        in_section=true
+      else
+        $in_section && break
+      fi
+      continue
+    fi
+
+    $in_section || continue
+
+    local key="${line%%=*}"
+    local val="${line#*=}"
+    key="${key## }"
+    key="${key%% }"
+    val="${val## }"
+    val="${val%% }"
+
+    case "$key" in
+      repos) read -ra PROJECT_REPOS <<< "$val" ;;
+    esac
+  done < "$config_file"
+
+  if [[ ${#PROJECT_REPOS[@]} -eq 0 ]]; then
+    echo "Error: project '$project' not found or has no repos" >&2
+    exit 1
+  fi
+}
+
+repo_name() {
+  local entry="${1%%:*}"
+  echo "${entry##*/}"
+}
+
+while getopts ":d" opt; do
+  case $opt in
+    d) DELETE_BRANCHES=true ;;
+    *) usage ;;
+  esac
+done
+shift $((OPTIND - 1))
+
+[[ $# -ge 2 ]] || usage
+
+project="$1"
+branch="$2"
+
+parse_config "$project" "$CONFIG"
+
+# Kill tmux session if it exists
+if tmux has-session -t "$project" 2>/dev/null; then
+  echo "Killing tmux session: $project"
+  tmux kill-session -t "$project"
+fi
+
+# Remove docker sandbox
+sandbox_name="copilot-${branch}"
+echo "Removing docker sandbox: $sandbox_name"
+docker sandbox rm "$sandbox_name" 2>/dev/null || true
+
+# Remove worktrees
+for repo in "${PROJECT_REPOS[@]}"; do
+  name="$(repo_name "$repo")"
+  repo_dir="$PROJECTS_DIR/$name"
+  wt_dir="$WORKTREE_ROOT/$name/$branch"
+
+  if [[ -d "$wt_dir" ]]; then
+    if [[ -n "$(git -C "$wt_dir" status --porcelain 2>/dev/null)" ]]; then
+      echo "WARNING: $wt_dir has uncommitted changes:"
+      git -C "$wt_dir" status --short
+      read -rp "Remove anyway? [y/N] " confirm
+      [[ "$confirm" =~ ^[Yy]$ ]] || { echo "Skipping $wt_dir"; continue; }
+    fi
+    echo "Removing worktree: $wt_dir"
+    git -C "$repo_dir" worktree remove "$wt_dir" --force
+    if $DELETE_BRANCHES; then
+      echo "Deleting branch: $branch (in $name)"
+      git -C "$repo_dir" branch -D "$branch" 2>/dev/null || true
+    fi
+  else
+    echo "Worktree not found (skipping): $wt_dir"
+  fi
+done
+
+echo "Done."
