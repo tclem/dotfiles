@@ -87,7 +87,17 @@ cmd_import() {
 
 cmd_build() {
   echo "Building sandbox template: copilot-custom"
-  docker build -t copilot-custom "$COPILOT_REPO"
+
+  # Derive GH token for github org repos (same logic as bin/agent)
+  local token_var="COPILOT_GITHUB_GH_TOKEN"
+  if [[ -z "${!token_var:-}" ]]; then
+    echo "Error: $token_var is not set (needed to clone private repos during build)" >&2
+    exit 1
+  fi
+
+  GH_TOKEN="${!token_var}" docker build \
+    --secret id=gh_token,env=GH_TOKEN \
+    -t copilot-custom "$COPILOT_REPO"
   green "  built copilot-custom"
 }
 

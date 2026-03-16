@@ -37,3 +37,27 @@ RUN printf '#!/bin/sh\nif [ "$1" = "get" ]; then\n  while IFS= read -r line; do\
 
 # Cargo uses git CLI for private repo fetches
 ENV CARGO_NET_GIT_FETCH_WITH_CLI=true
+
+# ---------------------------------------------------------------------------
+# Pre-clone and build heavy repos to warm dependency caches.
+# The actual repos are mounted at /workspace at runtime — we only keep the
+# caches (CARGO_HOME/registry, Go module cache, Rust toolchain).
+# The GH_TOKEN build secret is used only during build and never stored.
+# ---------------------------------------------------------------------------
+
+# blackbird (Rust) — warm cargo registry cache + install project's toolchain
+RUN --mount=type=secret,id=gh_token \
+    GH_TOKEN="$(cat /run/secrets/gh_token)" \
+    && git clone --depth 1 "https://x-access-token:${GH_TOKEN}@github.com/github/blackbird.git" /tmp/blackbird \
+    && cd /tmp/blackbird \
+    && cargo fetch \
+    && cargo build --release 2>&1 | tail -5 \
+    && rm -rf /tmp/blackbird
+
+# blackbird-mw (Go) — warm Go module cache
+RUN --mount=type=secret,id=gh_token \
+    GH_TOKEN="$(cat /run/secrets/gh_token)" \
+    && git clone --depth 1 "https://x-access-token:${GH_TOKEN}@github.com/github/blackbird-mw.git" /tmp/blackbird-mw \
+    && cd /tmp/blackbird-mw \
+    && go build ./... 2>&1 | tail -5 \
+    && rm -rf /tmp/blackbird-mw
