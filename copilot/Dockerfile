@@ -28,14 +28,12 @@ USER agent
 COPY --chown=agent:agent copilot-instructions.md /home/agent/.copilot/copilot-instructions.md
 COPY --chown=agent:agent config.json /home/agent/.copilot/config.json
 
+# Git credential helper: reads GH_TOKEN at invocation time for private repos
+RUN printf '#!/bin/sh\nif [ "$1" = "get" ]; then\n  while IFS= read -r line; do\n    case "$line" in host=*) host="${line#host=}" ;; esac\n  done\n  if [ "$host" = "github.com" ]; then\n    echo "protocol=https"\n    echo "host=github.com"\n    echo "username=x-access-token"\n    echo "password=$GH_TOKEN"\n  fi\nfi\n' \
+      > /home/agent/.git-credential-gh-token \
+    && chmod +x /home/agent/.git-credential-gh-token \
+    && git config --global credential.https://github.com.helper /home/agent/.git-credential-gh-token \
+    && git config --global --add safe.directory /workspace
+
 # Cargo uses git CLI for private repo fetches
 ENV CARGO_NET_GIT_FETCH_WITH_CLI=true
-
-# Setup the entrypoint
-COPY --chown=agent:agent entrypoint.sh /home/agent/entrypoint.sh
-RUN chmod +x /home/agent/entrypoint.sh
-
-WORKDIR /workspace
-
-ENTRYPOINT ["/home/agent/entrypoint.sh"]
-CMD ["sleep", "infinity"]
