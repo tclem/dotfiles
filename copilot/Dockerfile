@@ -47,7 +47,7 @@ ENV CARGO_NET_GIT_FETCH_WITH_CLI=true
 
 # blackbird (Rust) — warm cargo registry cache + install project's toolchain
 RUN --mount=type=secret,id=gh_token,mode=0444 \
-    GH_TOKEN="$(cat /run/secrets/gh_token)" \
+    export GH_TOKEN="$(cat /run/secrets/gh_token)" \
     && git clone --depth 1 "https://x-access-token:${GH_TOKEN}@github.com/github/blackbird.git" /tmp/blackbird \
     && cd /tmp/blackbird \
     && cargo fetch \
@@ -56,7 +56,7 @@ RUN --mount=type=secret,id=gh_token,mode=0444 \
 
 # blackbird-mw (Go) — warm Go module cache
 RUN --mount=type=secret,id=gh_token,mode=0444 \
-    GH_TOKEN="$(cat /run/secrets/gh_token)" \
+    export GH_TOKEN="$(cat /run/secrets/gh_token)" \
     && git clone --depth 1 "https://x-access-token:${GH_TOKEN}@github.com/github/blackbird-mw.git" /tmp/blackbird-mw \
     && cd /tmp/blackbird-mw \
     && go build ./... 2>&1 | tail -5 \
