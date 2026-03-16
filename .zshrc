@@ -154,7 +154,11 @@ test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell
 # Put dirname in the iTerm window title
 DISABLE_AUTO_TITLE="true"
 function precmd () {
-  window_title="\033]0;${PWD##*/}\007"
+  if [[ -n "${AGENT_TITLE:-}" ]]; then
+    window_title="\033]0;${AGENT_TITLE}\007"
+  else
+    window_title="\033]0;${PWD##*/}\007"
+  fi
   echo -ne "$window_title"
 }
 
