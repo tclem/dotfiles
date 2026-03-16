@@ -15,14 +15,14 @@ RUN apt-get update \
     zlib1g-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Rust
-ENV RUSTUP_HOME=/usr/local/rustup \
-    CARGO_HOME=/usr/local/cargo \
-    PATH=/usr/local/cargo/bin:$PATH
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-
 # Back to non-root agent user
 USER agent
+
+# Install Rust as agent so rustup can manage toolchains at runtime
+ENV RUSTUP_HOME=/home/agent/.rustup \
+    CARGO_HOME=/home/agent/.cargo \
+    PATH=/home/agent/.cargo/bin:$PATH
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 
 # Copilot config and instructions
 COPY --chown=agent:agent copilot-instructions.md /home/agent/.copilot/copilot-instructions.md
