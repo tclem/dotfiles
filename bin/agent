@@ -2,14 +2,16 @@
 #
 # Launch a tmux session for working with a Copilot agent on a project.
 #
-# Usage: agent [-l] <project> <branch>
+# Usage: agent [-l|-n] <project> <branch>
 #        agent -l <project>
+#        agent -n <project>
 #
 #   -l  Local mode: use repos as-is at their current branch (no worktrees)
+#   -n  Native mode: like local, but run copilot directly (no docker sandbox)
 #
 # Creates git worktrees for each repo in the project, then opens a tmux
 # session with two windows: a general-purpose shell and a copilot agent
-# running in a docker sandbox.
+# running in a docker sandbox (or natively with -n).
 
 set -euo pipefail
 
@@ -18,14 +20,17 @@ PROJECTS_DIR="${PROJECTS:-$HOME/github}"
 CONFIG="${COPILOT_AGENT_CONFIG:-$HOME/.config/copilot-agent/projects.conf}"
 SANDBOX_TEMPLATE="${SANDBOX_TEMPLATE:-copilot-custom}"
 LOCAL_MODE=false
+NATIVE_MODE=false
 
 usage() {
-  echo "Usage: agent [-l] <project> <branch>"
+  echo "Usage: agent [-l|-n] <project> <branch>"
   echo "       agent -l <project>"
+  echo "       agent -n <project>"
   echo ""
   echo "  -l        Local mode: use repos at current branch (no worktrees)"
+  echo "  -n        Native mode: local + run copilot directly (no sandbox)"
   echo "  project   Project name (section in projects.conf)"
-  echo "  branch    Branch name for worktrees (not needed with -l)"
+  echo "  branch    Branch name for worktrees (not needed with -l or -n)"
   exit 1
 }
 
@@ -103,9 +108,10 @@ repo_base() {
   fi
 }
 
-while getopts ":l" opt; do
+while getopts ":ln" opt; do
   case $opt in
     l) LOCAL_MODE=true ;;
+    n) NATIVE_MODE=true; LOCAL_MODE=true ;;
     *) usage ;;
   esac
 done
@@ -156,7 +162,6 @@ if $LOCAL_MODE; then
     repo_paths+=("$repo_dir")
   done
   sandbox_paths=("${repo_paths[@]}")
-  sandbox_name="copilot-${project}"
 else
   for repo in "${PROJECT_REPOS[@]}"; do
     name="$(repo_name "$repo")"
@@ -180,18 +185,26 @@ else
     repo_paths+=("$wt_dir")
     sandbox_paths+=("$wt_dir" "$repo_dir")
   done
-  sandbox_name="copilot-${branch}"
 fi
 
-# Create or reuse docker sandbox (parent repos mounted read-only for worktree .git refs)
-if docker sandbox ls 2>/dev/null | grep -q "^${sandbox_name}\b"; then
-  sandbox_cmd="GH_TOKEN=\$${token_var} docker sandbox run ${sandbox_name}"
+# Build the copilot launch command
+if $NATIVE_MODE; then
+  # Run copilot directly on the host in the first repo dir
+  copilot_cmd="cd ${repo_paths[0]} && GH_TOKEN=\$${token_var} copilot"
 else
-  sandbox_cmd="GH_TOKEN=\$${token_var} docker sandbox create --name ${sandbox_name} --template ${SANDBOX_TEMPLATE} copilot ${sandbox_paths[*]} && GH_TOKEN=\$${token_var} docker sandbox run ${sandbox_name}"
+  # Create or reuse docker sandbox (parent repos mounted read-only for worktree .git refs)
+  sandbox_name="copilot-${branch:-$project}"
+  if docker sandbox ls 2>/dev/null | grep -q "^${sandbox_name}\b"; then
+    copilot_cmd="GH_TOKEN=\$${token_var} docker sandbox run ${sandbox_name}"
+  else
+    copilot_cmd="GH_TOKEN=\$${token_var} docker sandbox create --name ${sandbox_name} --template ${SANDBOX_TEMPLATE} copilot ${sandbox_paths[*]} && GH_TOKEN=\$${token_var} docker sandbox run ${sandbox_name}"
+  fi
 fi
 
 # Build terminal title
-if $LOCAL_MODE; then
+if $NATIVE_MODE; then
+  agent_title="$project (native)"
+elif $LOCAL_MODE; then
   agent_title="$project"
 else
   agent_title="$project [$branch]"
@@ -201,7 +214,7 @@ fi
 tmux kill-session -t "$project" 2>/dev/null || true
 tmux new-session -d -s "$project" -n copilot
 tmux set-environment -t "$project" AGENT_TITLE "$agent_title"
-tmux send-keys -t "$project:copilot" "$sandbox_cmd" Enter
+tmux send-keys -t "$project:copilot" "$copilot_cmd" Enter
 
 for ((i = 0; i < ${#PROJECT_REPOS[@]}; i++)); do
   name="$(repo_name "${PROJECT_REPOS[$i]}")"
