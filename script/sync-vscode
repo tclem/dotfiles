@@ -1,0 +1,96 @@
+#!/bin/bash
+#
+# Sync VSCode settings and extensions between this repo and the live config.
+#
+#   script/sync-vscode install   — symlink settings from repo, install extensions
+#   script/sync-vscode import    — capture current settings and extensions into repo
+#
+
+set -euo pipefail
+
+DOTFILES_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+VSCODE_REPO="$DOTFILES_ROOT/vscode"
+
+# Resolve the live VSCode config directory
+case "$(uname -s)" in
+  Darwin) VSCODE_DIR="$HOME/Library/Application Support/Code/User" ;;
+  Linux)  VSCODE_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/Code/User" ;;
+  *)      echo "Error: unsupported OS" >&2; exit 1 ;;
+esac
+
+green()  { printf "\033[32m%s\033[0m\n" "$1"; }
+yellow() { printf "\033[33m%s\033[0m\n" "$1"; }
+
+cmd_install() {
+  echo "Installing VSCode settings: $VSCODE_REPO → $VSCODE_DIR"
+
+  mkdir -p "$VSCODE_DIR"
+
+  # Symlink settings.json
+  local src="$VSCODE_REPO/settings.json"
+  local dst="$VSCODE_DIR/settings.json"
+  if [[ -L "$dst" && "$(readlink "$dst")" == "$src" ]]; then
+    yellow "  skip settings.json (already linked)"
+  else
+    [[ -f "$dst" && ! -L "$dst" ]] && mv "$dst" "$dst.backup" && yellow "  backed up existing settings.json"
+    ln -sf "$src" "$dst"
+    green "  linked settings.json"
+  fi
+
+  # Install extensions
+  if ! command -v code &>/dev/null; then
+    yellow "  skip extensions (code not in PATH)"
+    return
+  fi
+
+  local installed
+  installed=$(code --list-extensions 2>/dev/null)
+  local count=0
+
+  while IFS= read -r ext; do
+    [[ -z "$ext" || "$ext" == "❯"* ]] && continue
+    if echo "$installed" | grep -qi "^${ext}$"; then
+      continue
+    fi
+    code --install-extension "$ext" --force >/dev/null 2>&1 && green "  installed $ext" || yellow "  failed $ext"
+    ((count++)) || true
+  done < "$VSCODE_REPO/extensions.txt"
+
+  if [[ $count -eq 0 ]]; then
+    yellow "  skip extensions (all installed)"
+  fi
+}
+
+cmd_import() {
+  echo "Importing VSCode settings: $VSCODE_DIR → $VSCODE_REPO"
+
+  # Import settings.json (skip if it's already our symlink)
+  local src="$VSCODE_DIR/settings.json"
+  if [[ -L "$src" && "$(readlink "$src")" == "$VSCODE_REPO/settings.json" ]]; then
+    yellow "  skip settings.json (already linked)"
+  elif [[ -f "$src" ]]; then
+    cp "$src" "$VSCODE_REPO/settings.json"
+    ln -sf "$VSCODE_REPO/settings.json" "$src"
+    green "  imported settings.json"
+  else
+    yellow "  skip settings.json (not found)"
+  fi
+
+  # Import extensions list
+  if ! command -v code &>/dev/null; then
+    yellow "  skip extensions (code not in PATH)"
+    return
+  fi
+
+  code --list-extensions 2>/dev/null | sort > "$VSCODE_REPO/extensions.txt"
+  green "  imported extensions.txt"
+}
+
+case "${1:-}" in
+  install) cmd_install ;;
+  import)  cmd_import ;;
+  *)
+    echo "Usage: script/sync-vscode {install|import}"
+    exit 1
+    ;;
+esac
