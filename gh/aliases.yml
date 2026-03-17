@@ -1,1 +1,4 @@
+co: pr checkout
+pra: pr review --approve
 prc: pr create --web
+prl: pr ls -A "@me" -s all
