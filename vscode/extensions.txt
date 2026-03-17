@@ -1,4 +1,3 @@
-❯ code --list-extensions
 akamud.vscode-theme-onedark
 akamud.vscode-theme-onelight
 anseki.vscode-color
