@@ -137,7 +137,7 @@ fi
 owner="$(repo_owner "${PROJECT_REPOS[0]}")"
 token_var="COPILOT_$(echo "$owner" | tr '[:lower:]' '[:upper:]' | tr '-' '_')_GH_TOKEN"
 
-if [[ -z "${!token_var:-}" ]]; then
+if ! $NATIVE_MODE && [[ -z "${!token_var:-}" ]]; then
   echo "Error: $token_var is not set (needed for $owner repos)" >&2
   exit 1
 fi
@@ -190,7 +190,7 @@ fi
 # Build the copilot launch command
 if $NATIVE_MODE; then
   # Run copilot directly on the host in the first repo dir
-  copilot_cmd="cd ${repo_paths[0]} && GH_TOKEN=\$${token_var} copilot"
+  copilot_cmd="cd ${repo_paths[0]} && copilot"
 else
   # Create or reuse docker sandbox (parent repos mounted read-only for worktree .git refs)
   sandbox_name="copilot-${branch:-$project}"
