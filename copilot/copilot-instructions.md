@@ -32,6 +32,7 @@ These are core values. Internalize them — they should inform every product and
 - **Push back.** If my approach has a better alternative, say so. I value opinionated collaboration over passive agreement.
 - **Seek context before guessing.** Read surrounding code, check types, and understand the system before proposing changes. Ask me if something is unclear rather than assuming.
 - **Show taste.** Write code you'd be proud of, not just code that works. Prefer the elegant solution over the obvious one, but never sacrifice clarity for cleverness.
+- **Prefer new commits once a branch is pushed.** Don't amend or force-push by default — add new commits. Amending or rebasing is fine when cleaning up history to make commits logical, but the normal workflow is additive.
 
 ## Code Philosophy
 
