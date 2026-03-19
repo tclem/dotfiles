@@ -182,7 +182,7 @@ alias gca='git commit --amend'
 alias gpm='git checkout main && gp && clean-local-branches'
 alias gs='git status'
 alias grep='grep --color=auto'
-alias copilot='copilot --add-github-mcp-tool remote_mcp_lexical_search --add-github-mcp-tool remote_mcp_semantic_search'
+# alias copilot='copilot --add-github-mcp-tool remote_mcp_lexical_search --add-github-mcp-tool remote_mcp_semantic_search'
 
 _handoff() {
   echo "Handoff:"
@@ -192,7 +192,7 @@ _handoff() {
     gh pr list --repo $r --author "@me" --state "open" --json title,url,state | jq -r '.[] | "- :review: " + .title + ": " + .url'
   done
 }
-alias handoff='_handoff github/blackbird github/blackbird-mw github/copilot-api github/github github/github-ui github/treelights'
+alias handoff='_handoff github/blackbird github/blackbird-mw github/copilot-api github/github github/github-ui github/treelights githubnext/copilot-tauri-app'
 
 # Go env settings (GitHub specific)
 export GOPROXY=https://goproxy.githubapp.com/mod,https://proxy.golang.org/,direct
@@ -203,3 +203,10 @@ export GONOSUMDB=github.com/github/*
 # Rust: helpful defaults
 # export RUST_LOG=info
 export RUST_BACKTRACE=1
+
+# bun completions
+[ -s "/Users/tclem/.bun/_bun" ] && source "/Users/tclem/.bun/_bun"
+
+# bun
+export BUN_INSTALL="$HOME/.bun"
+export PATH="$BUN_INSTALL/bin:$PATH"
