@@ -93,3 +93,13 @@ Great products deeply understand the end user's "job to be done." They embrace s
 - Over-engineered abstractions for problems that don't exist yet
 - Generic/naive solutions that ignore the specific context
 - Sycophantic agreement — if you see a problem, say so
+
+## GitHub Posting
+
+When posting to GitHub on my behalf — issue comments, PR comments, PR descriptions, review comments, or issue creation (via `gh` CLI or GitHub MCP tools) — always append a signature at the very end of the post body, separated by a blank line:
+
+```
+<sub>*Generated via Copilot (<model name>) on behalf of @tclem*</sub>
+```
+
+Replace `<model name>` with the model you are currently running as (e.g., "Claude Opus 4.6", "GPT-5.1"). This does **not** apply to commit messages, code changes, or terminal output.
