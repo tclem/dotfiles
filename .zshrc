@@ -195,7 +195,7 @@ _handoff() {
     gh pr list --repo $r --author "@me" --state "open" --json title,url,state | jq -r '.[] | "- :review: " + .title + ": " + .url'
   done
 }
-alias handoff='_handoff github/blackbird github/blackbird-mw github/copilot-api github/github github/github-ui github/treelights githubnext/copilot-tauri-app'
+alias handoff='_handoff github/blackbird github/blackbird-mw github/copilot-api github/github github/github-ui github/treelights github/github-app'
 
 # Go env settings (GitHub specific)
 export GOPROXY=https://goproxy.githubapp.com/mod,https://proxy.golang.org/,direct
