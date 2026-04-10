@@ -167,7 +167,7 @@ function precmd () {
 
 # Aliases
 alias reload='. ~/.zshrc'
-alias clean-local-branches="git branch -v | grep '\[gone\]' | awk '{print \$1}' | xargs git branch -D"
+alias clean-local-branches="git branch -v | grep '\[gone\]' | awk '{print (\$1 == \"+\" || \$1 == \"*\") ? \$2 : \$1}' | xargs git branch -D"
 # alias clean-local-branches='git branch --merged main | grep -v ''main$'' | xargs git branch -d'
 # alias clean-local-branchesm='git branch --merged master | grep -v '\''master$'\'' | xargs git branch -d'
 alias ...='cd ../..'
