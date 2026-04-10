@@ -4008,6 +4008,8 @@
 	<integer>1</integer>
 	<key>TabStyleWithAutomaticOption</key>
 	<integer>5</integer>
+	<key>TmuxSyncClipboard</key>
+	<false/>
 	<key>TmuxUsesDedicatedProfile</key>
 	<false/>
 	<key>UseLionStyleFullscreen</key>
