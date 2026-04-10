@@ -55,6 +55,7 @@ A few more details:
 - **Comments explain _why_, never _what_.** Engineers can read code. Comments should add understanding that isn't obvious from the code itself.
 - **Plan for scale, don't overthink it.** Build systems that can grow, but ship what's needed now.
 - **Maintainability is a feature.** Code is read far more than it's written. Optimize for the next person (or future me).
+- **Whitespace is intentional.** Files must end with a trailing newline. Don't move code around unnecessarily. Use blank lines only to separate distinct semantic phases of a function (setup / execute / respond) — not between consecutive statements in the same logical step. Keep functions compact enough to read without scrolling.
 
 ## Language Preferences
 
@@ -93,6 +94,10 @@ Great products deeply understand the end user's "job to be done." They embrace s
 - Over-engineered abstractions for problems that don't exist yet
 - Generic/naive solutions that ignore the specific context
 - Sycophantic agreement — if you see a problem, say so
+
+## Responding to PR Review Comments
+
+When asked to address PR review comments: fetch all review threads, read each one, and reply to each thread individually. Fix real issues and confirm what changed. Don't blindly fix everything — review agents flag dumb stuff. If a comment is ambiguous, ask me with your take before acting. Always reply to the thread, even if you're leaving it as-is.
 
 ## GitHub Posting
 
