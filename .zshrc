@@ -4,6 +4,9 @@ export PATH="$HOME/.cargo/bin:$PATH" # Rust cargo
 export PATH="$HOME/.local/bin:$PATH"
 export PATH="$HOME/.devcontainers/bin:$PATH"
 
+# Keep path-like arrays unique to avoid repeated lookups.
+typeset -U path PATH fpath FPATH
+
 # your project folder that we can `c [tab]` to
 case $(uname) in
   Darwin)
@@ -132,21 +135,26 @@ bindkey -M menuselect '^o' accept-and-infer-next-history
 zstyle ':completion:*:*:*:*:*' menu select                                                 # highlight the selection
 zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}' 'r:|[._-]=* r:|=*' 'l:|=* r:|=*' # case-insensitive (all),partial-word and then substring completion
 zstyle ':completion:*:cd:*' tag-order local-directories directory-stack path-directories   # disable named-directories autocompletion
+zstyle ':completion:*' use-cache on
+zstyle ':completion:*' cache-path "${XDG_CACHE_HOME:-$HOME/.cache}/zsh"
 cdpath=(.)
 # zstyle ':completion:*' list-colors ''
 # zstyle ':completion:*:default' list-colors ${(s.:.)LS_COLORS}
-zstyle ':completion:*:*:*:*:*' menu select
 zstyle ':completion:*:*:kill:*:processes' list-colors '=(#b) #([0-9]#) ([0-9a-z-]#)*=01;34=0=01'
 zstyle ':completion:*:*:*:*:processes' command "ps -u $(whoami) -o pid,user,comm -w -w"
 # use /etc/hosts and known_hosts for hostname completion
-[ -r ~/.ssh/known_hosts ] && _ssh_hosts=(${${${${(f)"$(<$HOME/.ssh/known_hosts)"}:#[\|]*}%%\ *}%%,*}) || _ssh_hosts=()
-[ -r /etc/hosts ] && : ${(A)_etc_hosts:=${(s: :)${(ps:\t:)${${(f)~~"$(</etc/hosts)"}%%\#*}##[:blank:]#[^[:blank:]]#}}} || _etc_hosts=()
-hosts=(
-  "$_ssh_hosts[@]"
-  "$_etc_hosts[@]"
-  $(hostname)
-  localhost
-)
+hosts_cache_dir="${XDG_CACHE_HOME:-$HOME/.cache}/zsh"
+hosts_cache_file="$hosts_cache_dir/hosts"
+mkdir -p "$hosts_cache_dir"
+if [[ ! -r "$hosts_cache_file" || -n ${hosts_cache_file}(#qN.mh+24) || ( -r ~/.ssh/known_hosts && ~/.ssh/known_hosts -nt "$hosts_cache_file" ) || /etc/hosts -nt "$hosts_cache_file" ]]; then
+  [ -r ~/.ssh/known_hosts ] && _ssh_hosts=(${${${${(f)"$(<$HOME/.ssh/known_hosts)"}:#[\|]*}%%\ *}%%,*}) || _ssh_hosts=()
+  [ -r /etc/hosts ] && : ${(A)_etc_hosts:=${(s: :)${(ps:\t:)${${(f)~~"$(</etc/hosts)"}%%\#*}##[:blank:]#[^[:blank:]]#}}} || _etc_hosts=()
+  typeset -Ua _all_hosts
+  _all_hosts=("${_ssh_hosts[@]}" "${_etc_hosts[@]}")
+  print -l -- "${_all_hosts[@]}" > "$hosts_cache_file"
+fi
+typeset -Ua hosts
+hosts=("${(@f)$(cat "$hosts_cache_file" 2>/dev/null)}" "$HOST" localhost)
 zstyle ':completion:*:hosts' hosts $hosts
 
 # I don't know what this does...
