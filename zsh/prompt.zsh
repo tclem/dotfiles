@@ -72,7 +72,7 @@ _prompt_git_collect() {
   if (( dirty == 0 )); then
     git diff --no-ext-diff --quiet --ignore-submodules 2>/dev/null || dirty=1
   fi
-  if (( dirty == 0 )) && [[ -n "$(git ls-files --others --exclude-standard --directory 2>/dev/null | head -n 1)" ]]; then
+  if (( dirty == 0 )) && [[ -n "$(git ls-files --others --exclude-standard 2>/dev/null | head -n 1)" ]]; then
     dirty=1
   fi
 
