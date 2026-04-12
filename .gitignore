@@ -1,2 +1,4 @@
 .localrc
 .DS_Store
+.zcompdump
+.zcompdump-*

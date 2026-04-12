@@ -167,7 +167,7 @@ zstyle ':completion:*:hosts' hosts $hosts
 
 # Prompt
 . $ZSH/zsh/prompt.zsh
-export PROMPT='⑁ $(platform) $(directory_name) $(project_name_color)$(git_dirty)$(need_push) ❯ '
+export PROMPT='$(prompt_lead_char) $(platform) $(directory_name) $(project_name_color)$(git_dirty)$(need_push) ❯ '
 
 command -v direnv >/dev/null 2>&1 && eval "$(direnv hook zsh)"
 command -v rbenv >/dev/null 2>&1 && eval "$(rbenv init -)"
@@ -211,8 +211,8 @@ _handoff() {
   echo "Handoff:"
 
   for r in $@; do
-    gh pr list --repo $r --author "@me" --state "merged" --search "merged:>=$(date "+%Y-%m-%d")" --json title,url,state | jq -r '.[] | "- :merged: " + .title + ": " + .url'
-    gh pr list --repo $r --author "@me" --state "open" --json title,url,state | jq -r '.[] | "- :review: " + .title + ": " + .url'
+    gh pr list --repo $r --author "@me" --state "merged" --search "merged:>=$(date "+%Y-%m-%d")" --json title,url,state | jq -r '.[] | "- :merged: [" + .title + "](" + .url + ")"'
+    gh pr list --repo $r --author "@me" --state "open" --json title,url,state | jq -r '.[] | "- :review: [" + .title + "](" + .url + ")"'
   done
 }
 alias handoff='_handoff github/blackbird github/blackbird-mw github/copilot-api github/github github/github-ui github/treelights github/github-app'
