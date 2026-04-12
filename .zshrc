@@ -8,7 +8,11 @@ export PATH=":bin:$PATH"
 # your project folder that we can `c [tab]` to
 case `uname` in
   Darwin)
-    eval "$(/usr/local/bin/brew shellenv)"
+    if [[ -x /opt/homebrew/bin/brew ]]; then
+      eval "$(/opt/homebrew/bin/brew shellenv)"
+    elif [[ -x /usr/local/bin/brew ]]; then
+      eval "$(/usr/local/bin/brew shellenv)"
+    fi
     prefix=$(brew --prefix)
 
     # commands for OS X go here
@@ -22,9 +26,8 @@ case `uname` in
     export MANPATH="$prefix/man:$prefix/mysql/man:$prefix/git/man:$MANPATH"
     export PATH="$prefix/bin:$ZSH/bin:$PATH" # homebrew
     export PATH="$prefix/opt/mysql-client/bin:$PATH" # mysql
-    export PATH="/usr/local/bin:$PATH" # docker and a few other utils
+    export PATH="$prefix/bin:$PATH" # docker and a few other utils
     # export PATH="/usr/local/go/bin:$PATH" # Manual install of Go to fix "was built for newer 'macOS' version (15.4) than being linked (15.0)" warnings
-    # export PATH="$HOME/.docker/bin:$PATH" # docker
     # export PATH="$prefix/opt/python@3.8/libexec/bin:$PATH"
     # export PATH="$prefix/opt/node@10/bin:$PATH"
     # export PATH="$PATH:./node_modules/.bin"
