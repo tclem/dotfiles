@@ -72,7 +72,12 @@ autoload -U $ZSH/zsh/functions/*(:t)
 
 # Do this once
 autoload -Uz compinit
-compinit
+zcompdump_file=${ZDOTDIR:-$HOME}/.zcompdump
+if [[ -n ${zcompdump_file}(#qN.mh+24) ]]; then
+  compinit
+else
+  compinit -C
+fi
 
 # zsh options
 setopt ALWAYS_TO_END
