@@ -3,17 +3,25 @@ export PATH=$HOME/go/bin:$PATH # Go binaries
 export PATH="$HOME/.cargo/bin:$PATH" # Rust cargo
 export PATH="$HOME/.local/bin:$PATH"
 export PATH="$HOME/.devcontainers/bin:$PATH"
-export PATH=":bin:$PATH"
 
 # your project folder that we can `c [tab]` to
-case `uname` in
+case $(uname) in
   Darwin)
     if [[ -x /opt/homebrew/bin/brew ]]; then
       eval "$(/opt/homebrew/bin/brew shellenv)"
     elif [[ -x /usr/local/bin/brew ]]; then
       eval "$(/usr/local/bin/brew shellenv)"
     fi
-    prefix=$(brew --prefix)
+    prefix=${HOMEBREW_PREFIX:-}
+    if [[ -z "$prefix" ]]; then
+      if [[ -x /opt/homebrew/bin/brew ]]; then
+        prefix=$(/opt/homebrew/bin/brew --prefix)
+      elif [[ -x /usr/local/bin/brew ]]; then
+        prefix=$(/usr/local/bin/brew --prefix)
+      else
+        prefix=/usr/local
+      fi
+    fi
 
     # commands for OS X go here
     export PROJECTS=~/github
@@ -26,7 +34,6 @@ case `uname` in
     export MANPATH="$prefix/man:$prefix/mysql/man:$prefix/git/man:$MANPATH"
     export PATH="$prefix/bin:$ZSH/bin:$PATH" # homebrew
     export PATH="$prefix/opt/mysql-client/bin:$PATH" # mysql
-    export PATH="$prefix/bin:$PATH" # docker and a few other utils
     # export PATH="/usr/local/go/bin:$PATH" # Manual install of Go to fix "was built for newer 'macOS' version (15.4) than being linked (15.0)" warnings
     # export PATH="$prefix/opt/python@3.8/libexec/bin:$PATH"
     # export PATH="$prefix/opt/node@10/bin:$PATH"
@@ -36,8 +43,8 @@ case `uname` in
     export PATH="$PROJECTS/sbx:$PATH" # containerized development sandbox manager
 
     # GRC colorizes nifty unix tools all over the place
-    if $(gls &>/dev/null); then
-      source `brew --prefix`/etc/grc.zsh
+    if command -v gls >/dev/null 2>&1 && [[ -r "$prefix/etc/grc.zsh" ]]; then
+      source "$prefix/etc/grc.zsh"
     fi
 
     alias tailscale="/Applications/Tailscale.app/Contents/MacOS/Tailscale"
@@ -125,14 +132,14 @@ cdpath=(.)
 # zstyle ':completion:*:default' list-colors ${(s.:.)LS_COLORS}
 zstyle ':completion:*:*:*:*:*' menu select
 zstyle ':completion:*:*:kill:*:processes' list-colors '=(#b) #([0-9]#) ([0-9a-z-]#)*=01;34=0=01'
-zstyle ':completion:*:*:*:*:processes' command "ps -u `whoami` -o pid,user,comm -w -w"
+zstyle ':completion:*:*:*:*:processes' command "ps -u $(whoami) -o pid,user,comm -w -w"
 # use /etc/hosts and known_hosts for hostname completion
 [ -r ~/.ssh/known_hosts ] && _ssh_hosts=(${${${${(f)"$(<$HOME/.ssh/known_hosts)"}:#[\|]*}%%\ *}%%,*}) || _ssh_hosts=()
 [ -r /etc/hosts ] && : ${(A)_etc_hosts:=${(s: :)${(ps:\t:)${${(f)~~"$(</etc/hosts)"}%%\#*}##[:blank:]#[^[:blank:]]#}}} || _etc_hosts=()
 hosts=(
   "$_ssh_hosts[@]"
   "$_etc_hosts[@]"
-  `hostname`
+  $(hostname)
   localhost
 )
 zstyle ':completion:*:hosts' hosts $hosts
@@ -149,9 +156,9 @@ zstyle ':completion:*:hosts' hosts $hosts
 . $ZSH/zsh/prompt.zsh
 export PROMPT='⑁ $(platform) $(directory_name) $(project_name_color)$(git_dirty)$(need_push) ❯ '
 
-test -e "$(which direnv)" && eval "$(direnv hook zsh)"
-test -e "$(which rbenv)" && eval "$(rbenv init -)"
-test -e "$(which fnm)" && eval "$(fnm env --use-on-cd --shell zsh)"
+command -v direnv >/dev/null 2>&1 && eval "$(direnv hook zsh)"
+command -v rbenv >/dev/null 2>&1 && eval "$(rbenv init -)"
+command -v fnm >/dev/null 2>&1 && eval "$(fnm env --use-on-cd --shell zsh)"
 
 test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
 # Put dirname in the iTerm window title
