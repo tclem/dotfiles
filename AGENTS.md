@@ -12,6 +12,7 @@ Personal dotfiles for tclem (Staff Engineer, GitHub). Manages shell config, edit
 | `.zshrc` | Main shell config (symlinked to `~/.zshrc`) |
 | `zsh/` | Prompt, functions, completions |
 | `tmux.conf` | Tmux config (symlinked to `~/.tmux.conf`) |
+| `cargo/config.toml` | Cargo config (symlinked to `~/.cargo/config.toml`) — sccache wrapper, git-fetch-with-cli |
 | `Brewfile` | Homebrew packages and casks |
 | `bin/` | Executable scripts (agent workflows, GitHub log) |
 | `copilot/` | Copilot agent config, sandbox Dockerfile, skills, project definitions |

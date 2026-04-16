@@ -36,11 +36,6 @@ if [[ "$current_shell" != "$target_shell" ]]; then
     chsh -s "$target_shell"
 fi
 
-if [[ ! -f ~/.cargo/config.toml ]]; then
-    mkdir -p ~/.cargo
-    echo "[net]\ngit-fetch-with-cli = true" > ~/.cargo/config.toml
-fi
-
 # Configure MacOS
 
 # Fast keyrepeat

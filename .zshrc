@@ -227,6 +227,13 @@ export GONOSUMDB=github.com/github/*
 # export RUST_LOG=info
 export RUST_BACKTRACE=1
 
+# sccache: rustc-wrapper is configured in ~/.cargo/config.toml so it applies
+# to cargo, rust-analyzer, and IDEs uniformly. Only tune runtime behavior here.
+# Incremental compilation fights sccache's caching model — disable it so more
+# artifacts are cacheable.
+export CARGO_INCREMENTAL=0
+export SCCACHE_CACHE_SIZE="30G"
+
 # bun completions
 [ -s "/Users/tclem/.bun/_bun" ] && source "/Users/tclem/.bun/_bun"
 
