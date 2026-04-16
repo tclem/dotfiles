@@ -5,8 +5,6 @@ These are my dotfiles.
 ## Install
 
 ``` sh
-git clone git://github.com/tclem/dotfiles
-cd dotfiles
 ./install.sh
 ```
 
@@ -19,5 +17,5 @@ repo.
 The original version of these came from [Zach
 Holman](https://github.com/holman/dotfiles), but I have ripped and torn
 them beyond recognition. Many of my zsh tricks come from
-[oh-my-zsh](https://github.com/robbyrussell/oh-my-zsh) which is well
-worth checking out in it's own right.
+[oh-my-zsh](https://github.com/ohmyzsh/ohmyzsh) which is well
+worth checking out in its own right.
