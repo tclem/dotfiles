@@ -1,0 +1,7 @@
+[net]
+git-fetch-with-cli = true
+
+[build]
+# Resolve sccache from PATH so this works on both macOS (Homebrew) and Linux.
+# Disable by invoking cargo with `RUSTC_WRAPPER= cargo …`.
+rustc-wrapper = "sccache"

@@ -26,6 +26,11 @@ ln -s "$(pwd)/.zshrc" ~/.zshrc
 rm -rf ~/.tmux.conf
 ln -s "$(pwd)/tmux.conf" ~/.tmux.conf
 
+# Setup cargo config (sccache wrapper, git-fetch-with-cli)
+mkdir -p ~/.cargo
+rm -rf ~/.cargo/config.toml
+ln -s "$(pwd)/cargo/config.toml" ~/.cargo/config.toml
+
 # Sync Copilot config (agents, skills, docs, instructions)
 script/copilot-sync install
 
