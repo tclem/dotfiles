@@ -4,18 +4,16 @@ These are my dotfiles.
 
 ## Install
 
+Targets **macOS** (Homebrew) and **Linux** (Ubuntu/Debian, WIP).
+
 ``` sh
 ./install.sh
 ```
 
-A .zshrc is setup for you, but it will look for and source a .localrc
-which is where you should put stuff you don't want checked into a public
-repo.
+This detects your OS, installs packages, symlinks configs (`.zshrc`, `tmux.conf`), sets up git, and syncs Copilot config.
 
-## Credit where credit is due
+Put secrets and machine-specific overrides in `~/.localrc` (not versioned).
 
-The original version of these came from [Zach
-Holman](https://github.com/holman/dotfiles), but I have ripped and torn
-them beyond recognition. Many of my zsh tricks come from
-[oh-my-zsh](https://github.com/ohmyzsh/ohmyzsh) which is well
-worth checking out in its own right.
+---
+
+Originally forked from [Zach Holman's dotfiles](https://github.com/holman/dotfiles), but I've diverged dramatically over the years. Many zsh tricks borrowed from [oh-my-zsh](https://github.com/ohmyzsh/ohmyzsh).
