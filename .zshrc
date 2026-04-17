@@ -42,9 +42,6 @@ case $(uname) in
     # export PATH="$prefix/opt/node@10/bin:$PATH"
     # export PATH="$PATH:./node_modules/.bin"
 
-    SBX_SETUP_COPILOT=1
-    export PATH="$PROJECTS/sbx:$PATH" # containerized development sandbox manager
-
     # GRC colorizes nifty unix tools all over the place
     if command -v gls >/dev/null 2>&1 && [[ -r "$prefix/etc/grc.zsh" ]]; then
       source "$prefix/etc/grc.zsh"
