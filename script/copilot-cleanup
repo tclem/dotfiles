@@ -1,0 +1,123 @@
+#!/bin/bash
+#
+# Purge old Copilot CLI session-state directories and corresponding
+# rows from session-store.db.
+#
+# Usage:
+#   copilot-cleanup              # delete sessions older than 7 days (default)
+#   copilot-cleanup 30           # delete sessions older than 30 days
+#   copilot-cleanup --dry-run    # show what would be deleted
+#   copilot-cleanup 14 --dry-run
+#   copilot-cleanup --keep-db    # only delete dirs, leave DB intact
+
+set -euo pipefail
+
+COPILOT_DIR="${HOME}/.copilot"
+SESSION_DIR="${COPILOT_DIR}/session-state"
+SESSION_DB="${COPILOT_DIR}/session-store.db"
+MAX_AGE_DAYS="${1:-7}"
+DRY_RUN=false
+KEEP_DB=false
+
+for arg in "$@"; do
+  case "$arg" in
+    --dry-run) DRY_RUN=true ;;
+    --keep-db) KEEP_DB=true ;;
+  esac
+done
+
+# Strip flags from MAX_AGE_DAYS if it was first arg
+if [[ "$MAX_AGE_DAYS" == --* ]]; then
+  MAX_AGE_DAYS=7
+fi
+
+if [[ ! -d "$SESSION_DIR" ]]; then
+  echo "Nothing to clean — $SESSION_DIR does not exist."
+  exit 0
+fi
+
+# Find sessions with lock files (currently in use)
+active_sessions=()
+while IFS= read -r lockfile; do
+  active_sessions+=("$(dirname "$lockfile")")
+done < <(find "$SESSION_DIR" -maxdepth 2 -name "inuse.*.lock" 2>/dev/null)
+
+candidates=$(find "$SESSION_DIR" -maxdepth 1 -mindepth 1 -type d -mtime +"$MAX_AGE_DAYS")
+
+if [[ -z "$candidates" ]]; then
+  echo "No sessions older than ${MAX_AGE_DAYS} days."
+  exit 0
+fi
+
+count=0
+size=0
+skipped=0
+session_ids=()
+
+while IFS= read -r dir; do
+  # Skip active sessions
+  is_active=false
+  for active in "${active_sessions[@]+"${active_sessions[@]}"}"; do
+    if [[ "$dir" == "$active" ]]; then
+      is_active=true
+      break
+    fi
+  done
+
+  if $is_active; then
+    skipped=$((skipped + 1))
+    continue
+  fi
+
+  session_id=$(basename "$dir")
+  dir_size=$(du -sk "$dir" 2>/dev/null | cut -f1)
+  size=$((size + dir_size))
+  count=$((count + 1))
+  session_ids+=("$session_id")
+
+  if $DRY_RUN; then
+    echo "would delete: ${session_id} (${dir_size}K)"
+  else
+    rm -rf "$dir"
+  fi
+done <<< "$candidates"
+
+# Purge corresponding rows from session-store.db
+db_rows=0
+if ! $KEEP_DB && [[ ${#session_ids[@]} -gt 0 ]] && [[ -f "$SESSION_DB" ]]; then
+  # Build a comma-separated list of quoted IDs for SQL IN clause
+  id_list=""
+  for sid in "${session_ids[@]}"; do
+    id_list+="'${sid}',"
+  done
+  id_list="${id_list%,}"
+
+  if $DRY_RUN; then
+    db_rows=$(sqlite3 "$SESSION_DB" "SELECT count(*) FROM sessions WHERE id IN (${id_list});")
+    echo "would prune ${db_rows} sessions from session-store.db"
+  else
+    # Delete in dependency order
+    sqlite3 "$SESSION_DB" <<SQL
+DELETE FROM search_index WHERE session_id IN (${id_list});
+DELETE FROM session_files WHERE session_id IN (${id_list});
+DELETE FROM session_refs WHERE session_id IN (${id_list});
+DELETE FROM turns WHERE session_id IN (${id_list});
+DELETE FROM checkpoints WHERE session_id IN (${id_list});
+DELETE FROM sessions WHERE id IN (${id_list});
+SQL
+    db_rows=${#session_ids[@]}
+  fi
+fi
+
+size_mb=$((size / 1024))
+
+if $DRY_RUN; then
+  echo ""
+  echo "Would delete ${count} sessions, freeing ~${size_mb}MB."
+  [[ $db_rows -gt 0 ]] && echo "Would prune ${db_rows} sessions from session-store.db."
+  [[ $skipped -gt 0 ]] && echo "Skipping ${skipped} active sessions."
+else
+  echo "Deleted ${count} sessions, freed ~${size_mb}MB."
+  [[ $db_rows -gt 0 ]] && echo "Pruned ${db_rows} sessions from session-store.db."
+  [[ $skipped -gt 0 ]] && echo "Skipped ${skipped} active sessions."
+fi
