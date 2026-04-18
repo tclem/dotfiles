@@ -32,7 +32,7 @@ These are core values. Internalize them — they should inform every product and
 - **Push back.** If my approach has a better alternative, say so. I value opinionated collaboration over passive agreement.
 - **Seek context before guessing.** Read surrounding code, check types, and understand the system before proposing changes. Ask me if something is unclear rather than assuming.
 - **Show taste.** Write code you'd be proud of, not just code that works. Prefer the elegant solution over the obvious one, but never sacrifice clarity for cleverness.
-- **Prefer new commits once a branch is pushed.** Don't amend or force-push by default — add new commits. Amending or rebasing is fine when cleaning up history to make commits logical, but the normal workflow is additive.
+- **Prefer new commits once a branch is pushed.** Don't amend or force-push by default — add new commits. If the branch hasn't been pushed yet, amending is fine. Rebasing or squashing is fine when explicitly cleaning up history before merge, but the default workflow is additive.
 
 ## Code Philosophy
 
@@ -40,6 +40,7 @@ Especially for Rust code (though these principles apply broadly), I strongly ali
 
 - **Avoid traits/interfaces when possible.** They break code navigation. Prefer plain-old functions on the type over implementing `From`/`Into` or the visitor pattern. Use iterators to replace visitor patterns.
 - **Avoid mock testing.** Depend on real implementations, spin up lightweight versions, or restructure code so logic takes dependency output as input. Mock tests are a maintenance disaster.
+- **Testing philosophy:** Write tests that actually matter — bad tests make code fragile, slow down CI, and don't help maintain quality. Good tests provide automated validation, catch regressions, and document design/interactions/API usage. Prefer the right level of testing for the context: if you have a type system, skip the tests the compiler already handles. Prefer property-based and table-driven tests over verbose, repetitive ones. Tests built from real data and examples are especially valuable (e.g., tree-sitter's corpus tests). Fast end-to-end and simulation tests are priceless. Use judgment on scope — run relevant tests for the change, not necessarily the full suite for every edit.
 - **Avoid lambdas/functors as function arguments.** They're anonymous in stack traces and break navigability. If a closure is >10 lines, extract it to a named function.
 - **Multithreading:** Use Rayon for CPU-bound parallelism. Use Tokio futures (not spawned tasks) for async I/O — futures get cancelled with the parent task and allow local references. Avoid spawning Tokio tasks unless necessary.
 - **Error handling:** `panic!` for unrecoverable states. `Result` for localized failures. `anyhow` in binaries only; `thiserror` for library/public types. Only `unwrap()` in tests — use `expect` or `unwrap_or_else` elsewhere.
@@ -57,7 +58,7 @@ A few more details:
 - **Maintainability is a feature.** Code is read far more than it's written. Optimize for the next person (or future me).
 - **Whitespace is intentional.** Files must end with a trailing newline. Don't move code around unnecessarily. Use blank lines only to separate distinct semantic phases of a function (setup / execute / respond) — not between consecutive statements in the same logical step. Keep functions compact enough to read without scrolling.
 - **ASCII art only.** In code comments, doc comments, and markdown, use plain ASCII characters (`+`, `-`, `|`, `>`) for diagrams and boxes. Never use unicode box-drawing characters (`┌`, `─`, `│`, `└`, `▶`, etc.) — they render at inconsistent widths across monospaced fonts and break alignment.
-- **ADRs for major decisions.** All my projects use Architecture Decision Records. Major technical decisions (architecture changes, new dependency patterns, public API changes, hard-to-reverse choices) get a formal ADR — written as a separate PR, reviewed by the team, merged before implementation.
+- **ADRs for major decisions.** All my projects use Architecture Decision Records. Major technical decisions (architecture changes, new dependency patterns, public API changes, hard-to-reverse choices) get a formal ADR. Draft the ADR and commit it — I'll handle getting it reviewed by the team before implementation proceeds.
 
 ## Language Preferences
 
