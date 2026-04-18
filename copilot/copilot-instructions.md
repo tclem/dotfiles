@@ -56,6 +56,7 @@ A few more details:
 - **Plan for scale, don't overthink it.** Build systems that can grow, but ship what's needed now.
 - **Maintainability is a feature.** Code is read far more than it's written. Optimize for the next person (or future me).
 - **Whitespace is intentional.** Files must end with a trailing newline. Don't move code around unnecessarily. Use blank lines only to separate distinct semantic phases of a function (setup / execute / respond) — not between consecutive statements in the same logical step. Keep functions compact enough to read without scrolling.
+- **ASCII art only.** In code comments, doc comments, and markdown, use plain ASCII characters (`+`, `-`, `|`, `>`) for diagrams and boxes. Never use unicode box-drawing characters (`┌`, `─`, `│`, `└`, `▶`, etc.) — they render at inconsistent widths across monospaced fonts and break alignment.
 
 ## Language Preferences
 
