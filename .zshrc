@@ -66,6 +66,9 @@ HISTFILE=~/.zsh_history
 HISTSIZE=99999
 SAVEHIST=$HISTSIZE
 
+# Docker CLI completions (added to fpath before compinit)
+FPATH="$HOME/.docker/completions:${FPATH}"
+
 # Custom functions defined in this repo
 FPATH="$ZSH/zsh/functions:${FPATH}"
 autoload -U $ZSH/zsh/functions/*(:t)
@@ -237,3 +240,4 @@ export SCCACHE_CACHE_SIZE="30G"
 # bun
 export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
+
