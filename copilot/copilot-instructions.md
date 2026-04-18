@@ -57,6 +57,7 @@ A few more details:
 - **Maintainability is a feature.** Code is read far more than it's written. Optimize for the next person (or future me).
 - **Whitespace is intentional.** Files must end with a trailing newline. Don't move code around unnecessarily. Use blank lines only to separate distinct semantic phases of a function (setup / execute / respond) — not between consecutive statements in the same logical step. Keep functions compact enough to read without scrolling.
 - **ASCII art only.** In code comments, doc comments, and markdown, use plain ASCII characters (`+`, `-`, `|`, `>`) for diagrams and boxes. Never use unicode box-drawing characters (`┌`, `─`, `│`, `└`, `▶`, etc.) — they render at inconsistent widths across monospaced fonts and break alignment.
+- **ADRs for major decisions.** All my projects use Architecture Decision Records. Major technical decisions (architecture changes, new dependency patterns, public API changes, hard-to-reverse choices) get a formal ADR — written as a separate PR, reviewed by the team, merged before implementation.
 
 ## Language Preferences
 
