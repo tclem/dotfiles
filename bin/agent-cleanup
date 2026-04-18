@@ -5,7 +5,7 @@
 # Usage: agent-cleanup <project> [<branch>]
 #        agent-cleanup [-l] <project>
 #
-#   -l  Local mode: skip worktree/branch cleanup (only tmux + sandbox)
+#   -l  Local mode: skip worktree/branch cleanup (tmux session only)
 
 set -euo pipefail
 
@@ -106,15 +106,6 @@ if tmux has-session -t "$project" 2>/dev/null; then
   echo "Killing tmux session: $project"
   tmux kill-session -t "$project"
 fi
-
-# Remove docker sandbox
-if $LOCAL_MODE; then
-  sandbox_name="copilot-${project}"
-else
-  sandbox_name="copilot-${branch}"
-fi
-echo "Removing docker sandbox: $sandbox_name"
-docker sandbox rm "$sandbox_name" 2>/dev/null || true
 
 # Remove worktrees (skip in local mode)
 if ! $LOCAL_MODE; then

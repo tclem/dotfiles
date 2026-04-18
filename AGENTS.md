@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Personal dotfiles for tclem (Staff Engineer, GitHub). Manages shell config, editor settings, Homebrew packages, and Copilot agent sandbox setup across macOS and Linux.
+Personal dotfiles for tclem (Staff Engineer, GitHub). Manages shell config, editor settings, Homebrew packages, and Copilot agent setup across macOS and Linux.
 
 ## Repo Layout
 
@@ -15,7 +15,7 @@ Personal dotfiles for tclem (Staff Engineer, GitHub). Manages shell config, edit
 | `cargo/config.toml` | Cargo config (symlinked to `~/.cargo/config.toml`) — sccache wrapper, git-fetch-with-cli |
 | `Brewfile` | Homebrew packages and casks |
 | `bin/` | Executable scripts (agent workflows, GitHub log) |
-| `copilot/` | Copilot agent config, sandbox Dockerfile, skills, project definitions |
+| `copilot/` | Copilot agent config, skills, project definitions |
 | `script/` | Bootstrap and copilot-sync utilities |
 | `gh/` | GitHub CLI aliases |
 | `vscode/` | Editor settings and extensions list |
@@ -24,10 +24,10 @@ Personal dotfiles for tclem (Staff Engineer, GitHub). Manages shell config, edit
 
 ## Key Scripts
 
-- **`bin/agent`** — Launch a tmux session for Copilot agent work. Modes: default (docker sandbox with worktrees), `-l` (local, no worktrees), `-n` (native, no sandbox). Reads project config from `copilot/projects.conf`.
-- **`bin/agent-cleanup`** — Tear down worktrees, tmux session, and docker sandbox after agent work.
+- **`bin/agent`** — Launch a tmux session for Copilot agent work. Modes: default (worktrees), `-l` (local, no worktrees). Reads project config from `copilot/projects.conf`.
+- **`bin/agent-cleanup`** — Tear down worktrees and tmux session after agent work.
 - **`bin/gh-log`** — Query GitHub Issues/PRs you're involved with since a given date.
-- **`script/copilot-sync`** — Sync copilot config (instructions, agents, skills) between this repo and `~/.copilot`. `install` symlinks, `import` copies new files back, `build` rebuilds the docker sandbox template.
+- **`script/copilot-sync`** — Sync copilot config (instructions, agents, skills) between this repo and `~/.copilot`. `install` symlinks, `import` copies new files back.
 
 ## Copilot Agent Setup
 
@@ -38,8 +38,6 @@ Personal dotfiles for tclem (Staff Engineer, GitHub). Manages shell config, edit
 repos=owner/repo owner/other-repo:base-branch
 local=true  # optional — skip worktrees
 ```
-
-`copilot/Dockerfile` builds the `copilot-custom` sandbox template on top of `docker/sandbox-templates:copilot` (Ubuntu + Node/Go/Python/Git/gh/ripgrep/jq). Adds build-essential, cmake, Rust toolchain, and pre-cached Cargo/Go dependencies for Blackbird projects.
 
 `copilot/copilot-instructions.md` contains global agent instructions (symlinked to `~/.copilot/`).
 
