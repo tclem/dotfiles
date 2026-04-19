@@ -107,7 +107,7 @@ When asked to address PR review comments: fetch all review threads, read each on
 When posting to GitHub on my behalf — issue comments, PR comments, PR descriptions, review comments, or issue creation (via `gh` CLI or GitHub MCP tools) — always append a signature at the very end of the post body, separated by a blank line:
 
 ```
-<sub>*Generated via Copilot (<model name>) on behalf of @tclem*</sub>
+<sub><em>![](https://raw.githubusercontent.com/tclem/dotfiles/main/copilot/assets/copilot-signature.svg)&nbsp;&nbsp;Generated via Copilot (<model name>) <a href="https://adaptivepatchwork.com/ai-attribution/">on behalf</a> of @tclem</em></sub>
 ```
 
-Replace `<model name>` with the model you are currently running as (e.g., "Claude Opus 4.6", "GPT-5.1"). This does **not** apply to commit messages, code changes, or terminal output.
+Replace `<model name>` with the model you are currently running as (e.g., "Claude Opus 4.7", "GPT-5.2"). This does **not** apply to commit messages, code changes, or terminal output.
