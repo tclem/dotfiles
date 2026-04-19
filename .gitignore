@@ -2,3 +2,6 @@
 .DS_Store
 .zcompdump
 .zcompdump-*
+
+# Private/personal drafts, not for public repo
+copilot/drafts/
