@@ -1,7 +1,7 @@
 ---
 name: agent-plan
-description: Run the agent plan workflow: research → plan → execute → wrap-up. Use when asked to plan a multi-phase project, create a tracking plan, or coordinate parallel agent sessions.
 user-invocable: true
+description: "Run the agent plan workflow: research → plan → execute → wrap-up. Use when asked to plan a multi-phase project, create a tracking plan, or coordinate parallel agent sessions."
 ---
 
 # Agent Plan
