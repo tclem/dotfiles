@@ -1,4 +1,4 @@
-Help me author a daily handoff for my team (blackbird). I will paste this in slack so present as a markdown block that I can copy easily. I use :merged: and :review: and I like to list any meetings or conversations I've had first (but i'll add this manually). You MUST use the syntax shown in the example below for markdown links. Here's an example handoff:
+Help me author a daily handoff for my team (blackbird). I will paste this in slack so present as a markdown block that I can copy easily. I use :merged: and :review: and I like to list any meetings or conversations I've had first (but i'll add this manually). Here's an example handoff:
 
 ```
 Handoff:
