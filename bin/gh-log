@@ -106,6 +106,27 @@ function formatted_issues() {
   done | jq  -r '.items[] | "* [\(.title)](\(.html_url)) \(.comments) comments"'
 }
 
+function filter_out_by_url() {
+  exclude_file=$1
+  source_file=$2
+
+  awk '
+    function issue_url(line,   s) {
+      s = line
+      sub(/^.*\(/, "", s)
+      sub(/\).*/, "", s)
+      return s
+    }
+
+    FNR == NR {
+      exclude[issue_url($0)] = 1
+      next
+    }
+
+    !(issue_url($0) in exclude)
+  ' "$exclude_file" "$source_file"
+}
+
 echo "Searching GitHub..."
 
 formatted_issues "author:$GH_LOGIN+is:merged+is:pr" > "$merged_prs"
@@ -124,10 +145,10 @@ echo "# Issues @$GH_LOGIN opened (`cat "$authored_issues" | wc -l` issues)"
 cat "$authored_issues"
 echo
 
-echo "# PRs from others that @$GH_LOGIN commented on (`comm -13 "$merged_prs" "$commented_prs" | wc -l` prs)"
-comm -13 "$merged_prs" "$commented_prs"
+echo "# PRs from others that @$GH_LOGIN commented on (`filter_out_by_url "$merged_prs" "$commented_prs" | wc -l` prs)"
+filter_out_by_url "$merged_prs" "$commented_prs"
 echo
 
-echo "# Issues from others that @$GH_LOGIN commented on (`comm -13 "$authored_issues" "$commented_issues" | wc -l` issues)"
-comm -13 "$authored_issues" "$commented_issues"
+echo "# Issues from others that @$GH_LOGIN commented on (`filter_out_by_url "$authored_issues" "$commented_issues" | wc -l` issues)"
+filter_out_by_url "$authored_issues" "$commented_issues"
 echo
