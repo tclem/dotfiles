@@ -98,16 +98,24 @@ Great products deeply understand the end user's "job to be done." They embrace s
 - Generic/naive solutions that ignore the specific context
 - Sycophantic agreement — if you see a problem, say so
 
-## Responding to PR Review Comments
+## GitHub Posting Protocol (MANDATORY)
 
-When asked to address PR review comments: fetch all review threads, read each one, and reply to each thread individually. Fix real issues and confirm what changed. Don't blindly fix everything — review agents flag dumb stuff. If a comment is ambiguous, ask me with your take before acting. Always reply to the thread, even if you're leaving it as-is.
+Before posting any GitHub content on my behalf - issue comments, PR comments, PR descriptions, review comments, review-thread replies, or issue creation (via `gh` CLI or GitHub MCP tools):
 
-## GitHub Posting
+- Append the required signature block at the very end of the body, separated by a blank line.
+- Verify the final body ends with the required signature block before sending.
+- If the signature is missing, do not post.
 
-When posting to GitHub on my behalf — issue comments, PR comments, PR descriptions, review comments, or issue creation (via `gh` CLI or GitHub MCP tools) — always append a signature at the very end of the post body, separated by a blank line:
+Required signature block:
 
 ```
 <sub><em><img src="https://raw.githubusercontent.com/tclem/dotfiles/main/copilot/assets/copilot-signature.svg" alt="" align="absmiddle" style="display: inline;">&nbsp;&nbsp;Generated via Copilot (<model name>) <a href="https://adaptivepatchwork.com/ai-attribution/">on behalf</a> of @tclem</em></sub>
 ```
 
 Replace `<model name>` with the model you are currently running as (e.g., "Claude Opus 4.7", "GPT-5.2"). This does **not** apply to commit messages, code changes, or terminal output.
+
+## Responding to PR Review Comments
+
+When asked to address PR review comments: fetch all review threads, read each one, and reply to each thread individually. Fix real issues and confirm what changed. Don't blindly fix everything — review agents flag dumb stuff. If a comment is ambiguous, ask me with your take before acting. Always reply to the thread, even if you're leaving it as-is.
+
+Every GitHub reply in this flow, including review-thread replies, must follow the GitHub Posting Protocol above. Verify the final body ends with the required signature block before posting.
