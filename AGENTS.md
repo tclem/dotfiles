@@ -22,6 +22,7 @@ Personal dotfiles for tclem (Staff Engineer, GitHub). Manages shell config, edit
 | `vscode/` | Editor settings and extensions list |
 | `divvy/` | Window manager shortcuts |
 | `iterm2/` | Terminal theme and preferences |
+| `ghostty/` | Ghostty terminal config (symlinked to `~/Library/Application Support/com.mitchellh.ghostty/config`) |
 
 ## Key Scripts
 

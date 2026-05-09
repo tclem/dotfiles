@@ -31,6 +31,11 @@ mkdir -p ~/.cargo
 rm -rf ~/.cargo/config.toml
 ln -s "$(pwd)/cargo/config.toml" ~/.cargo/config.toml
 
+# Setup Ghostty config
+mkdir -p "$HOME/Library/Application Support/com.mitchellh.ghostty"
+rm -rf "$HOME/Library/Application Support/com.mitchellh.ghostty/config"
+ln -s "$(pwd)/ghostty/config" "$HOME/Library/Application Support/com.mitchellh.ghostty/config"
+
 # Sync Copilot config (agents, skills, docs, instructions)
 script/copilot-sync install
 

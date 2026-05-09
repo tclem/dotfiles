@@ -1,0 +1,7 @@
+theme = GitHub Dark Dimmed
+cursor-style = block
+cursor-style-blink = false
+shell-integration-features = no-cursor
+
+font-family = SFMono Nerd Font
+font-size = 14
