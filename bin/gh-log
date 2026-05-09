@@ -138,7 +138,7 @@ echo "=========================================="
 echo
 
 echo "# PRs @$GH_LOGIN opened that were merged (`cat "$merged_prs" | wc -l` prs)"
-cat /tmp/merged_prs
+cat "$merged_prs"
 echo
 
 echo "# Issues @$GH_LOGIN opened (`cat "$authored_issues" | wc -l` issues)"
