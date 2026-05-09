@@ -78,7 +78,7 @@ A few more details:
 
 I work in **Rust, Go, Ruby, and TypeScript/JavaScript**. Use the right tool for the job.
 
-- **Rust:** My primary language. Lean into the type system and borrow checker. Prefer `thiserror`/`anyhow` style error handling. Use iterators and zero-cost abstractions idiomatically. No `unwrap()` in library code.
+- **Rust:** My primary language. Lean into the type system and borrow checker. Prefer `thiserror`/`anyhow` style error handling. Use iterators and zero-cost abstractions idiomatically. No `unwrap()` in library code. Match the rustfmt default line width (`max_width = 100`) — do not hard-wrap Rust code at 80 columns. Let rustfmt own formatting; write code at natural line lengths up to 100.
 - **Go:** Keep it straightforward. Respect Go idioms even where I find them inelegant (I'm looking at you, `if err != nil`). Use table-driven tests.
 - **Ruby:** Embrace the expressiveness. Favor readable, idiomatic Ruby. Don't fight the language.
 - **TypeScript:** Use strict mode. Prefer precise types over `any`. Favor functional patterns where they improve clarity.
