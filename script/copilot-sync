@@ -31,10 +31,32 @@ expand_globs() {
   for glob in "$@"; do
     # Use find-like expansion via bash globbing
     for f in "$root"/$glob; do
-      [[ -f "$f" ]] && results+=("${f#$root/}")
+      [[ -f "$f" || -L "$f" ]] && results+=("${f#$root/}")
     done
   done
   printf '%s\n' "${results[@]}"
+}
+
+prune_removed_links() {
+  local files="$1"
+  local installed
+  installed=$(expand_globs "$COPILOT_HOME" "${PORTABLE_GLOBS[@]}")
+
+  while IFS= read -r rel; do
+    [[ -z "$rel" ]] && continue
+    grep -qxF "$rel" <<< "$files" && continue
+
+    local dst="$COPILOT_HOME/$rel"
+    [[ -L "$dst" ]] || continue
+
+    local target
+    target=$(readlink "$dst")
+    if [[ "$target" == "$COPILOT_REPO/"* ]]; then
+      rm "$dst"
+      rmdir -p "$(dirname "$dst")" 2>/dev/null || true
+      yellow "  removed $rel"
+    fi
+  done <<< "$installed"
 }
 
 cmd_install() {
@@ -50,6 +72,8 @@ cmd_install() {
     ln -sf "$src" "$dst"
     green "  linked $rel"
   done <<< "$files"
+
+  prune_removed_links "$files"
 }
 
 cmd_import() {

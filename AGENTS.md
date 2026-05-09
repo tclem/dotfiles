@@ -16,6 +16,7 @@ Personal dotfiles for tclem (Staff Engineer, GitHub). Manages shell config, edit
 | `Brewfile` | Homebrew packages and casks |
 | `bin/` | Executable scripts (agent workflows, GitHub log) |
 | `copilot/` | Copilot agent config, skills, project definitions |
+| `copilot/skills/<name>/SKILL.md` | User-level Copilot skills symlinked into `~/.copilot/skills/` |
 | `script/` | Bootstrap and copilot-sync utilities |
 | `gh/` | GitHub CLI aliases |
 | `vscode/` | Editor settings and extensions list |
@@ -41,13 +42,38 @@ local=true  # optional — skip worktrees
 
 `copilot/copilot-instructions.md` contains global agent instructions (symlinked to `~/.copilot/`).
 
+### Skill source of truth
+
+This repo owns Tim's **user-level** Copilot skills. Add or edit personal skills under `copilot/skills/<name>/SKILL.md`, then run `script/copilot-sync install` to symlink them into `~/.copilot/skills/`.
+
+Keep repo-specific workflows in the repo where they apply. Do not promote one repo's labels, bots, branches, runbooks, dashboards, deployment scripts, app harnesses, or style rules into dotfiles unless they are genuinely useful across repos.
+
+### Skill index
+
+| Skill | Scope | Notes |
+|---|---|---|
+| `choosing-workflow` | User-level | Router for choosing repo-local skills, dotfiles process skills, or app-native workflows. |
+| `create-pr` | User-level | Personal PR creation workflow with template handling, review-before-posting, and GitHub Posting Protocol. |
+| `planning-multi-agent-projects` | User-level, narrow | Durable repo-tracked multi-agent planning PRs only; not normal app plan mode. |
+| `designing-before-coding` | User-level | Lightweight design gate before behavior or architecture changes. |
+| `planning-implementation` | User-level | Session-local implementation plans for multi-step work. |
+| `debugging-systematically` | User-level | Evidence-first bug, regression, and failure investigation. |
+| `testing-before-coding` | User-level | Test/verification-first implementation discipline. |
+| `verifying-before-claiming` | User-level | Fresh verification before completion claims. |
+| `handling-review-feedback` | User-level | Review feedback triage, fixes, and replies. |
+| `investigate-alert` | User-level | General alert/incident investigation using available telemetry and code context. |
+| `incident-postmortem` | User-level | General postmortem assembly and repair-item workflow. |
+| `updating-dependencies` | User-level | Generic dependency update workflow with per-ecosystem PRs and validation. |
+
+Keep project-specific operational, app-runtime, UI, and repo-style skills in their owning repositories. Runtime orchestration such as session execution, subagent dispatch, worktree setup, branch finishing, and PR orchestration should be app behavior rather than dotfiles prompt skills.
+
 ## Making Changes
 
 - **Adding a package**: Edit `Brewfile`, run `brew bundle`.
 - **Changing shell config**: Edit `.zshrc` or files in `zsh/`. Changes take effect in new shells.
 - **Changing agent instructions**: Edit `copilot/copilot-instructions.md`, run `script/copilot-sync install`.
 - **Adding a project**: Add a section to `copilot/projects.conf`.
-- **Adding a skill**: Create `copilot/skills/<name>/SKILL.md`, run `script/copilot-sync install`.
+- **Adding a skill**: Create `copilot/skills/<name>/SKILL.md`, keep the description trigger-focused, avoid competing with repo-local skills, then run `script/copilot-sync install`.
 - **After any install-level changes**: Re-run `./install.sh` to re-symlink and reconfigure.
 
 Secrets and personal overrides go in `~/.localrc` (not versioned).

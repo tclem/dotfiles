@@ -1,12 +1,14 @@
 ---
 name: create-pr
-description: Create a pull request from current changes. Finds and fills PR templates, commits logically, and lets you review before posting.
+description: Use when creating a GitHub pull request from current changes, especially when commits, PR templates, concise descriptions, or review-before-posting are needed.
 user-invocable: true
 ---
 
 # Create Pull Request
 
 Create a PR from the current branch. Use session context to write the description — don't re-analyze diffs you already understand.
+
+If an app-native PR creation tool is available, prefer it over shelling out to `gh`. Use this workflow to prepare the branch, commits, title, and body either way.
 
 ## Workflow
 
@@ -38,11 +40,7 @@ git add -A && git commit -m "descriptive message"
 git push -u origin HEAD
 ```
 
-If the branch is behind the base, merge (don't rebase unless asked):
-
-```bash
-git fetch origin main && git merge origin/main
-```
+Do not merge or rebase the base branch just because it has moved. Only update from the base branch when required by conflicts, failing checks, branch protection, or explicit user request. Prefer the repo's normal history policy.
 
 ### 4. Find the PR template
 
@@ -72,20 +70,25 @@ If a template is found, read it and use its structure. If multiple templates exi
 - If no template: write a short description covering what changed and why. Skip "how" unless non-obvious.
 - Reference issues if the branch name or context suggests one (e.g., `Fixes #123`).
 - Never pad with obvious information. The reviewer can read the diff.
+- Before posting with `gh` or any GitHub tool, append the required GitHub Posting Protocol signature from the global instructions. Verify the final PR body ends with that signature block.
 
 **If you're unsure how to fill out a template section**, ask the user rather than guessing. Be specific about what you need to know.
 
 ### 6. Review before posting
 
-**ALWAYS** show the user the full PR title and body before creating it. Ask for confirmation or edits. Do not create the PR until the user approves.
+When interactive, show the user the full PR title and body before creating it. Ask for confirmation or edits. Do not create the PR until the user approves.
+
+When non-interactive, create the PR only if the user already asked for one and all required fields are known. Prefer a draft PR when there is any uncertainty. If required template fields are unknown, stop with the prepared title/body instead of guessing.
 
 ### 7. Create the PR
 
-Write the body to a temp file to avoid shell escaping issues:
+If no app-native PR creation tool is available, write the body to a git-local scratch file to avoid shell escaping issues:
 
 ```bash
-gh pr create --title "title" --body-file /tmp/pr-body.md --base main
-rm /tmp/pr-body.md
+body_file="$(git rev-parse --git-path copilot-pr-body.md)"
+# write the complete body, including the GitHub Posting Protocol signature, to "$body_file"
+gh pr create --title "title" --body-file "$body_file" --base <default-branch>
+rm "$body_file"
 ```
 
 Display the PR URL after creation.

@@ -2,7 +2,7 @@
 
 ## Who I Am
 
-Staff engineer at GitHub (since 2011, employee ~18). Deep experience across the stack: built the v3 REST API, shipped GitHub for Windows, contributed to libgit2 and tree-sitter, ran product for GitHub Platform and pricing, and now build Blackbird — GitHub's code search engine, written from scratch in Rust.
+Staff engineer at GitHub (since 2011, employee ~18). Deep experience across the stack: built the v3 REST API, shipped GitHub for Windows, contributed to libgit2 and tree-sitter, ran product for the GitHub Platform and Pricing and Payments, built Blackbird — GitHub's code search engine, written from scratch in Rust.
 
 I think like both an engineer and a product manager. I care about user experience, system architecture, and long-term maintainability in equal measure.
 
@@ -33,6 +33,20 @@ These are core values. Internalize them — they should inform every product and
 - **Seek context before guessing.** Read surrounding code, check types, and understand the system before proposing changes. Ask me if something is unclear rather than assuming.
 - **Show taste.** Write code you'd be proud of, not just code that works. Prefer the elegant solution over the obvious one, but never sacrifice clarity for cleverness.
 - **Prefer new commits once a branch is pushed.** Don't amend or force-push by default — add new commits. If the branch hasn't been pushed yet, amending is fine. Rebasing or squashing is fine when explicitly cleaning up history before merge, but the default workflow is additive.
+
+## Skill Discovery and Precedence
+
+My personal Copilot config lives in `tclem/dotfiles`, with user-level skills under `copilot/skills/<name>/SKILL.md` symlinked into `~/.copilot/skills/`.
+
+When skills overlap, choose the narrowest applicable source:
+
+1. Direct user instructions and repo instructions.
+2. Repo-local skills for project-specific workflows, style rules, runbooks, app harnesses, deployment processes, and operational knowledge.
+3. Dotfiles user-level skills for cross-repo personal workflows.
+4. Dotfiles process skills for development discipline such as design, planning, debugging, testing, review, and verification.
+5. App-native affordances for sessions, PRs, review, worktrees, and orchestration when available.
+
+Use `choosing-workflow` when the right skill source is ambiguous. Do not promote project-specific runbooks, labels, bots, dashboards, branches, or app runtime procedures into user-level dotfiles skills.
 
 ## Code Philosophy
 

@@ -1,14 +1,16 @@
 ---
-name: agent-plan
+name: planning-multi-agent-projects
 user-invocable: true
-description: "Run the agent plan workflow: research → plan → execute → wrap-up. Use when asked to plan a multi-phase project, create a tracking plan, or coordinate parallel agent sessions."
+description: "Use when creating a repo-tracked multi-agent planning PR for a large project, especially when phases, living docs, parallel agent prompts, and cross-PR coordination are needed."
 ---
 
-# Agent Plan
+# Planning Multi-Agent Projects
 
 Create and maintain a structured, multi-phase project plan as markdown documents committed to a branch. The plan lives in the repo — not in session state — so multiple agents (and humans) can read, execute, and update it independently.
 
 This skill produces **documentation, not code**. Each phase becomes a self-contained document with enough context for an agent to execute it without reading the entire plan. Code changes happen in separate PRs linked from the phase docs.
+
+Do not use this for normal app plan mode, single-session implementation plans, or routine code changes. For those, use the app's planning workflow or `planning-implementation`. This skill is only for durable repo-tracked planning hubs.
 
 ## The deliverable
 
@@ -28,7 +30,7 @@ The PR for this branch is documentation-only. It serves as the living tracking h
 
 ### 1. Research
 
-Before writing anything, deeply understand the problem space. **Interview the user.** Don't accept a vague request — ask pointed questions one at a time using the ask_user tool until you have a crisp understanding of the goal, constraints, and success criteria.
+Before writing anything, deeply understand the problem space. **Interview the user.** Don't accept a vague request — ask pointed questions one at a time until you have a crisp understanding of the goal, constraints, and success criteria.
 
 - **Clarify the goal.** What problem are we solving? What does "done" look like? What's explicitly out of scope? Push back if the scope is fuzzy — get it sharp before investing in research.
 - **Read the code.** Use explore agents in parallel for large codebases. Trace execution paths. Understand the current architecture.
@@ -71,7 +73,7 @@ Each phase is a separate markdown file: `phase-{NN}-{name}.md` (zero-padded: `ph
 ```markdown
 # Phase N: Title
 
-> **Status:** 🔲 Not started
+> **Status:** Not started
 >
 > Read [context.md](./context.md) first.
 
@@ -138,8 +140,8 @@ The README is the status dashboard. Include:
 ```markdown
 | Phase | Description | Status |
 |-------|-------------|--------|
-| [Phase 1](./phase-01-foo.md) | Do the thing | 🔲 Not started |
-| [Phase 2](./phase-02-bar.md) | Do the other thing | 🔲 Not started |
+| [Phase 1](./phase-01-foo.md) | Do the thing | Not started |
+| [Phase 2](./phase-02-bar.md) | Do the other thing | Not started |
 ```
 
 - **File index** — what each file in the directory is for
@@ -149,7 +151,7 @@ The README is the status dashboard. Include:
 - **Parallelism notes** — which phases/todos can run concurrently and which must be serial (see below)
 - **Agent prompts** — copy-paste prompts at the bottom (see below)
 
-Status emoji: 🔲 Not started, 🔄 In progress, ✅ Complete, ➡️ Deferred
+Statuses: Not started, In progress, Complete, Deferred
 
 #### Parallelism
 
