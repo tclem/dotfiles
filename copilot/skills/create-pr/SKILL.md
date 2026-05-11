@@ -71,6 +71,7 @@ If a template is found, read it and use its structure. If multiple templates exi
 - Reference issues if the branch name or context suggests one (e.g., `Fixes #123`).
 - Never pad with obvious information. The reviewer can read the diff.
 - **Describe the final state, not the dev journey.** The reviewer is reading the code as it stands. Do not narrate iterations ("initial implementation used X, then we switched to Y"), self-review findings you already fixed, or compaction/agent process artifacts. If a non-obvious decision needs context, state it as the current rationale ("uses Y because Z"), not as a fix-up story.
+- **Trailer hygiene.** `Co-authored-by:` belongs in **git commit messages only**, never in a PR body, issue, or comment. PR bodies end with the GitHub Posting Protocol signature block from the global instructions — nothing else.
 - Before posting with `gh` or any GitHub tool, append the required GitHub Posting Protocol signature from the global instructions. Verify the final PR body ends with that signature block.
 
 **If you're unsure how to fill out a template section**, ask the user rather than guessing. Be specific about what you need to know.
