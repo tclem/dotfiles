@@ -28,6 +28,7 @@ Choose the narrowest workflow that fits. Do not load competing skills just becau
 | Implementing testable behavior | `testing-before-coding` |
 | Claiming work is complete | `verifying-before-claiming` |
 | Handling review comments | `handling-review-feedback` |
+| Searching code across repos, by symbol, or by concept | `searching-github-code` |
 | Creating a broadly useful personal workflow | Dotfiles skill |
 
 ## Do not promote
