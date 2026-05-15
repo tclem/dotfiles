@@ -48,6 +48,10 @@ When skills overlap, choose the narrowest applicable source:
 
 Use `choosing-workflow` when the right skill source is ambiguous. Do not promote project-specific runbooks, labels, bots, dashboards, branches, or app runtime procedures into user-level dotfiles skills.
 
+## Pull Request Creation Gate
+
+Before invoking any PR creation tool (`create_pull_request`, `gh pr create`, GitHub MCP `create_pull_request`, or app-native equivalents), load the `create-pr` skill first. This is non-negotiable, even if the PR seems straightforward or you think you remember the conventions.
+
 ## Code Philosophy
 
 Especially for Rust code (though these principles apply broadly), I strongly align with the Blackbird style guide. The priorities, in order: readable code, correct code (especially multi-threaded), performant code. Key rules:
@@ -60,6 +64,14 @@ Especially for Rust code (though these principles apply broadly), I strongly ali
 - **Error handling:** `panic!` for unrecoverable states. `Result` for localized failures. `anyhow` in binaries only; `thiserror` for library/public types. Only `unwrap()` in tests — use `expect` or `unwrap_or_else` elsewhere.
 - **Observability:** Log static messages with dynamic data as separate fields (`tracing::info!(score = x, "scoring done")` not `tracing::info!("done {x}")`). Use `blackbird.` metric prefix.
 - **Assertions:** `assert_eq!(actual, expected)` ordering for readable diffs.
+
+## Fix Root Causes, Not Symptoms
+
+Always solve the root cause. Do not add band-aid fixes, defensive backstops, or "just in case" layers on top of a fix. They accumulate, hide the real problem, and cost more over time than they save.
+
+Before writing code, identify the single root cause. If the fix needs a fallback, brand-casing map, hardcoded display override, special-case lookup, retry around something that should not fail, or default for data that should be present, stop and trace the producer/schema/type path instead. The default is the root-cause fix, even when it touches more files.
+
+If there are two plausible fixes, say so: "A fixes the root cause across X/Y/Z; B is a one-line backstop." Recommend A unless the user explicitly chooses otherwise.
 
 A few more details:
 
@@ -78,7 +90,7 @@ A few more details:
 
 I work in **Rust, Go, Ruby, and TypeScript/JavaScript**. Use the right tool for the job.
 
-- **Rust:** My primary language. Lean into the type system and borrow checker. Prefer `thiserror`/`anyhow` style error handling. Use iterators and zero-cost abstractions idiomatically. No `unwrap()` in library code. Match the rustfmt default line width (`max_width = 100`) — do not hard-wrap Rust code at 80 columns. Let rustfmt own formatting; write code at natural line lengths up to 100.
+- **Rust:** My primary language. Lean into the type system and borrow checker. Prefer `thiserror`/`anyhow` style error handling. Use iterators and zero-cost abstractions idiomatically. No `unwrap()` in library code. Avoid defensive `unwrap_or_default()`, silent `None` fallbacks, and optional fields that only exist because "the data might be missing"; fix the type, producer, or schema instead. Match the rustfmt default line width (`max_width = 100`) — do not hard-wrap Rust code at 80 columns. Let rustfmt own formatting; write code at natural line lengths up to 100.
 - **Go:** Keep it straightforward. Respect Go idioms even where I find them inelegant (I'm looking at you, `if err != nil`). Use table-driven tests.
 - **Ruby:** Embrace the expressiveness. Favor readable, idiomatic Ruby. Don't fight the language.
 - **TypeScript:** Use strict mode. Prefer precise types over `any`. Favor functional patterns where they improve clarity.
@@ -112,11 +124,32 @@ Great products deeply understand the end user's "job to be done." They embrace s
 - Generic/naive solutions that ignore the specific context
 - Sycophantic agreement — if you see a problem, say so
 
+## GitHub References Must Be Links
+
+When referencing GitHub PRs, issues, commits, or other GitHub artifacts in chat responses, research summaries, status reports, plan docs, and inline mentions, always render them as Markdown links to the canonical URL instead of bare `#1234` text.
+
+Examples:
+
+- PR: `[#4821](https://github.com/<owner>/<repo>/pull/4821)`
+- Issue: `[#2454](https://github.com/<owner>/<repo>/issues/2454)`
+- Commit: ``[`abc1234`](https://github.com/<owner>/<repo>/commit/abc1234567...)``
+
+Infer `<owner>/<repo>` from the current repository, remote URL, workspace metadata, or conversation context when possible. If the artifact is in a different repo, use that repo's slug. If you genuinely can't determine the repo, fall back to bare `#1234` and say that the repo could not be determined.
+
+This does **not** apply to PR/issue titles being authored.
+
+## Co-authored-by Trailer Scope
+
+The `Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>` trailer belongs only in git commit messages.
+
+Never include the Co-authored-by trailer in PR titles, PR descriptions, issue bodies, issue/PR comments, review comments, review-thread replies, or any other GitHub-posted body.
+
 ## GitHub Posting Protocol (MANDATORY)
 
 Before posting any GitHub content on my behalf - issue comments, PR comments, PR descriptions, review comments, review-thread replies, or issue creation (via `gh` CLI or GitHub MCP tools):
 
 - Append the required signature block at the very end of the body, separated by a blank line.
+- Do not include the `Co-authored-by` trailer; that trailer is only for git commit messages.
 - Verify the final body ends with the required signature block before sending.
 - If the signature is missing, do not post.
 
