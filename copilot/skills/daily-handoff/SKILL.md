@@ -99,6 +99,47 @@ Handoff:
 
 Second block for the github-app thread reply, same format.
 
+## Save the handoff
+
+After producing the two fenced blocks, always save the handoff to the `tclem/notes` repo without asking first.
+
+Use the user's notes checkout even when the current session is running in another repo. The usual path is:
+
+```text
+~/github/notes/notes/
+```
+
+Filename format:
+
+```text
+notes/YYYY-MM-DD-handoff-NN.md
+```
+
+Determine `NN` by finding the highest existing handoff number under `notes/notes/` and incrementing it. For example:
+
+```bash
+find ~/github/notes/notes -name '*-handoff-*.md' -print |
+  sed -E 's/.*-handoff-([0-9]+)\.md$/\1/' |
+  sort -n |
+  tail -1
+```
+
+If the latest file is `2026-05-11-handoff-53.md`, the next file is `YYYY-MM-DD-handoff-54.md` using today's date.
+
+Saved file format:
+
+```markdown
+# Handoff NN
+
+Tags: #handoff #project-tag
+
+<main handoff fenced block, verbatim>
+
+<thread reply fenced block, verbatim>
+```
+
+Infer project tags from the handoff content, e.g. `#blackbird`, `#github-app`, `#copilot`, or other obvious project names. Keep tags lowercase and hyphenated when needed. Preserve both fenced blocks verbatim in the saved file so the note exactly matches what the user can paste into Slack.
+
 ## Style notes
 
 - Match the user's voice: casual, first-person, specific.

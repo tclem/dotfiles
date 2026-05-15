@@ -10,6 +10,13 @@ Create a PR from the current branch. Use session context to write the descriptio
 
 If an app-native PR creation tool is available, prefer it over shelling out to `gh`. Use this workflow to prepare the branch, commits, title, and body either way.
 
+## Cardinal rules
+
+- **Describe the final state, not the dev journey.** The reviewer is reading the final diff. Do not narrate how the branch got there.
+- **Do not include process status as prose.** Skip standalone `make lint` / `make test` / CI green-red status paragraphs, force-push notes, "had a fixup", "switched approach from X to Y", and self-review findings already fixed. The reviewer can see CI status in GitHub and read the final diff.
+- **Use the PR template when one exists.** Fill every section or ask for the missing information.
+- **Keep trailers out of PR bodies.** `Co-authored-by:` belongs in git commit messages only. PR bodies end with the GitHub Posting Protocol signature block from the global instructions.
+
 ## Workflow
 
 ### 1. Assess state
@@ -70,7 +77,7 @@ If a template is found, read it and use its structure. If multiple templates exi
 - If no template: write a short description covering what changed and why. Skip "how" unless non-obvious.
 - Reference issues if the branch name or context suggests one (e.g., `Fixes #123`).
 - Never pad with obvious information. The reviewer can read the diff.
-- **Describe the final state, not the dev journey.** The reviewer is reading the code as it stands. Do not narrate iterations ("initial implementation used X, then we switched to Y"), self-review findings you already fixed, or compaction/agent process artifacts. If a non-obvious decision needs context, state it as the current rationale ("uses Y because Z"), not as a fix-up story.
+- **Describe the final state, not the dev journey.** If a non-obvious decision needs context, state it as the current rationale ("uses Y because Z"), not as a fix-up story.
 - **Trailer hygiene.** `Co-authored-by:` belongs in **git commit messages only**, never in a PR body, issue, or comment. PR bodies end with the GitHub Posting Protocol signature block from the global instructions — nothing else.
 - Before posting with `gh` or any GitHub tool, append the required GitHub Posting Protocol signature from the global instructions. Verify the final PR body ends with that signature block.
 
