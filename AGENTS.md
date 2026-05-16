@@ -70,6 +70,7 @@ Keep repo-specific workflows in the repo where they apply. Do not promote one re
 | `incident-postmortem` | User-level | General postmortem assembly and repair-item workflow. |
 | `updating-dependencies` | User-level | Generic dependency update workflow with per-ecosystem PRs and validation. |
 | `searching-github-code` | User-level | When to use `gh blackbird` for lexical, symbol, or semantic code search across one or many GitHub repos. |
+| `thinking-about` | User-level | Capture thoughts into `tclem/notes` and run the daily rollup that re-themes `top-of-mind.md` and prunes resolved/stale entries. |
 
 Keep project-specific operational, app-runtime, UI, and repo-style skills in their owning repositories. Runtime orchestration such as session execution, subagent dispatch, worktree setup, branch finishing, and PR orchestration should be app behavior rather than dotfiles prompt skills.
 
