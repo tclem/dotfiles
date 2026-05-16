@@ -1,6 +1,6 @@
 # Copilot Skills
 
-This directory contains Tim's user-level Copilot skills, synced into `~/.copilot/skills/` by `script/copilot-sync install`.
+This directory contains Tim's user-level Copilot skills, synced into `~/.copilot/skills/` by `script/sync-copilot install`.
 
 ## Attribution
 

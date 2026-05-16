@@ -37,7 +37,7 @@ rm -rf "$HOME/Library/Application Support/com.mitchellh.ghostty/config"
 ln -s "$(pwd)/ghostty/config" "$HOME/Library/Application Support/com.mitchellh.ghostty/config"
 
 # Sync Copilot config (agents, skills, docs, instructions)
-script/copilot-sync install
+script/sync-copilot install
 
 # Copilot agent project config
 mkdir -p ~/.config/copilot-agent
