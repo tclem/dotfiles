@@ -1,14 +1,14 @@
 ---
 name: create-pr
-description: Use when creating a GitHub pull request from current changes, especially when commits, PR templates, concise descriptions, or review-before-posting are needed.
+description: Use when creating a GitHub pull request, or when updating an existing PR's title or body so it matches what the code actually does.
 user-invocable: true
 ---
 
-# Create Pull Request
+# Create or Update a Pull Request
 
-Create a PR from the current branch. Use session context to write the description — don't re-analyze diffs you already understand.
+Author or refresh a PR's title and body so they describe the final diff, not the dev journey. Same cardinal rules apply whether you're creating a new PR or rewriting an existing one that has drifted from the code.
 
-If an app-native PR creation tool is available, prefer it over shelling out to `gh`. Use this workflow to prepare the branch, commits, title, and body either way.
+If an app-native PR creation/edit tool is available, prefer it over shelling out to `gh`. Use this workflow to prepare the branch, commits, title, and body either way.
 
 ## Cardinal rules
 
@@ -16,8 +16,13 @@ If an app-native PR creation tool is available, prefer it over shelling out to `
 - **Do not include process status as prose.** Skip standalone `make lint` / `make test` / CI green-red status paragraphs, force-push notes, "had a fixup", "switched approach from X to Y", and self-review findings already fixed. The reviewer can see CI status in GitHub and read the final diff.
 - **Use the PR template when one exists.** Fill every section or ask for the missing information.
 - **Keep trailers out of PR bodies.** `Co-authored-by:` belongs in git commit messages only. PR bodies end with the GitHub Posting Protocol signature block from the global instructions.
+- **Re-ground in the diff before rewriting an existing PR.** Title/body drift is common when an agent iterates without re-reading the final diff. Refuse to update from memory alone.
 
-## Workflow
+## Decide: create or update
+
+Run `gh pr view --json number,title,body,baseRefName 2>/dev/null` from the branch. If it returns a PR, this is an **update**; jump to [Update an existing PR](#update-an-existing-pr). Otherwise this is a **create**; follow the creation workflow.
+
+## Workflow (create)
 
 ### 1. Assess state
 
@@ -128,6 +133,60 @@ rm "$body_file"
 ```
 
 Display the PR URL after creation.
+
+## Update an existing PR
+
+Use this when an agent has been iterating on a PR and the title or body no longer matches the code. The goal is to rewrite both so they describe the **current** final diff, concisely.
+
+### 1. Re-ground in the actual diff
+
+Do not rewrite from memory or from the existing body. Read the real diff against the PR's base:
+
+```bash
+num=$(gh pr view --json number --jq .number)
+base=$(gh pr view --json baseRefName --jq .baseRefName)
+git fetch origin "$base"
+git diff --stat "origin/$base"...HEAD
+git log --oneline "origin/$base"..HEAD
+git diff "origin/$base"...HEAD          # full diff; skim for surprises
+```
+
+Skim the existing body too — note any sections worth keeping (tracking-issue blockquote, stacked-on note, validation notes the reviewer asked for), but treat everything else as untrusted.
+
+### 2. Draft the new title and body
+
+Apply the cardinal rules. The body should read like a fresh description of what the diff does today, not a changelog of how the PR evolved.
+
+- Drop anything that no longer matches the code.
+- Drop dev-journey prose ("originally tried X, then switched to Y", "fixup after review", "addressed feedback in commit abc123").
+- Keep the PR template structure if one exists; fill each section against the current diff.
+- Preserve durable context the reviewer needs (stacked-on note, tracking-issue blockquote, deliberate non-goals).
+- End with the GitHub Posting Protocol signature block.
+
+For the title: match the diff's main change. If the title still describes the original intent but the diff has narrowed or shifted, retitle.
+
+### 3. Show the user before posting
+
+Show the proposed title and body diff (old vs new) and ask for approval. Do not push edits silently.
+
+### 4. Apply the update
+
+Prefer the app-native PR edit tool. Otherwise `gh pr edit`:
+
+```bash
+body_file="$(git rev-parse --git-path copilot-pr-body.md)"
+# write the new body, including the signature block, to "$body_file"
+gh pr edit "$num" --title "new title" --body-file "$body_file"
+rm "$body_file"
+```
+
+If `gh pr edit` fails with a scope error, use the REST API fallback from [Edge cases](#edge-cases).
+
+### 5. Do not touch unrelated state
+
+- Do not push new commits, rebase, or change the base just because you're editing the body.
+- Do not re-request reviews unless the user asks.
+- Do not close/reopen the PR.
 
 ## Tracking-issue convention
 

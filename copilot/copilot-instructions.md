@@ -48,9 +48,9 @@ When skills overlap, choose the narrowest applicable source:
 
 Use `choosing-workflow` when the right skill source is ambiguous. Do not promote project-specific runbooks, labels, bots, dashboards, branches, or app runtime procedures into user-level dotfiles skills.
 
-## Pull Request Creation Gate
+## Pull Request Authoring Gate
 
-Before invoking any PR creation tool (`create_pull_request`, `gh pr create`, GitHub MCP `create_pull_request`, or app-native equivalents), load the `create-pr` skill first. This is non-negotiable, even if the PR seems straightforward or you think you remember the conventions.
+Before invoking any PR creation or edit tool (`create_pull_request`, `gh pr create`, `gh pr edit`, GitHub MCP `create_pull_request` / `update_pull_request`, or app-native equivalents), load the `create-pr` skill first. This is non-negotiable, even if the change seems straightforward or you think you remember the conventions. The skill covers both creating new PRs and rewriting an existing PR's title/body when it has drifted from the code.
 
 ## Code Philosophy
 
