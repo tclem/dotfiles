@@ -65,6 +65,7 @@ Keep repo-specific workflows in the repo where they apply. Do not promote one re
 | `testing-before-coding` | User-level | Test/verification-first implementation discipline. |
 | `verifying-before-claiming` | User-level | Fresh verification before completion claims. |
 | `handling-review-feedback` | User-level | Review feedback triage, fixes, and replies. |
+| `merging-base-into-pr` | User-level | Merge a PR's actual base ref (not hardcoded `main`), with stacked-PR conflict resolution and `git rerere`. |
 | `investigate-alert` | User-level | General alert/incident investigation using available telemetry and code context. |
 | `incident-postmortem` | User-level | General postmortem assembly and repair-item workflow. |
 | `updating-dependencies` | User-level | Generic dependency update workflow with per-ecosystem PRs and validation. |
