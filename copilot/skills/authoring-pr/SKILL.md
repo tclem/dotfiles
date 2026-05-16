@@ -1,10 +1,10 @@
 ---
-name: create-pr
+name: authoring-pr
 description: Use when creating a GitHub pull request, or when updating an existing PR's title or body so it matches what the code actually does.
 user-invocable: true
 ---
 
-# Create or Update a Pull Request
+# Authoring a Pull Request
 
 Author or refresh a PR's title and body so they describe the final diff, not the dev journey. Same cardinal rules apply whether you're creating a new PR or rewriting an existing one that has drifted from the code.
 
