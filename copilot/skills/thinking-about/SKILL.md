@@ -13,11 +13,13 @@ Two modes against the `tclem/notes` repo:
 
 This skill is the only thing that should write to `notes/thinking-about.md` or `top-of-mind.md`. Don't edit those files manually from other skills.
 
-## Dispatch
+## When to use
 
-- If the invocation supplies a thought (free text from the user), run **Capture**.
-- If the invocation has no thought and the intent is "rollup", "review", "top of mind", or the daily workflow trigger, run **Rollup**.
-- Otherwise ask the user which mode.
+Capture mode — when the user supplies free text as a thought to save (e.g. `/thinking-about <text>`, "add to my thinking-about", "park this in my notes inbox").
+
+Rollup mode — when the daily github-app workflow fires, or the user explicitly asks to "rollup", "re-theme", "regenerate top of mind", or "review the inbox".
+
+If the invocation is ambiguous (no thought text and no explicit rollup intent), ask which mode before doing anything. Do **not** default to rollup, because rollup writes and prunes across multiple files.
 
 ## Repo setup
 
@@ -31,7 +33,7 @@ cd ~/github/notes
 git pull --ff-only origin main
 ```
 
-All commits go directly to `main` with `--no-verify` not needed (no hooks). Push after each operation.
+All commits go directly to `main`. Push after each operation.
 
 ## Capture
 
@@ -61,7 +63,7 @@ Rules:
 - Entries are append-only. Never edit or renumber an existing entry from Capture mode — only Rollup may move entries out.
 - IDs are zero-padded monotonic `t-NNNN`, never reused. Pick the next ID by scanning the file (and `notes/archive/**/*-thinking-about.md`) for the highest existing `t-NNNN` and incrementing.
 - Timestamp is local time in `YYYY-MM-DD HH:MM`.
-- The first line of an entry is the user's thought, lightly cleaned (typos, trailing punctuation) but **not paraphrased** — keep Tim's voice. If you're tempted to "make it clearer", stop.
+- The first line of an entry is the user's thought, lightly cleaned (typos and trailing punctuation) but **not paraphrased**. In-bounds: fix obvious misspellings, autocorrect artifacts, missing punctuation at end of sentence. Out of bounds: rewording for clarity, splitting run-on sentences, "fixing" nonstandard phrasing, expanding abbreviations, adding context the user didn't write. If you're tempted to "make it clearer", stop and append the entry verbatim.
 - If the file does not exist yet, create it with the header block above and start IDs at `t-0001`.
 
 ### Capture steps
@@ -141,7 +143,7 @@ Captured in the last 7 days, not yet part of a theme:
 
 Rules:
 
-- **Themes are durable.** If the previous `top-of-mind.md` already named a theme and it's still active, keep the same name and adjust membership. Don't churn theme names.
+- **Themes are durable.** If the previous `top-of-mind.md` already named a theme and it's still active, keep the same name and adjust membership. Only rename a theme when its current membership has shifted such that the old name actively misleads (e.g. theme was "Search latency" but every active entry is now about indexing throughput). Tightening, broadening, or aesthetic improvements are not reasons to rename.
 - **Synthesis is short.** One to three lines per theme. The rollup is an index, not an essay.
 - **Linkbacks only.** The top-of-mind file does not duplicate entry content; it links to the inbox or archive.
 - **Section order is fixed.** Themes → Unthemed recent → Resolved this rollup → Stale this rollup. Drop empty sections.
