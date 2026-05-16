@@ -1,5 +1,5 @@
 ---
-name: authoring-pr
+name: pr-authoring
 description: Use when creating a GitHub pull request, or when updating an existing PR's title or body so it matches what the code actually does.
 user-invocable: true
 ---

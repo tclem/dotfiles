@@ -50,7 +50,7 @@ Use `choosing-workflow` when the right skill source is ambiguous. Do not promote
 
 ## Pull Request Authoring Gate
 
-Before invoking any PR creation or edit tool (`create_pull_request`, `gh pr create`, `gh pr edit`, GitHub MCP `create_pull_request` / `update_pull_request`, or app-native equivalents), load the `authoring-pr` skill first. This is non-negotiable, even if the change seems straightforward or you think you remember the conventions. The skill covers both creating new PRs and rewriting an existing PR's title/body when it has drifted from the code.
+Before invoking any PR creation or edit tool (`create_pull_request`, `gh pr create`, `gh pr edit`, GitHub MCP `create_pull_request` / `update_pull_request`, or app-native equivalents), load the `pr-authoring` skill first. This is non-negotiable, even if the change seems straightforward or you think you remember the conventions. The skill covers both creating new PRs and rewriting an existing PR's title/body when it has drifted from the code.
 
 ## Code Philosophy
 

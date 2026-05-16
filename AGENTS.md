@@ -54,7 +54,7 @@ Keep repo-specific workflows in the repo where they apply. Do not promote one re
 | Skill | Scope | Notes |
 |---|---|---|
 | `choosing-workflow` | User-level | Router for choosing repo-local skills, dotfiles process skills, or app-native workflows. |
-| `authoring-pr` | User-level | Personal PR authoring workflow — create new PRs or rewrite an existing PR's title/body so it matches the final diff, with template handling, review-before-posting, and GitHub Posting Protocol. |
+| `pr-authoring` | User-level | Personal PR authoring workflow — create new PRs or rewrite an existing PR's title/body so it matches the final diff, with template handling, review-before-posting, and GitHub Posting Protocol. |
 | `copy-editing` | User-level | Minimal copy edits that preserve Tim's voice, quirks, and nonstandard phrasing. |
 | `writing-skills` | User-level | Guidance for creating, editing, and reviewing dotfiles Copilot skills. |
 | `planning-multi-agent-projects` | User-level, narrow | Durable repo-tracked multi-agent planning PRs only; not normal app plan mode. |
