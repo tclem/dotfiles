@@ -177,30 +177,48 @@ Be explicit. Example:
 
 End the README with pre-made prompts — one per todo that's ready for an agent to pick up. These are copy-paste ready: minimal, self-contained, and reference the plan docs so the agent has full context.
 
+**Critical:** Child agent sessions start on a fresh branch off the repo's base branch (usually `main`), so the plan docs in `docs/copilot/<date>-<project>/` do **not** exist in their worktree. Every prompt must tell the agent to read those docs directly from the plan branch via `git`, `gh`, or GitHub MCP — not by checking out, merging, or rebasing onto the plan branch. Include the plan branch name and PR number in the prompt.
+
 ```markdown
 ## Agent prompts
 
 Ready-to-use prompts for spinning up agent sessions. Each prompt targets one todo.
 Copy-paste into a new session.
 
+Plan branch: `<user>/<project-name>` (PR #NNN). The plan docs live only on that
+branch — read them via `gh` or `git show`, do not check out or merge that branch.
+
 ### Phase 1, todo 1.1
 
-> Read `docs/copilot/<date>-<project>/context.md` and
-> `docs/copilot/<date>-<project>/phase-01-foo.md`, then execute todo 1.1.
+> The plan for this work lives on branch `<user>/<project-name>` (PR #NNN), in
+> `docs/copilot/<date>-<project>/`. That branch is **not** checked out here —
+> fetch the docs read-only, e.g.:
+>
+> ```
+> git fetch origin <user>/<project-name>
+> git show origin/<user>/<project-name>:docs/copilot/<date>-<project>/context.md
+> git show origin/<user>/<project-name>:docs/copilot/<date>-<project>/phase-01-foo.md
+> ```
+>
+> (or use `gh api .../contents/...?ref=<user>/<project-name>`.) Read both, then
+> execute todo 1.1. Open your PR against `main`, not the plan branch. Do not
+> edit plan docs from this session.
 
 ### Phase 1, todo 1.2
 
-> Read `docs/copilot/<date>-<project>/context.md` and
-> `docs/copilot/<date>-<project>/phase-01-foo.md`, then execute todo 1.2.
+> Same plan branch and fetch pattern as above. Read context.md and
+> phase-01-foo.md from `origin/<user>/<project-name>`, then execute todo 1.2.
 ```
 
 **Rules for agent prompts:**
 
-- Keep them minimal — the phase doc and context.md have the detail, not the prompt
-- Only list todos that are **currently unblocked** (dependencies met)
-- Group parallel-safe todos together with a note: "These can run simultaneously"
-- For serial todos, list them in order with a note: "Run in sequence — each depends on the previous"
-- Update the prompts section as work completes — remove done todos, unblock new ones
+- Always name the plan branch and PR number, and show the read-only fetch pattern.
+- Tell the agent which base branch its PR should target (almost always the repo default, not the plan branch).
+- Keep them minimal otherwise — the phase doc and context.md have the detail, not the prompt.
+- Only list todos that are **currently unblocked** (dependencies met).
+- Group parallel-safe todos together with a note: "These can run simultaneously".
+- For serial todos, list them in order with a note: "Run in sequence — each depends on the previous".
+- Update the prompts section as work completes — remove done todos, unblock new ones.
 
 ### 6. Commit and open PR
 
