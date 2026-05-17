@@ -17,6 +17,7 @@ Personal dotfiles for tclem (Staff Engineer, GitHub). Manages shell config, edit
 | `bin/` | Executable scripts (agent workflows, GitHub log) |
 | `copilot/` | Copilot agent config, skills, project definitions |
 | `copilot/skills/<name>/SKILL.md` | User-level Copilot skills symlinked into `~/.copilot/skills/` |
+| `copilot/templates/<name>/SKILL.md` | Starter skills to copy into other repos (not symlinked) |
 | `script/` | Bootstrap and sync utilities |
 | `gh/` | GitHub CLI aliases |
 | `vscode/` | Editor settings and extensions list |
