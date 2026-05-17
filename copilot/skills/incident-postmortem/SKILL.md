@@ -1,6 +1,6 @@
 ---
 name: incident-postmortem
-description: Use when assembling, updating, or reviewing an incident postmortem from issues, timelines, metrics, logs, traces, alerts, responder notes, or repair items.
+description: Use when assembling, updating, or reviewing an incident postmortem, and the repository has no postmortem skill of its own.
 ---
 
 # Incident Postmortem

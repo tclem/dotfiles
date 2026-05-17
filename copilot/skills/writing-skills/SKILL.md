@@ -86,6 +86,23 @@ If a new skill overlaps an existing skill, either:
 2. Merge the durable rule into the existing skill.
 3. Add routing guidance to `choosing-workflow`.
 
+## Fallback skills
+
+Some user-level skills exist as **explicit fallbacks** for tasks Tim does across many repos but where individual repos may provide a specialized version (Rust coding, alert investigation, postmortems, dependency updates). When both layers exist, the repo-local skill always wins.
+
+When creating or editing a user-level skill that could plausibly have a repo-level specialization:
+
+- Phrase the description as `"Use when ... and the repository has no equivalent skill of its own."` This signals fallback intent at discovery time. Current tooling can't enumerate other skills to enforce it, but the phrasing sets the expectation.
+- Add the skill to the **Fallback skills** table in `choosing-workflow/SKILL.md`.
+- Note in the skill body that a repo-local equivalent, if present, supersedes this one.
+- If a starter template would help repos bootstrap their own specialized version, put it under `copilot/templates/<name>/SKILL.md` (not `copilot/skills/`). The template is scaffolding; the user-level skill is the live fallback.
+
+## Skills that should never be mirrored into a repo
+
+Some user-level skills are pure cross-repo personal workflow with no repo-level specialization (e.g. `searching-github-code`, `pr-authoring`, `thinking-about`, `daily-handoff`, `copy-editing`, `delegating-plan-work`, `planning-multi-agent-projects`, `writing-skills`, `choosing-workflow`). They should not be copied into any project's `.copilot/skills/` or `.github/skills/`.
+
+When authoring one of these, note in the body that the skill is user-level only. The "Skills that should never be mirrored" list in `choosing-workflow/SKILL.md` is the canonical roster.
+
 ## Pressure-test discipline skills
 
 For skills that enforce discipline, write against the failure mode agents naturally choose under pressure.

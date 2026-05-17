@@ -67,9 +67,10 @@ Keep repo-specific workflows in the repo where they apply. Do not promote one re
 | `verifying-before-claiming` | User-level | Fresh verification before completion claims. |
 | `handling-review-feedback` | User-level | Review feedback triage, fixes, and replies. |
 | `merging-base-into-pr` | User-level | Merge a PR's actual base ref (not hardcoded `main`), with stacked-PR conflict resolution and `git rerere`. |
-| `investigate-alert` | User-level | General alert/incident investigation using available telemetry and code context. |
-| `incident-postmortem` | User-level | General postmortem assembly and repair-item workflow. |
-| `updating-dependencies` | User-level | Generic dependency update workflow with per-ecosystem PRs and validation. |
+| `investigate-alert` | User-level, fallback | General alert/incident investigation when the repo has no equivalent skill. |
+| `incident-postmortem` | User-level, fallback | General postmortem assembly when the repo has no equivalent skill. |
+| `updating-dependencies` | User-level, fallback | Generic dependency update workflow when the repo has no equivalent skill. |
+| `rust-coding` | User-level, fallback | Generic Rust style and discipline when the repo has no `rust-coding-skill` of its own. Template at `copilot/templates/rust-coding-skill/` for new repos. |
 | `searching-github-code` | User-level | When to use `gh blackbird` for lexical, symbol, or semantic code search across one or many GitHub repos. |
 | `thinking-about` | User-level | Capture thoughts into `tclem/notes` and run the daily rollup that re-themes `top-of-mind.md` and prunes resolved/stale entries. |
 
