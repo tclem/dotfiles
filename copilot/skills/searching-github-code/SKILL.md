@@ -34,6 +34,23 @@ Not for:
 - **`--symbol`** - you know the name. Language-aware; do not approximate with regex.
 - **`--semantic`** - you only know the concept. Vector search over embeddings; single repo; returns nearest neighbors, not an exhaustive set.
 
+## Query efficiency
+
+Blackbird quotas are cost-based, not just request-count based. Lexical and semantic have separate quota buckets, and expensive queries consume more quota. Treat every broad search as spending a shared budget.
+
+Use the cheapest useful query first:
+
+1. Prefer local `rg` when the repo is already checked out and the scope is local.
+2. Prefer lexical discovery over semantic when you have concrete identifiers, strings, paths, routes, docs names, config keys, package names, or repo names.
+3. Prefer `--symbol` for exact name lookup instead of broad lexical regexes.
+4. Scope before broadening: add `-R owner/repo`, `path:`, `language:`, package/service names, or a distinctive quoted string before increasing `-n`.
+5. Start with a small cap (`-n 5` or `-n 10`) for discovery. Increase only if the first page proves the query is correctly scoped and still lacks the needed evidence.
+6. Avoid broad `OR` queries across large repos as a first move. Split them into narrower searches so one expensive term does not burn quota and flood output.
+7. Do not run lexical and semantic back-to-back "just in case." Pick one mode from the evidence, then switch only when the result shows the mode is wrong.
+8. Stop searching once you have a canonical file, owner repo, route, schema, doc, or wrapper symbol to read. Reading one result is cheaper and more reliable than another broad search.
+
+If a query returns noisy results, make it cheaper before retrying: lower `-n`, add repo/path/language qualifiers, search a more distinctive literal, or search the wrapper/symbol that appeared in the first results.
+
 ## Discovery before semantic
 
 For ambiguous cross-repo questions, first find the owner repo/component. If the user asks "how do I integrate with X's API?" or "where does X live?", do **lexical discovery** for proper nouns, service names, repo names, docs references, config keys, routes, or schema names across likely repos/orgs before semantic search.
@@ -91,13 +108,31 @@ gh blackbird search 'parseURL' -R a/b -R c/d --json
 gh blackbird search --symbol parse_url -R owner/name --json
 
 # Semantic / conceptual (single repo, may need indexing)
-gh blackbird search --semantic "how does token resolution work" -R owner/name --auto-index --json
+gh blackbird search --semantic "how does token resolution work" -R owner/name --auto-index --json -n 5
 
 # External fileset (dotcom only)
-gh blackbird search 'pattern' --fileset my-corpus --json
+gh blackbird search 'pattern' --fileset my-corpus --json -n 10
 ```
 
-Cap results with `-n` when scoping a broad query. Defaults: 25 lexical, 10 semantic.
+Cap results with `-n` when scoping a broad query. Defaults: 25 lexical, 10 semantic. For agent discovery, prefer `-n 5` or `-n 10` unless you already know the query is narrow.
+
+## Rate limits and retries
+
+429s mean the current quota bucket is exhausted or the query spent too much of it. Because lexical and semantic have different cost buckets, do not assume a semantic retry tells you anything about lexical quota, or vice versa.
+
+When using `--json`, errors are JSONL too:
+
+```json
+{"type":"error","code":"rate_limited","status":429,"retry_after_seconds":30,"rate_limit_reset_epoch_seconds":1778990400,"guidance":"Back off before retrying; honor retry_after_seconds or rate_limit_reset_epoch_seconds when present."}
+```
+
+Handle 429s deliberately:
+
+1. If `retry_after_seconds` is present and short enough to wait in the current tool run, wait that long plus a small cushion, then retry once.
+2. If only `rate_limit_reset_epoch_seconds` is present and the reset is soon, wait until reset plus a small cushion, then retry once.
+3. Before retrying, make the query cheaper unless the exact same query is necessary: reduce `-n`, add `-R`/`path:`/`language:`, split broad `OR`s, or switch from semantic to lexical when you have concrete terms.
+4. If the wait is long, the reset time is missing, or the retry also returns 429, stop and tell the user the query hit Blackbird rate limits. Include the mode (lexical or semantic), any retry/reset value, and the cheaper query you would try next.
+5. Do not spin on 429s. One intentional retry is enough for an agent unless the user explicitly asks to keep waiting.
 
 ## Rules
 
@@ -108,6 +143,8 @@ Cap results with `-n` when scoping a broad query. Defaults: 25 lexical, 10 seman
 - Use `--semantic` for conceptual questions only after the repo scope is known; do not lexical-search a paraphrase inside a known repo when semantic would answer the concept better.
 - For ownership discovery, lexical-search proper nouns and concrete identifiers first. Do not start with semantic in a guessed repo.
 - For "all callers" questions, use local `rg` on checked-out repos whenever possible. Do not present ranked Blackbird results as exhaustive.
+- Spend quota intentionally: start narrow and low-`-n`, then broaden only when the first results justify it.
+- On JSONL errors with `code=="rate_limited"`, honor retry/reset metadata once; otherwise report the rate limit instead of looping.
 - Do not duplicate case variants unless the first result suggests case matters; code search for `octokit` can already find `Octokit`.
 - Prefer simple `jq` one-liners or reading key files over opaque ad-hoc post-processing. Avoid Python summarizers unless there is a real need.
 - Do not pass `--lab` (staff-only no-op).
@@ -124,6 +161,9 @@ Cap results with `-n` when scoping a broad query. Defaults: 25 lexical, 10 seman
 - Claiming "all callers" from top-N Blackbird results without local exhaustive search or another exhaustive source.
 - Searching only raw request types and missing wrapper methods used by production callers.
 - Using lexical search for a conceptual question inside a known repo when `--semantic` (vector search) would find better matches.
+- Starting with an expensive broad query (`OR`, no path/language/repo scope, high `-n`) when a narrower literal or symbol lookup would answer the question.
+- Retrying a 429 immediately, repeatedly, or with the same expensive query when retry/reset metadata says to wait.
+- Treating lexical and semantic rate limits as interchangeable; they are separate quota buckets with different costs.
 - Multiple `-R` flags with `--semantic` (rejected).
 - Forgetting `--auto-index` on `--semantic` against an unindexed repo (404).
 - Treating Blackbird results as exhaustive in any mode - it is top-N ranked, not every match. For exhaustiveness, clone and `rg`.
