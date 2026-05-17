@@ -39,7 +39,7 @@ Before writing anything, deeply understand the problem space. **Interview the us
 - **Find prior art.** Are there existing patterns in the codebase to follow? Reference implementations?
 - **Surface key decisions.** What technical choices need to be made? Document tradeoffs. Don't let decisions stay ambiguous — for each one, grill the user until you get a concrete answer. Present the options, your recommendation, and why. Get a yes or no.
 
-**Decisions that need ADRs:** If a decision is major — it changes architecture, introduces a new dependency pattern, affects public APIs, or would be hard to reverse — propose writing an Architecture Decision Record (ADR). If the repo already uses ADRs (check for `docs/adr/` or similar), follow the existing format and numbering. If not, ask the user whether to create one or document the decision inline in context.md with full rationale. An ADR should be written as a separate PR and reviewed by the team before implementation proceeds.
+**Decisions that need ADRs:** If a decision is major — it changes architecture, introduces a new dependency pattern, affects public APIs, or would be hard to reverse — propose writing an Architecture Decision Record (ADR). If the repo already uses ADRs (check for `docs/adr/` or similar), follow the existing filename pattern. For new ADR directories in agent-heavy projects, prefer `YYYY-MM-DD-kebab-name.md` (e.g. `2026-05-16-search-tokenizer.md`) over sequential numbering — date prefixes don't collide when multiple agents author ADRs in parallel and they still sort chronologically. If the repo doesn't use ADRs at all, ask the user whether to create one or document the decision inline in context.md with full rationale. An ADR should be written as a separate PR and reviewed by the team before implementation proceeds.
 
 Confirm your understanding with the user before proceeding. Ask specific questions — don't present a wall of text for approval.
 
@@ -58,7 +58,7 @@ This is the shared context that all phase documents reference. An agent starting
 
 - **Architecture** — current system overview, ASCII diagrams of request flows or component relationships
 - **Key source locations** — exact file paths, function names, line references for the code being changed
-- **Key technical decisions** — numbered list of decisions made during research, with rationale. Every decision should be concrete and resolved before implementation starts. For major decisions, link to the ADR (e.g., "See ADR 0067"). For smaller decisions, a one-line rationale here is sufficient.
+- **Key technical decisions** — numbered list of decisions made during research, with rationale. Every decision should be concrete and resolved before implementation starts. For major decisions, link to the ADR by filename (e.g. "See `docs/adr/2026-05-16-search-tokenizer.md`"). For smaller decisions, a one-line rationale here is sufficient.
 - **Build & lint commands** — how to validate changes in this repo
 - **Agent guidelines** — "read this file first", naming conventions, patterns to follow, things to avoid
 
