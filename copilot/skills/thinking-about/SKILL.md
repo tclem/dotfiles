@@ -8,10 +8,10 @@ user-invocable: true
 
 Two modes against the `tclem/notes` repo:
 
-1. **Capture** — append a single thought to `notes/thinking-about.md` (the rolling raw inbox), tagged and anchored so the rollup can link back to it.
-2. **Rollup** — re-theme `notes/thinking-about.md`, regenerate `top-of-mind.md` at the repo root, and prune resolved/stale entries into `notes/archive/YYYY/`.
+1. **Capture** — append a single thought to `thinking-about.md` at the repo root (the rolling raw inbox), tagged and anchored so the rollup can link back to it.
+2. **Rollup** — re-theme `thinking-about.md`, regenerate `top-of-mind.md` at the repo root, and prune resolved/stale entries into `archive/YYYY/`.
 
-This skill is the only thing that should write to `notes/thinking-about.md` or `top-of-mind.md`. Don't edit those files manually from other skills.
+This skill is the only thing that should write to `thinking-about.md` or `top-of-mind.md`. Don't edit those files manually from other skills.
 
 ## When to use
 
@@ -39,13 +39,13 @@ All commits go directly to `main`. Push after each operation.
 
 ### File shape
 
-`notes/thinking-about.md` is a single rolling Markdown file:
+`thinking-about.md` is a single rolling Markdown file at the repo root:
 
 ```markdown
 # Thinking about
 
 Raw, append-only inbox of things on my mind. Captured by the `thinking-about`
-skill (in `tclem/dotfiles`). The daily rollup at [`top-of-mind.md`](../top-of-mind.md)
+skill (in `tclem/dotfiles`). The daily rollup at [`top-of-mind.md`](top-of-mind.md)
 synthesizes themes and links back to specific entries by anchor.
 
 Tags: #thinking-about #inbox
@@ -61,7 +61,7 @@ Tags: #thinking-about #inbox
 Rules:
 
 - Entries are append-only. Never edit or renumber an existing entry from Capture mode — only Rollup may move entries out.
-- IDs are zero-padded monotonic `t-NNNN`, never reused. Pick the next ID by scanning the file (and `notes/archive/**/*-thinking-about.md`) for the highest existing `t-NNNN` and incrementing.
+- IDs are zero-padded monotonic `t-NNNN`, never reused. Pick the next ID by scanning the file (and `archive/**/*-thinking-about.md`) for the highest existing `t-NNNN` and incrementing.
 - Timestamp is local time in `YYYY-MM-DD HH:MM`.
 - The first line of an entry is the user's thought, lightly cleaned (typos and trailing punctuation) but **not paraphrased**. In-bounds: fix obvious misspellings, autocorrect artifacts, missing punctuation at end of sentence. Out of bounds: rewording for clarity, splitting run-on sentences, "fixing" nonstandard phrasing, expanding abbreviations, adding context the user didn't write. If you're tempted to "make it clearer", stop and append the entry verbatim.
 - If the file does not exist yet, create it with the header block above and start IDs at `t-0001`.
@@ -74,7 +74,7 @@ Rules:
 4. Stage, commit, push:
 
    ```bash
-   git add notes/thinking-about.md
+   git add thinking-about.md
    git commit -m "thinking-about: capture t-NNNN"
    git push
    ```
@@ -89,9 +89,9 @@ The rollup regenerates `top-of-mind.md` at the repo root and prunes the inbox. R
 
 ### Inputs
 
-- `notes/thinking-about.md` — current inbox.
+- `thinking-about.md` at the repo root — current inbox.
 - Previous `top-of-mind.md` at repo root — read it to preserve theme names and synthesis where they're still accurate. Do not blindly overwrite.
-- `notes/archive/YYYY/` — for ID collision avoidance and historical context.
+- `archive/YYYY/` — for ID collision avoidance and historical context.
 
 ### Judgments per entry
 
@@ -109,7 +109,7 @@ For each entry in the inbox, decide one of:
 ```markdown
 # Top of mind
 
-Rolled up YYYY-MM-DD from [`notes/thinking-about.md`](notes/thinking-about.md).
+Rolled up YYYY-MM-DD from [`thinking-about.md`](thinking-about.md).
 Each item links to its raw entry.
 
 ## Themes
@@ -118,8 +118,8 @@ Each item links to its raw entry.
 
 One- to three-line synthesis of what's going on in this theme.
 
-- [t-0012](notes/thinking-about.md#t-0012) — short title or excerpt
-- [t-0018](notes/thinking-about.md#t-0018) — short title or excerpt
+- [t-0012](thinking-about.md#t-0012) — short title or excerpt
+- [t-0018](thinking-about.md#t-0018) — short title or excerpt
 
 ### <Another theme>
 
@@ -129,16 +129,16 @@ One- to three-line synthesis of what's going on in this theme.
 
 Captured in the last 7 days, not yet part of a theme:
 
-- [t-0044](notes/thinking-about.md#t-0044) — short text
-- [t-0045](notes/thinking-about.md#t-0045) — short text
+- [t-0044](thinking-about.md#t-0044) — short text
+- [t-0045](thinking-about.md#t-0045) — short text
 
 ## Resolved this rollup
 
-- [t-0005] — moved to `notes/archive/2026/2026-05-16-thinking-about.md`; was about <X>.
+- [t-0005] — moved to `archive/2026/2026-05-16-thinking-about.md`; was about <X>.
 
 ## Stale this rollup
 
-- [t-0009] — moved to `notes/archive/2026/2026-05-16-thinking-about.md`; not revisited since 2026-04-08.
+- [t-0009] — moved to `archive/2026/2026-05-16-thinking-about.md`; not revisited since 2026-04-08.
 ```
 
 Rules:
@@ -153,7 +153,7 @@ Rules:
 When pruning (Resolved or Stale), move the entry **including its anchor** to a dated archive file:
 
 ```
-notes/archive/<YYYY>/<YYYY-MM-DD>-thinking-about.md
+archive/<YYYY>/<YYYY-MM-DD>-thinking-about.md
 ```
 
 where `<YYYY-MM-DD>` is the day the rollup is running. Multiple prunes on the same day accumulate into the same archive file. Archive file shape:
@@ -161,7 +161,7 @@ where `<YYYY-MM-DD>` is the day the rollup is running. Multiple prunes on the sa
 ```markdown
 # Thinking about — pruned YYYY-MM-DD
 
-Entries moved out of `notes/thinking-about.md` by the daily rollup. Anchors
+Entries moved out of `thinking-about.md` by the daily rollup. Anchors
 preserved so external links still resolve.
 
 Tags: #thinking-about #archive
@@ -184,11 +184,11 @@ The pruning note (single line after the original content) records the reason. Or
 3. Make per-entry judgments. **Print the judgment list and ask the user to confirm prunes** when run interactively. The daily workflow is non-interactive — in that case, only prune entries that match the explicit signals (`(done)`, `[x]`, `~~...~~`, or `> 60 days untouched with no theme membership`). Treat the 30-day threshold as advisory in non-interactive mode; default to keeping.
 4. Cluster active entries into themes. Reuse previous theme names where they still fit.
 5. Rewrite `top-of-mind.md` at the repo root.
-6. For each prune: remove the entry block from `notes/thinking-about.md`, append to today's archive file (create directory if needed) with the pruning reason.
+6. For each prune: remove the entry block from `thinking-about.md`, append to today's archive file (create directory if needed) with the pruning reason.
 7. Commit as a single rollup commit:
 
    ```bash
-   git add top-of-mind.md notes/thinking-about.md notes/archive
+   git add top-of-mind.md thinking-about.md archive
    git commit -m "thinking-about: rollup YYYY-MM-DD (N themes, M pruned)"
    git push
    ```
