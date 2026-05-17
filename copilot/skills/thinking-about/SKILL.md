@@ -17,7 +17,7 @@ This skill is the only thing that should write to `notes/thinking-about.md` or `
 
 Capture mode — when the user supplies free text as a thought to save (e.g. `/thinking-about <text>`, "add to my thinking-about", "park this in my notes inbox").
 
-Rollup mode — when the daily github-app workflow fires, or the user explicitly asks to "rollup", "re-theme", "regenerate top of mind", or "review the inbox".
+Rollup mode — when a scheduled rollup workflow fires, or the user explicitly asks to "rollup", "re-theme", "regenerate top of mind", or "review the inbox".
 
 If the invocation is ambiguous (no thought text and no explicit rollup intent), ask which mode before doing anything. Do **not** default to rollup, because rollup writes and prunes across multiple files.
 

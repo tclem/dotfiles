@@ -42,7 +42,7 @@ The handoff is **status-first**, with PRs as supporting evidence — not the oth
 1. **Meetings / context.** A bullet listing meetings and notable conversations. The user will usually rewrite this, but take a first pass from session context if you have it — don't just emit a generic "random 1:1s and meetings" placeholder.
 2. **On-call / ops** (if the user is on-call). A narrative capturing the shape of the day — how busy, what landed, what didn't, who helped. Credit collaborators with `@handle` and reference channels with `#channel`.
 3. **Active work streams**, one bullet per theme. Lead with story: what happened, what's blocked, what's next. Name blockers explicitly — who you've asked, what you're waiting on ("I'm blocked here"). PRs nest underneath.
-4. **Incidents / investigations** if any, with links to the incident issue and any security/SIRT engagement.
+4. **Incidents / investigations** if any, with links to the incident issue and any security engagement.
 5. **github-app pointer**: `* github-app progress in :thread:` (see below).
 
 ### PR bullet format
