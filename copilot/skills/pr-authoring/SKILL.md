@@ -8,7 +8,7 @@ user-invocable: true
 
 Author or refresh a PR's title and body so they describe the final diff, not the dev journey. Same cardinal rules apply whether you're creating a new PR or rewriting an existing one that has drifted from the code.
 
-If an app-native PR creation/edit tool is available, prefer it over shelling out to `gh`. In particular, prefer `update_pull_request` (app-native, REST PATCH, no SAML or `read:org` scope required) for any PR title/body/base edit — `gh pr edit` routinely fails on the local token with an opaque `read:org` scope error. Use this workflow to prepare the branch, commits, title, and body either way.
+If an app-native PR creation/edit tool is available in the current session, prefer it over shelling out to `gh`. Most app-native edit tools use REST PATCH under the hood and sidestep the SAML / `read:org` scope error that `gh pr edit` routinely hits on the local token. Names vary by host (GitHub MCP exposes `update_pull_request`; some apps ship an internal equivalent) — use whatever the session offers. Use this workflow to prepare the branch, commits, title, and body either way.
 
 ## Cardinal rules
 
@@ -97,7 +97,7 @@ When basing on a prior PR's head, add a line near the top of the PR body:
 > Stacked on #<prior-pr> — will be retargeted to `<default>` when that merges.
 ```
 
-Pass `--base <stacked-branch>` to `gh pr create`. After the upstream PR merges, retarget by calling `update_pull_request` (app-native, no `read:org` required) with the new base. Only fall back to `gh pr edit <num> --base <default>` if the app-native tool isn't available, and expect the REST API fallback from [Edge cases](#edge-cases) if that errors on scopes.
+Pass `--base <stacked-branch>` to `gh pr create`. After the upstream PR merges, retarget using an app-native PR edit tool if one is available (no `read:org` required). Only fall back to `gh pr edit <num> --base <default>` if no app-native tool is available, and expect the REST API fallback from [Edge cases](#edge-cases) if that errors on scopes.
 
 ### 6. Draft the PR
 
@@ -171,13 +171,9 @@ Show the proposed title and body diff (old vs new) and ask for approval. Do not 
 
 ### 4. Apply the update
 
-Prefer the app-native `update_pull_request` tool (REST PATCH, no SAML or `read:org` scope required). Pass the new title and body directly:
+Prefer an app-native PR edit tool if one is available in this session (REST PATCH under the hood, no SAML or `read:org` scope required). Names vary by host (GitHub MCP: `update_pull_request`; some apps ship an internal equivalent). Pass the new title and body directly to whatever tool the session exposes.
 
-```
-update_pull_request(pull_number=<num>, title="<new title>", body="<new body including signature>")
-```
-
-Only fall back to `gh pr edit` if `update_pull_request` isn't available in this session — it routinely fails on the local token with an opaque `read:org` scope error:
+If no app-native tool is available, try `gh pr edit` — though it routinely fails on the local token with an opaque `read:org` scope error:
 
 ```bash
 body_file="$(git rev-parse --git-path copilot-pr-body.md)"
@@ -209,7 +205,7 @@ Do not add this blockquote speculatively; it's a team-level convention, not a de
 - **No changes:** Check for existing PR (`gh pr view`). If one exists, nothing to do. If unpushed commits exist, push and create.
 - **PR already exists:** Push new commits — the PR updates automatically. Inform the user.
 - **On default branch:** Create a feature branch, then proceed.
-- **`gh pr edit --body-file` fails with a scope error.** `gh pr edit` requires `read:org` on the local token; many installs don't have it and the failure is opaque. Prefer the app-native `update_pull_request` tool (REST PATCH, no extra scope required) if available. Otherwise fall back to the REST API directly, which also needs no extra scope:
+- **`gh pr edit --body-file` fails with a scope error.** `gh pr edit` requires `read:org` on the local token; many installs don't have it and the failure is opaque. Prefer an app-native PR edit tool (REST PATCH, no extra scope required) if the session exposes one. Otherwise fall back to the REST API directly, which also needs no extra scope:
 
   ```bash
   jq -Rs '{body: .}' < body.md \
@@ -220,7 +216,7 @@ Do not add this blockquote speculatively; it's a team-level convention, not a de
 
 ## Common mistakes
 
-- **Reaching for `gh pr edit` first.** It needs `read:org` on the local token and routinely fails with an opaque scope error. Default to `update_pull_request` (app-native REST PATCH, no extra scope) for any title/body/base edit.
+- **Reaching for `gh pr edit` first.** It needs `read:org` on the local token and routinely fails with an opaque scope error. Default to an app-native PR edit tool if the session exposes one (REST PATCH, no extra scope), otherwise the REST API directly. `gh pr edit` is the last resort.
 - **Treating `bash gh pr edit …` as a way around the authoring gate.** The Pull Request Authoring Gate fires on any PR mutation — including `gh pr edit`, `gh pr create`, `gh api … /pulls/…`, or `curl` against the pulls API — even when invoked through bash. Load this skill first; do not type the command and hope.
 - **Rewriting body from memory.** When updating an existing PR, always re-ground in the actual diff against the base ref first. Memory drifts after a few iterations.
 - **Padding the body with process status.** CI results, force-push notes, "switched approach from X to Y", and self-review findings already fixed do not belong in the body. The reviewer sees CI in GitHub and reads the final diff.
