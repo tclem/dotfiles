@@ -50,7 +50,18 @@ Use `choosing-workflow` when the right skill source is ambiguous. Do not promote
 
 ## Pull Request Authoring Gate
 
-Before invoking any PR creation or edit tool (`create_pull_request`, `gh pr create`, `gh pr edit`, GitHub MCP `create_pull_request` / `update_pull_request`, or app-native equivalents), load the `pr-authoring` skill first. This is non-negotiable, even if the change seems straightforward or you think you remember the conventions. The skill covers both creating new PRs and rewriting an existing PR's title/body when it has drifted from the code.
+Before authoring or editing a PR by any mechanism, load the `pr-authoring` skill first. This is non-negotiable, even if the change seems straightforward or you think you remember the conventions. The skill covers both creating new PRs and rewriting an existing PR's title/body when it has drifted from the code.
+
+The gate fires for **any** of these — including when they appear inside a `bash` (or other shell) call:
+
+- App-native tools: `create_pull_request`, `update_pull_request`, or equivalents.
+- GitHub MCP: `create_pull_request`, `update_pull_request`.
+- CLI: `gh pr create`, `gh pr edit`, `gh pr ready`, `gh pr merge`'s body/title flags.
+- Raw REST/GraphQL: `gh api … /pulls/…` with `-X POST`/`-X PATCH`, `curl` against the pulls API, etc.
+
+"It's just a bash call" does not exempt it. If the command will create or mutate a PR's title, body, base, or draft state, load `pr-authoring` first.
+
+Prefer the app-native `update_pull_request` tool (REST PATCH, no SAML or `read:org` scope required) over `gh pr edit` whenever it's available — `gh pr edit` routinely fails on this token with an opaque `read:org` scope error.
 
 ## Code Philosophy
 
