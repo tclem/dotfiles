@@ -158,7 +158,16 @@ Never include the Co-authored-by trailer in PR titles, PR descriptions, issue bo
 
 ## GitHub Posting Protocol (MANDATORY)
 
-Before posting any GitHub content on my behalf - issue comments, PR comments, PR descriptions, review comments, review-thread replies, or issue creation (via `gh` CLI or GitHub MCP tools):
+Before posting any GitHub content on my behalf — issue comments, PR comments, PR descriptions, review comments, review-thread replies, or issue creation — regardless of mechanism. This fires for **any** of these, including when they appear inside a `bash`/shell call:
+
+- App-native tools, whatever the host calls them (e.g. `add_pr_review_comment`, `reply_to_comment`, submit-review, post-issue-comment, edit PR body).
+- GitHub MCP tools (`create_pull_request`, `update_pull_request`, comment tools).
+- CLI: `gh issue comment`, `gh pr comment`, `gh pr review`, `gh api …` POST/PATCH against `/issues/`, `/pulls/`, `/reviews`, `/comments`.
+- Raw REST/GraphQL via `curl`.
+
+Drafts count: if the tool stages content that will become a posted GitHub body (e.g. pending review comments the user will submit later), include the signature in the draft body.
+
+Then:
 
 - Append the required signature block at the very end of the body, separated by a blank line.
 - Do not include the `Co-authored-by` trailer; that trailer is only for git commit messages.
