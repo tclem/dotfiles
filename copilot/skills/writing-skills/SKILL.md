@@ -76,6 +76,16 @@ Bad:
 description: Explains the full process for writing high-quality skills, including testing, directory layout, examples, and review.
 ```
 
+## YAML safety for the description
+
+Frontmatter is parsed as YAML. Single-quote the `description:` value whenever it contains `: ` (colon-space), a `"`, a leading `> | & * ! % @ \``, or ` #`. Single quotes pass everything through literally; use double quotes only if the value itself contains a single quote.
+
+```yaml
+description: 'Use when reading layout. Symptoms: jank, "ResizeObserver loop" warnings.'
+```
+
+When a skill fails to load, check this first.
+
 ## Keep skills narrow
 
 Prefer several focused skills over one broad policy blob. A future agent should be able to load the smallest applicable skill and not inherit unrelated workflow.
