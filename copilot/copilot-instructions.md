@@ -48,6 +48,18 @@ When skills overlap, choose the narrowest applicable source:
 
 Use `choosing-workflow` when the right skill source is ambiguous. Do not promote project-specific runbooks, labels, bots, dashboards, branches, or app runtime procedures into user-level dotfiles skills.
 
+### Development discipline skills
+
+These fire on specific phases of the work loop. Load them when their trigger applies — don't reinvent the discipline in chat:
+
+- **`designing-before-coding`** — before behavior, API, or architecture changes; the lightweight design gate.
+- **`testing-before-coding`** — when behavior can be specified with tests or executable verification before production code.
+- **`debugging-systematically`** — investigating a bug, regression, flaky behavior, or unclear root cause.
+- **`fixing-root-causes`** — when tempted to add a defensive layer, fallback, retry, or "just in case" check alongside the real fix.
+- **`verifying-before-claiming`** — before claiming work is complete, fixed, passing, installed, synced, or ready for review.
+- **`authoring-adrs`** — when proposing or recording a significant technical decision that should land as an ADR.
+- **`authoring-design-docs`** — when explaining the shape of a subsystem, architecture, or significant feature.
+
 ## Pull Request Authoring Gate
 
 Before authoring or editing a PR by any mechanism, load the `pr-authoring` skill first. This is non-negotiable, even if the change seems straightforward or you think you remember the conventions. The skill covers both creating new PRs and rewriting an existing PR's title/body when it has drifted from the code.
@@ -78,11 +90,9 @@ Especially for Rust code (though these principles apply broadly), I strongly ali
 
 ## Fix Root Causes, Not Symptoms
 
-Always solve the root cause. Do not add band-aid fixes, defensive backstops, or "just in case" layers on top of a fix. They accumulate, hide the real problem, and cost more over time than they save.
+Always solve the root cause. Do not add band-aid fixes, defensive backstops, or "just in case" layers on top of a real fix — they accumulate, hide the next bug, and cost more over time than they save. If a fix needs a fallback, sentinel, retry, or special-case lookup, that's a signal you fixed the wrong layer; trace the producer/schema/type path instead.
 
-Before writing code, identify the single root cause. If the fix needs a fallback, brand-casing map, hardcoded display override, special-case lookup, retry around something that should not fail, or default for data that should be present, stop and trace the producer/schema/type path instead. The default is the root-cause fix, even when it touches more files.
-
-If there are two plausible fixes, say so: "A fixes the root cause across X/Y/Z; B is a one-line backstop." Recommend A unless the user explicitly chooses otherwise.
+When fixing a bug and tempted to add a defensive layer alongside the real fix, load the `fixing-root-causes` skill — it covers the common rationalizations ("just one line," "defense in depth is good practice," "but here's a scenario...") and pressure-tests each defensive layer with concrete questions.
 
 A few more details:
 
@@ -95,8 +105,7 @@ A few more details:
 - **Maintainability is a feature.** Code is read far more than it's written. Optimize for the next person (or future me).
 - **Whitespace is intentional.** Files must end with a trailing newline. Don't move code around unnecessarily. Use blank lines only to separate distinct semantic phases of a function (setup / execute / respond) — not between consecutive statements in the same logical step. Keep functions compact enough to read without scrolling.
 - **ASCII art only.** In code comments, doc comments, and markdown, use plain ASCII characters (`+`, `-`, `|`, `>`) for diagrams and boxes. Never use unicode box-drawing characters (`┌`, `─`, `│`, `└`, `▶`, etc.) — they render at inconsistent widths across monospaced fonts and break alignment.
-- **ADRs for major decisions.** All my projects use Architecture Decision Records. Major technical decisions (architecture changes, new dependency patterns, public API changes, hard-to-reverse choices) get a formal ADR. Draft the ADR and commit it — I'll handle getting it reviewed by the team before implementation proceeds.
-  - **Filenames.** **Always follow the existing repo convention.** If `docs/adr/` (or similar) already contains files, match the established pattern exactly — sequential numbering (`0067-foo.md`) is fine and common in legacy or human-authored projects, and an agent must never invent a new pattern in an established directory. The date-prefixed pattern `YYYY-MM-DD-kebab-name.md` (e.g. `2026-05-16-search-tokenizer.md`) is the **recommended default only when creating a brand-new ADR directory**, because it doesn't collide when multiple agents author ADRs in parallel and still sorts chronologically.
+- **ADRs for major decisions.** All my projects use Architecture Decision Records. Major technical decisions (architecture changes, new dependency patterns, public API changes, hard-to-reverse choices) get a formal ADR. Load `authoring-adrs` when proposing one — it covers filename conventions (always follow the repo's existing pattern), the header template, status lifecycle, and the "ADR as a separate PR before implementation" rule. I'll handle getting the ADR reviewed by the team.
 
 ## Language Preferences
 
@@ -184,6 +193,4 @@ Replace `<model name>` with the model you are currently running as (e.g., "Claud
 
 ## Responding to PR Review Comments
 
-When asked to address PR review comments: fetch all review threads, read each one, and reply to each thread individually. Fix real issues and confirm what changed. Don't blindly fix everything — review agents flag dumb stuff. If a comment is ambiguous, ask me with your take before acting. Always reply to the thread, even if you're leaving it as-is.
-
-Every GitHub reply in this flow, including review-thread replies, must follow the GitHub Posting Protocol above. Verify the final body ends with the required signature block before posting.
+When addressing PR review feedback, load `handling-review-feedback` first — it covers fetching threads, triaging which comments are real, replying to each one, and the GitHub Posting Protocol. Don't blindly fix everything (review agents flag dumb stuff). If a comment is ambiguous, ask me with your take before acting. Always reply to the thread, even if leaving it as-is.

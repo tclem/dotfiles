@@ -197,7 +197,7 @@ The pruning note (single line after the original content) records the reason. Or
 
 ## Common mistakes
 
-- **Paraphrasing the user's thought in Capture.** Lightly clean typos only. Tim wrote it; keep his voice.
+- **Paraphrasing the user's thought in Capture.** Lightly clean typos only. The user wrote it; keep their voice.
 - **Reusing IDs.** Always scan the inbox *and* archives for the highest existing ID before assigning.
 - **Editing existing entries in Capture mode.** Capture only appends.
 - **Aggressive pruning in non-interactive mode.** The daily workflow should be conservative — keep entries unless they're explicitly resolved or extremely stale.

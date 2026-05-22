@@ -61,8 +61,10 @@ Keep repo-specific workflows in the repo where they apply. Do not promote one re
 | `planning-multi-agent-projects` | User-level, narrow | Durable repo-tracked multi-agent planning PRs only; not normal app plan mode. |
 | `delegating-plan-work` | User-level, narrow | Readiness and scope checks before handing off repo-tracked plan phases/todos. |
 | `designing-before-coding` | User-level | Lightweight design gate before behavior or architecture changes. |
-| `planning-implementation` | User-level | Session-local implementation plans for multi-step work. |
+| `authoring-adrs` | User-level | Writing or amending Architecture Decision Records — filename conventions, header template, status lifecycle, ADR-as-separate-PR rule. |
+| `authoring-design-docs` | User-level | Writing long-form design docs that explain a subsystem's shape, contract, and mechanism — the companion to an ADR's terse decision record. |
 | `debugging-systematically` | User-level | Evidence-first bug, regression, and failure investigation. |
+| `fixing-root-causes` | User-level | Rejecting defense-in-depth backstops, fallbacks, and "just in case" layers alongside a real fix. |
 | `testing-before-coding` | User-level | Test/verification-first implementation discipline. |
 | `verifying-before-claiming` | User-level | Fresh verification before completion claims. |
 | `handling-review-feedback` | User-level | Review feedback triage, fixes, and replies. |

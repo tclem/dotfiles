@@ -5,7 +5,7 @@ description: Use when creating, editing, splitting, renaming, or reviewing Copil
 
 # Writing Skills
 
-Create small, searchable user-level Copilot skills that encode durable judgment Tim wants across repos.
+Create small, searchable user-level Copilot skills that encode durable judgment the user wants across repos.
 
 ## Core rule
 
@@ -15,10 +15,10 @@ A skill is reusable workflow guidance, not a diary entry and not a substitute fo
 
 Create or update a dotfiles skill when the guidance is:
 
-- Personal to Tim across many repos.
+- Personal to the user across many repos.
 - Hard to enforce mechanically.
 - Easy for agents to forget, rationalize away, or overdo.
-- Useful enough that future sessions should discover it without Tim repeating himself.
+- Useful enough that future sessions should discover it without the user repeating themselves.
 
 Do not create a dotfiles skill for:
 
@@ -88,7 +88,7 @@ If a new skill overlaps an existing skill, either:
 
 ## Fallback skills
 
-Some user-level skills exist as **explicit fallbacks** for tasks Tim does across many repos but where individual repos may provide a specialized version (Rust coding, alert investigation, postmortems, dependency updates). When both layers exist, the repo-local skill always wins.
+Some user-level skills exist as **explicit fallbacks** for tasks the user does across many repos but where individual repos may provide a specialized version (Rust coding, alert investigation, postmortems, dependency updates). When both layers exist, the repo-local skill always wins.
 
 When creating or editing a user-level skill that could plausibly have a repo-level specialization:
 

@@ -10,7 +10,7 @@ Create and maintain a structured, multi-phase project plan as markdown documents
 
 This skill produces **documentation, not code**. Each phase becomes a self-contained document with enough context for an agent to execute it without reading the entire plan. Code changes happen in separate PRs linked from the phase docs.
 
-Do not use this for normal app plan mode, single-session implementation plans, or routine code changes. For those, use the app's planning workflow or `planning-implementation`. This skill is only for durable repo-tracked planning hubs.
+Do not use this for normal app plan mode, single-session implementation plans, or routine code changes. For those, use the app's planning workflow. This skill is only for durable repo-tracked planning hubs.
 
 ## The deliverable
 
@@ -39,7 +39,7 @@ Before writing anything, deeply understand the problem space. **Interview the us
 - **Find prior art.** Are there existing patterns in the codebase to follow? Reference implementations?
 - **Surface key decisions.** What technical choices need to be made? Document tradeoffs. Don't let decisions stay ambiguous — for each one, grill the user until you get a concrete answer. Present the options, your recommendation, and why. Get a yes or no.
 
-**Decisions that need ADRs:** If a decision is major — it changes architecture, introduces a new dependency pattern, affects public APIs, or would be hard to reverse — propose writing an Architecture Decision Record (ADR). If the repo already uses ADRs (check for `docs/adr/` or similar), **follow the existing filename and structure convention exactly** — sequential numbering is fine, and an agent must never invent a new pattern in an established directory. Only when creating a brand-new ADR directory should you default to `YYYY-MM-DD-kebab-name.md` (e.g. `2026-05-16-search-tokenizer.md`), which doesn't collide when multiple agents author ADRs in parallel. If the repo doesn't use ADRs at all, ask the user whether to create one or document the decision inline in context.md with full rationale. An ADR should be written as a separate PR and reviewed by the team before implementation proceeds.
+**Decisions that need ADRs:** If a decision is major — it changes architecture, introduces a new dependency pattern, affects public APIs, or would be hard to reverse — load the `authoring-adrs` skill and propose writing an Architecture Decision Record. It covers filename conventions, the standard header, status lifecycle, and the "separate PR before implementation" rule. If the repo doesn't use ADRs at all, ask the user whether to create one or document the decision inline in context.md with full rationale.
 
 Confirm your understanding with the user before proceeding. Ask specific questions — don't present a wall of text for approval.
 

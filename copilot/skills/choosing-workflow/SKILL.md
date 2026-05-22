@@ -11,7 +11,7 @@ Choose the narrowest workflow that fits. Do not load competing skills just becau
 
 1. **User request and repo instructions** - direct instructions, `AGENTS.md`, and repo-local conventions win.
 2. **Repo-local skills** - use for project-specific code, runbooks, operational workflows, app harnesses, and style rules.
-3. **Dotfiles skills** - use for cross-repo personal workflows that Tim wants everywhere.
+3. **Dotfiles skills** - use for cross-repo personal workflows that the user wants everywhere.
 4. **Process skills** - use dotfiles skills for development discipline: design, planning, debugging, testing, review, verification.
 5. **App-native affordances** - prefer built-in session, PR, worktree, review, and orchestration UI when available instead of procedural prompt skills.
 
@@ -23,7 +23,7 @@ Choose the narrowest workflow that fits. Do not load competing skills just becau
 | Editing Rust with no repo-local Rust skill | `rust-coding` (dotfiles fallback) |
 | Working in a repo with app/runtime skills | Repo-local skills and app-native tools |
 | Running a project-specific on-call/runbook workflow | Repo-local skill or runbook |
-| Deciding how to approach implementation | `designing-before-coding` or `planning-implementation` |
+| Deciding how to approach implementation | `designing-before-coding` or the app's plan mode |
 | Investigating a bug or regression | `debugging-systematically` |
 | Implementing testable behavior | `testing-before-coding` |
 | Claiming work is complete | `verifying-before-claiming` |
@@ -39,7 +39,7 @@ Keep project-specific operational knowledge in the project repo. Dotfiles skills
 
 ## Fallback skills
 
-Some dotfiles skills exist as **explicit fallbacks** for tasks Tim does across many repos but where individual repos may provide a specialized version. When both exist, the repo-local skill always wins — its project-specific rules, runbooks, dashboards, and conventions trump the generic fallback. Use the dotfiles fallback only when no repo skill applies.
+Some dotfiles skills exist as **explicit fallbacks** for tasks the user does across many repos but where individual repos may provide a specialized version. When both exist, the repo-local skill always wins — its project-specific rules, runbooks, dashboards, and conventions trump the generic fallback. Use the dotfiles fallback only when no repo skill applies.
 
 | Task | Repo skill if it exists | Otherwise |
 |---|---|---|

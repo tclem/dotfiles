@@ -14,6 +14,8 @@ A handoff covers activity since the last one — typically the last 24 hours, bu
 
 **Bulleted PRs are always the user's own PRs.** `:merged:` and `:review:` both refer to PRs the user authored. PRs the user only reviewed/approved/commented on are **not** bulleted.
 
+**Personal-account PRs are excluded.** The handoff is for the Blackbird team, so PRs in the user's personal account (`tclem/*`) are side projects and do **not** appear anywhere in the handoff (not in the main message, not in the thread). Work in any *organization* (`github/*` is typical, but the user occasionally contributes to other orgs too) is eligible. When in doubt about an unfamiliar org, ask the user rather than dropping it. This is separate from the `github/github-app` thread rule below.
+
 Two sources:
 
 1. **Merged-in-window authored PRs.** The reliable query uses `--merged-at` (catches PRs created earlier but merged during the window):
@@ -22,14 +24,14 @@ Two sources:
      --merged-at=">=$(date -v-1d -u +%Y-%m-%dT%H:%M:%SZ)" \
      --json url,title,repository --limit 100
    ```
-   `gh-log` can also produce a merged list, but its `created:` filter misses PRs that were created before the window and merged inside it — prefer `gh search --merged-at`.
+   `gh-log` can also produce a merged list, but its `created:` filter misses PRs that were created before the window and merged inside it — prefer `gh search --merged-at`. Filter the results to drop any PR whose `repository.nameWithOwner` starts with `tclem/`.
 
 2. **Still-open authored PRs** (for `:review:` bullets):
    ```bash
    gh search prs --author=@me --state=open \
      --json url,title,repository,updatedAt --limit 50
    ```
-   Filter to PRs updated in the window or that the user is actively pushing. Drop dependabot / auto-merge noise unless the user calls it out.
+   Filter to PRs updated in the window or that the user is actively pushing. Drop `tclem/*` PRs. Drop dependabot / auto-merge noise unless the user calls it out.
 
 Cross-reference with session context — prefer what you already know over re-fetching.
 
@@ -62,6 +64,7 @@ Nest PR bullets under the narrative bullet they support. Use **four leading spac
 
 ### What to drop
 
+- **Personal-account PRs** (`tclem/*`). These are side projects and are excluded by default from both the main message *and* the thread. Org-owned repos (`github/*` and any other orgs the user contributes to) are eligible — only the personal account is filtered. This is distinct from the `github/github-app` thread rule, which only relocates eligible org PRs into the thread block.
 - **Yesterday's already-merged work** that's no longer in flight. Focus on what's active *now*.
 - **Dependabot / auto-generated / trivial chore PRs**, unless the user flags them.
 - **PRs you only reviewed or approved.** GitHub's `commenter:` search qualifier includes approvals, so `gh-log`'s "commented on" bucket conflates real discussion with routine approvals — use it only as narrative hints, never as bullets. Verify with `gh pr view <url> --comments` before framing anything as "discussing."
@@ -69,7 +72,7 @@ Nest PR bullets under the narrative bullet they support. Use **four leading spac
 
 ## github-app goes in a thread
 
-PRs in `github/github-app` (or any repo the user flags as a side project) go in a **separate** second fenced block for the Slack thread reply. End the main message with:
+PRs in `github/github-app` (or any other org repo the user flags for the thread) go in a **separate** second fenced block for the Slack thread reply. This is only about *relocating* eligible org PRs into the thread — personal-account PRs (`tclem/*`) are dropped entirely per the filtering rule above and never appear here. End the main message with:
 
 ```
 * github-app progress in :thread:
