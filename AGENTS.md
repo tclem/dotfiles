@@ -67,6 +67,7 @@ Keep repo-specific workflows in the repo where they apply. Do not promote one re
 | `fixing-root-causes` | User-level | Rejecting defense-in-depth backstops, fallbacks, and "just in case" layers alongside a real fix. |
 | `testing-before-coding` | User-level | Test/verification-first implementation discipline. |
 | `verifying-before-claiming` | User-level | Fresh verification before completion claims. |
+| `assessing-deploy-risk` | User-level, fallback | Hunt for revert/rollback-worthy failure modes in a PR diff before it deploys or releases. Repo-local equivalent wins. |
 | `handling-review-feedback` | User-level | Review feedback triage, fixes, and replies. |
 | `merging-base-into-pr` | User-level | Merge a PR's actual base ref (not hardcoded `main`), with stacked-PR conflict resolution and `git rerere`. |
 | `investigate-alert` | User-level, fallback | General alert/incident investigation when the repo has no equivalent skill. |

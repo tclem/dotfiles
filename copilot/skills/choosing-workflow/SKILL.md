@@ -47,6 +47,7 @@ Some dotfiles skills exist as **explicit fallbacks** for tasks the user does acr
 | Investigating an alert or incident | repo's alert/incident skill | `investigate-alert` |
 | Writing an incident postmortem | repo's `incident-postmortem` (or equivalent) | `incident-postmortem` |
 | Updating dependencies | repo's `update-deps` (or equivalent) | `updating-dependencies` |
+| Assessing deploy/release risk on a PR | repo's deploy-risk or release-readiness skill | `assessing-deploy-risk` |
 
 Authoring rule for these skills: their description **must** say "Use when... and the repository has no equivalent skill of its own." That signals fallback role at discovery time even though current tooling can't enumerate other skills to enforce it.
 
