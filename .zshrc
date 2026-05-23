@@ -37,6 +37,8 @@ case $(uname) in
     export MANPATH="$prefix/man:$prefix/mysql/man:$prefix/git/man:$MANPATH"
     export PATH="$prefix/bin:$ZSH/bin:$PATH" # homebrew
     export PATH="$prefix/opt/mysql-client/bin:$PATH" # mysql
+    export PATH="$prefix/opt/rustup/bin:$PATH" # rustup
+    #
     # export PATH="/usr/local/go/bin:$PATH" # Manual install of Go to fix "was built for newer 'macOS' version (15.4) than being linked (15.0)" warnings
     # export PATH="$prefix/opt/python@3.8/libexec/bin:$PATH"
     # export PATH="$prefix/opt/node@10/bin:$PATH"
@@ -244,4 +246,3 @@ ulimit -n 10240
 # bun
 export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
-
