@@ -57,6 +57,7 @@ These fire on specific phases of the work loop. Load them when their trigger app
 - **`debugging-systematically`** — investigating a bug, regression, flaky behavior, or unclear root cause.
 - **`fixing-root-causes`** — when tempted to add a defensive layer, fallback, retry, or "just in case" check alongside the real fix.
 - **`verifying-before-claiming`** — before claiming work is complete, fixed, passing, installed, synced, or ready for review.
+- **`pr-merge-readiness`** — when getting a PR ready to merge by addressing review threads, CI failures, or conflicts, without performing the merge.
 - **`assessing-deploy-risk`** — before merging or approving a PR that will deploy or release to users; hunts for failure modes that could force a revert.
 - **`authoring-adrs`** — when proposing or recording a significant technical decision that should land as an ADR.
 - **`authoring-design-docs`** — when explaining the shape of a subsystem, architecture, or significant feature.

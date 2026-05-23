@@ -56,4 +56,4 @@ Authoring rule for these skills: their description **must** say "Use when... and
 A small number of dotfiles skills are pure cross-repo personal workflow — they have no repo-level specialization and should not be copied into any project's `.copilot/skills/` or `.github/skills/`. Doing so causes drift and confuses discovery.
 
 - `searching-github-code` — purely a personal workflow over `gh blackbird`. If a repo wants users to learn the workflow, link to it from the repo's docs rather than vendoring it.
-- `pr-authoring`, `daily-handoff`, `thinking-about`, `copy-editing`, `delegating-plan-work`, `planning-multi-agent-projects`, `writing-skills`, `choosing-workflow` — personal workflow only.
+- `pr-authoring`, `pr-merge-readiness`, `daily-handoff`, `thinking-about`, `copy-editing`, `delegating-plan-work`, `planning-multi-agent-projects`, `writing-skills`, `choosing-workflow` — personal workflow only.

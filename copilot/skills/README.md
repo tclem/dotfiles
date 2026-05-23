@@ -12,6 +12,13 @@ Some skill-writing practices here are adapted from Jesse Vincent's Superpowers p
 
 Adapted ideas include trigger-focused skill descriptions, keeping skills reusable rather than project-specific, and pressure-testing process skills against likely agent rationalizations. The skills in this repo are rewritten for my dotfiles, Copilot CLI, and the `copilot/skills/<name>/SKILL.md` layout.
 
+The `pr-merge-readiness` skill adapts the merge-readiness framing from GitHub's `agent-merge` app skill:
+
+- Source: https://github.com/github/github-app/blob/main/src-tauri/app-skills/agent-merge/SKILL.md
+- License: not declared in repository metadata
+
+Adapted ideas include the reviews/checks/mergeable readiness model, the stop-on-wait-state discipline, and CI workaround pressure tests. Repo-specific helper scripts and automated merge behavior are intentionally omitted.
+
 ## Public repo hygiene
 
 This is a public dotfiles repository. Skill examples and documentation must not mention internal project names, private services, unreleased workflows, or other GitHub-internal details. Use public projects or generic placeholders instead.
