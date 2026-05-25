@@ -1,18 +1,21 @@
 brew "direnv"
+brew "fnm"
 brew "gh"
 brew "git"
 brew "grc"
-# brew "imagemagick"
+brew "htop"
 brew "jq"
 brew "mas"
-# brew "neovim"
-brew "fnm"
 brew "rbenv"
+brew "rename"
+brew "ripgrep"
+brew "rustup"
 brew "sccache"
+brew "serialosc"
 brew "tmux"
 brew "tree"
+brew "uv"
 brew "zsh"
-# brew "graphviz" # for dot & tree-sitter grammar development
 
 # Fonts
 tap "epk/epk"
@@ -21,18 +24,22 @@ cask "font-sf-mono-nerd-font"
 
 # Development tools
 cask "divvy"
-# cask "github"
+cask "github"
 cask "iterm2"
 cask "visual-studio-code"
-# cask "zed" # todo
+cask "zed"
+cask "copilot-cli"
+# cask "docker-desktop"
 # cask "dash"
 # cask "licecap"
 
 # General apps
 # cask "1Password"
-# cask "Dropbox"
 # cask "arq"
+# cask "Dropbox"
 # cask "google-chrome"
+# cask "imageoptim"
+# cask "raspberry-pi-imager"
 # cask "slack"
 # cask "spotify"
 
