@@ -195,6 +195,16 @@ Required signature block:
 
 Replace `<model name>` with the model you are currently running as (e.g., "Claude Opus 4.7", "GPT-5.2"). This does **not** apply to commit messages, code changes, or terminal output.
 
+### Hand-authored variant (do not post on my behalf)
+
+When I write content myself but use a model for copy editing, review, or brainstorming, I sometimes attach a different signature signalling that the content is mine and the model only assisted. **Agents must not use this signature.** It's documented here so you recognize it and so I can copy it when posting my own content:
+
+```
+<sub><em><img src="https://raw.githubusercontent.com/tclem/dotfiles/main/copilot/assets/copilot-signature.svg" alt="" align="absmiddle" style="display: inline;">&nbsp;&nbsp;Written by @tclem <a href="https://adaptivepatchwork.com/ai-attribution/">with assistance from</a> Copilot (<model name>)</em></sub>
+```
+
+Rule of thumb: if the agent composed the text, use the "Generated via" signature. If I composed the text and the agent only edited, reviewed, or brainstormed alongside me, the "Written by" variant applies — and I will attach it myself.
+
 ## Responding to PR Review Comments
 
 When addressing PR review feedback, load `handling-review-feedback` first — it covers fetching threads, triaging which comments are real, replying to each one, and the GitHub Posting Protocol. Don't blindly fix everything (review agents flag dumb stuff). If a comment is ambiguous, ask me with your take before acting. Always reply to the thread, even if leaving it as-is.
