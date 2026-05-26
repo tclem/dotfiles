@@ -19,6 +19,16 @@ The `pr-merge-readiness` skill adapts the merge-readiness framing from GitHub's 
 
 Adapted ideas include the reviews/checks/mergeable readiness model, the stop-on-wait-state discipline, and CI workaround pressure tests. Repo-specific helper scripts and automated merge behavior are intentionally omitted.
 
+The `reading-source-code` and `deprecating-and-removing` skills adapt ideas from Addy Osmani's `agent-skills` pack:
+
+- Source: https://github.com/addyosmani/agent-skills
+- License: MIT
+- Copyright: Copyright (c) 2025 Addy Osmani
+
+`reading-source-code` keeps the version-pinning discipline, the source-over-docs hierarchy, the surface-conflicts-explicitly rule, and the anti-pattern of citing Stack Overflow or training memory. It's reframed around reading the *actual source* (cargo cache, `GOMODCACHE`, gem path, `node_modules`, `gh blackbird`) rather than only official docs, and the "STACK DETECTED" ceremony is dropped.
+
+`deprecating-and-removing` keeps the code-as-liability framing, advisory vs compulsory split, deprecator-owns-migration rule, and removal-as-goal discipline. It's rewritten in this repo's voice as a fallback skill that yields to any repo-local deprecation runbook, with an added Scope section that gates the ceremony to genuinely decoupled consumers.
+
 ## Public repo hygiene
 
 This is a public dotfiles repository. Skill examples and documentation must not mention internal project names, private services, unreleased workflows, or other GitHub-internal details. Use public projects or generic placeholders instead.

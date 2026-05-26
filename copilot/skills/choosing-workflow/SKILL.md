@@ -29,6 +29,8 @@ Choose the narrowest workflow that fits. Do not load competing skills just becau
 | Claiming work is complete | `verifying-before-claiming` |
 | Handling review comments | `handling-review-feedback` |
 | Searching code across repos, by symbol, or by concept | `searching-github-code` |
+| About to call an unfamiliar library API, or surprised by a dep's behavior | `reading-source-code` |
+| Retiring an old API, sunsetting a feature, or removing zombie code | `deprecating-and-removing` |
 | Creating a broadly useful personal workflow | Dotfiles skill |
 
 ## Do not promote
@@ -48,6 +50,7 @@ Some dotfiles skills exist as **explicit fallbacks** for tasks the user does acr
 | Writing an incident postmortem | repo's `incident-postmortem` (or equivalent) | `incident-postmortem` |
 | Updating dependencies | repo's `update-deps` (or equivalent) | `updating-dependencies` |
 | Assessing deploy/release risk on a PR | repo's deploy-risk or release-readiness skill | `assessing-deploy-risk` |
+| Deprecating or removing an API, feature, or system | repo's deprecation or release-management skill | `deprecating-and-removing` |
 
 Authoring rule for these skills: their description **must** say "Use when... and the repository has no equivalent skill of its own." That signals fallback role at discovery time even though current tooling can't enumerate other skills to enforce it.
 

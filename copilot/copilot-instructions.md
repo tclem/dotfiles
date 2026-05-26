@@ -55,10 +55,12 @@ These fire on specific phases of the work loop. Load them when their trigger app
 - **`designing-before-coding`** — before behavior, API, or architecture changes; the lightweight design gate.
 - **`testing-before-coding`** — when behavior can be specified with tests or executable verification before production code.
 - **`debugging-systematically`** — investigating a bug, regression, flaky behavior, or unclear root cause.
+- **`reading-source-code`** — before calling an unfamiliar library/crate API, when a dependency's behavior is surprising, or when training-data memory might be stale; pin the version and read the actual source.
 - **`fixing-root-causes`** — when tempted to add a defensive layer, fallback, retry, or "just in case" check alongside the real fix.
 - **`verifying-before-claiming`** — before claiming work is complete, fixed, passing, installed, synced, or ready for review.
 - **`pr-merge-readiness`** — when getting a PR ready to merge by addressing review threads, CI failures, or conflicts, without performing the merge.
 - **`assessing-deploy-risk`** — before merging or approving a PR that will deploy or release to users; hunts for failure modes that could force a revert.
+- **`deprecating-and-removing`** — retiring an API, sunsetting a feature, consolidating duplicates, or removing zombie code; advisory vs compulsory, deprecator owns the migration, removal is the goal.
 - **`authoring-adrs`** — when proposing or recording a significant technical decision that should land as an ADR.
 - **`authoring-design-docs`** — when explaining the shape of a subsystem, architecture, or significant feature.
 
