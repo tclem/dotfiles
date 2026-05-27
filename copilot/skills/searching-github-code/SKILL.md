@@ -99,20 +99,21 @@ Once a wrapper is identified, stop broad search and search that wrapper symbol/s
 
 Three output tiers, in order of preference for agent use:
 
-1. **`--for-llm`** - default for agents. Sugar for `--max-tokens 4000 --format jsonl`: trims the response to fit a model-friendly budget, drops oversize snippets, and still emits JSONL. Use this whenever an agent will consume the output and you do not have a specific reason to want more.
-2. **`--json`** (= `--format jsonl`) - full JSONL with no token cap. Use when you actually need every byte of every snippet, or when paired with a custom `--max-tokens N` for a different budget than `--for-llm`'s 4000. First line is a meta envelope, then one match per line.
+1. **`--for-llm`** - default for agents. Sugar for `--max-tokens 4000 --format jsonl`: server picks high-density regions under a token budget and emits JSONL. Use this whenever an agent will consume the output.
+2. **`--json`** (= `--format jsonl`) - JSONL without the token cap. Use when you specifically need grep-style snippet control (`-A`/`-B`/`-C`/`-M`/`--full-snippet`), a non-4000 `--max-tokens N` budget, or the response set the `results_incomplete: true` meta flag on a previous `--for-llm` run of the same query. Don't switch pre-emptively "in case results are too short."
 3. **`pretty`** - humans only. Never grep or parse it.
 
-Snippet width: pass `-M N` / `--max-columns N` (ripgrep-style) to clip individual lines that would otherwise blow the context window (minified JS, generated code, base64 blobs). Works with `--for-llm` and `--json`.
+`--for-llm` and the grep-style snippet flags (`-A`/`-B`/`-C`/`-M`/`--full-snippet`) are mutually exclusive — the LLM mode picks its own dense regions, so you choose one strategy or the other:
 
-Snippet context: `-A`, `-B`, `-C`, and `--full-snippet` work with JSONL output (fixed in v0.2.0). Pass `-C N` when you need surrounding lines without a second round-trip to read the file.
+- **Token-budgeted** (`--for-llm`): let the server decide what's relevant. Best default.
+- **Grep-style** (`--json` + `-C N` / `-M N` / `--full-snippet`): explicit line context and width clipping. Use when you need predictable surrounding lines or to clip minified/generated lines from blowing context. These flags affect JSONL output as of v0.2.0 ([#14](https://github.com/github/gh-blackbird/pull/14)).
 
 ```sh
 # Default agent invocation: token-capped JSONL
 gh blackbird search 'TokenResolver language:rust path:src/auth' -R owner/name --for-llm
 
-# Multi-repo lexical with context lines, width-clipped
-gh blackbird search 'parseURL' -R a/b -R c/d --for-llm -C 3 -M 200
+# Grep-style: explicit context + width clip (requires --json, not --for-llm)
+gh blackbird search 'parseURL' -R a/b -R c/d --json -C 3 -M 200
 
 # Exact symbol lookup (language-aware)
 gh blackbird search --symbol parse_url -R owner/name --for-llm
@@ -123,7 +124,7 @@ gh blackbird search --semantic "how does token resolution work" -R owner/name --
 # External fileset (dotcom only)
 gh blackbird search 'pattern' --fileset my-corpus --for-llm -n 10
 
-# Full JSONL with a custom token budget
+# Custom token budget (overrides --for-llm's 4000)
 gh blackbird search 'pattern' -R owner/name --json --max-tokens 8000
 ```
 
@@ -149,7 +150,7 @@ Handle 429s deliberately:
 
 ## Rules
 
-- Default agent invocation is `--for-llm` (token-capped JSONL). Drop to `--json` only when you need uncapped output or a custom `--max-tokens`. Never grep `pretty`.
+- Default agent invocation is `--for-llm` (token-capped JSONL). Drop to `--json` only when (a) you need grep-style snippet flags `-A`/`-B`/`-C`/`-M`/`--full-snippet`, which are mutually exclusive with `--for-llm`; (b) a previous `--for-llm` run on the same query returned `results_incomplete: true`; or (c) you need a specific non-4000 `--max-tokens` budget. Never grep `pretty`.
 - `--semantic` accepts at most one `-R`. Lexical accepts many.
 - Pair `--semantic` with `--auto-index` against repos that may not be indexed yet, otherwise expect a 404.
 - Use `--symbol` for name lookup; do not regex around it.
@@ -162,8 +163,7 @@ Handle 429s deliberately:
 - Prefer simple `jq` one-liners or reading key files over opaque ad-hoc post-processing. Avoid Python summarizers unless there is a real need.
 - Do not pass `--lab` (staff-only no-op).
 - No GHES. No filesets on `*.ghe.com`.
-- Context flags (`-C/-A/-B`, `--full-snippet`) work with JSONL output as of v0.2.0. Use `-C N` when an agent needs surrounding lines without a follow-up file read.
-- Clip wide lines with `-M N` (ripgrep-style `--max-columns`) when results contain minified or generated code.
+- Snippet context (`-C/-A/-B`, `--full-snippet`) and width clipping (`-M`) work with `--json` JSONL output as of v0.2.0, but are mutually exclusive with `--for-llm`. Pick the LLM mode or the grep-style mode, not both.
 
 ## Common mistakes
 
