@@ -47,9 +47,11 @@ Use the cheapest useful query first:
 5. Start with a small cap (`-n 5` or `-n 10`) for discovery. Increase only if the first page proves the query is correctly scoped and still lacks the needed evidence.
 6. Avoid broad `OR` queries across large repos as a first move. Split them into narrower searches so one expensive term does not burn quota and flood output.
 7. Do not run lexical and semantic back-to-back "just in case." Pick one mode from the evidence, then switch only when the result shows the mode is wrong.
-8. Stop searching once you have a canonical file, owner repo, route, schema, doc, or wrapper symbol to read. Reading one result is cheaper and more reliable than another broad search.
+8. Use `--for-llm` by default when an agent is parsing the output; it bounds response size so a single broad query can't flood context.
+9. Clip pathological snippets with `-M N` (e.g. `-M 200`) when results include minified JS, generated code, or other very long lines.
+10. Stop searching once you have a canonical file, owner repo, route, schema, doc, or wrapper symbol to read. Reading one result is cheaper and more reliable than another broad search.
 
-If a query returns noisy results, make it cheaper before retrying: lower `-n`, add repo/path/language qualifiers, search a more distinctive literal, or search the wrapper/symbol that appeared in the first results.
+If a query returns noisy results, make it cheaper before retrying: lower `-n`, add repo/path/language qualifiers, add `-M` to clip long lines, search a more distinctive literal, or search the wrapper/symbol that appeared in the first results.
 
 ## Discovery before semantic
 
@@ -93,25 +95,36 @@ Generic names create false positives. Scope aggressively with repo/org plus pack
 
 Once a wrapper is identified, stop broad search and search that wrapper symbol/string. Wrapper callers are usually the real integration points.
 
-## How to invoke
+## Output for agents
 
-Always pass `--json` (= `--format jsonl`) when an agent will parse the output. First line is a meta envelope, then one match per line. Never parse `pretty`.
+Three output tiers, in order of preference for agent use:
+
+1. **`--for-llm`** - default for agents. Sugar for `--max-tokens 4000 --format jsonl`: trims the response to fit a model-friendly budget, drops oversize snippets, and still emits JSONL. Use this whenever an agent will consume the output and you do not have a specific reason to want more.
+2. **`--json`** (= `--format jsonl`) - full JSONL with no token cap. Use when you actually need every byte of every snippet, or when paired with a custom `--max-tokens N` for a different budget than `--for-llm`'s 4000. First line is a meta envelope, then one match per line.
+3. **`pretty`** - humans only. Never grep or parse it.
+
+Snippet width: pass `-M N` / `--max-columns N` (ripgrep-style) to clip individual lines that would otherwise blow the context window (minified JS, generated code, base64 blobs). Works with `--for-llm` and `--json`.
+
+Snippet context: `-A`, `-B`, `-C`, and `--full-snippet` work with JSONL output (fixed in v0.2.0). Pass `-C N` when you need surrounding lines without a second round-trip to read the file.
 
 ```sh
-# Lexical with code-search qualifiers
-gh blackbird search 'TokenResolver language:rust path:src/auth' -R owner/name --json
+# Default agent invocation: token-capped JSONL
+gh blackbird search 'TokenResolver language:rust path:src/auth' -R owner/name --for-llm
 
-# Multi-repo lexical
-gh blackbird search 'parseURL' -R a/b -R c/d --json
+# Multi-repo lexical with context lines, width-clipped
+gh blackbird search 'parseURL' -R a/b -R c/d --for-llm -C 3 -M 200
 
 # Exact symbol lookup (language-aware)
-gh blackbird search --symbol parse_url -R owner/name --json
+gh blackbird search --symbol parse_url -R owner/name --for-llm
 
 # Semantic / conceptual (single repo, may need indexing)
-gh blackbird search --semantic "how does token resolution work" -R owner/name --auto-index --json -n 5
+gh blackbird search --semantic "how does token resolution work" -R owner/name --auto-index --for-llm -n 5
 
 # External fileset (dotcom only)
-gh blackbird search 'pattern' --fileset my-corpus --json -n 10
+gh blackbird search 'pattern' --fileset my-corpus --for-llm -n 10
+
+# Full JSONL with a custom token budget
+gh blackbird search 'pattern' -R owner/name --json --max-tokens 8000
 ```
 
 Cap results with `-n` when scoping a broad query. Defaults: 25 lexical, 10 semantic. For agent discovery, prefer `-n 5` or `-n 10` unless you already know the query is narrow.
@@ -136,7 +149,7 @@ Handle 429s deliberately:
 
 ## Rules
 
-- Always `--json` for programmatic use. Never grep `pretty`.
+- Default agent invocation is `--for-llm` (token-capped JSONL). Drop to `--json` only when you need uncapped output or a custom `--max-tokens`. Never grep `pretty`.
 - `--semantic` accepts at most one `-R`. Lexical accepts many.
 - Pair `--semantic` with `--auto-index` against repos that may not be indexed yet, otherwise expect a 404.
 - Use `--symbol` for name lookup; do not regex around it.
@@ -149,7 +162,8 @@ Handle 429s deliberately:
 - Prefer simple `jq` one-liners or reading key files over opaque ad-hoc post-processing. Avoid Python summarizers unless there is a real need.
 - Do not pass `--lab` (staff-only no-op).
 - No GHES. No filesets on `*.ghe.com`.
-- Context flags (`-C/-A/-B`) only affect `pretty`. Irrelevant when consuming `--json`.
+- Context flags (`-C/-A/-B`, `--full-snippet`) work with JSONL output as of v0.2.0. Use `-C N` when an agent needs surrounding lines without a follow-up file read.
+- Clip wide lines with `-M N` (ripgrep-style `--max-columns`) when results contain minified or generated code.
 
 ## Common mistakes
 
