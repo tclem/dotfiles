@@ -52,6 +52,8 @@ Look at sibling docs before picking a location. **Match the established pattern*
 
 If the repo has no design-doc convention at all, default to `docs/design/<topic>.md`. Confirm with the user before creating the directory.
 
+**Drafts live in the repo, on the branch.** Don't stash design docs in a session scratch directory, `/tmp`, or any other location the user can't see in the file tree — a doc the user can't read is a doc they can't iterate on. A doc on a feature branch is, by definition, a draft; the branch and PR are what mark it as in-progress. Land the file at its real path from the first version and edit it in place.
+
 ### 2. Lead with orientation
 
 Open the doc with a short "read this first" block: companion docs (ADR, SKILL, related design docs, active plans), and a one-paragraph summary of what the doc covers. Future readers should know within 30 seconds whether they're in the right place.
