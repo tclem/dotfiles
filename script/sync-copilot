@@ -23,6 +23,19 @@ PORTABLE_GLOBS=(
 green()  { printf "\033[32m%s\033[0m\n" "$1"; }
 yellow() { printf "\033[33m%s\033[0m\n" "$1"; }
 
+# Return 0 if the SKILL.md at $1 has `disabled: true` in its frontmatter, else 1.
+# Frontmatter is the leading `---`-delimited YAML block. Anything outside is ignored.
+is_disabled_skill() {
+  local file="$1"
+  [[ -f "$file" ]] || return 1
+  awk '
+    NR==1 && /^---[[:space:]]*$/ { in_fm=1; next }
+    in_fm && /^---[[:space:]]*$/ { exit }
+    in_fm && /^disabled:[[:space:]]*true[[:space:]]*$/ { found=1; exit }
+    END { exit !found }
+  ' "$file"
+}
+
 # Expand globs against a root directory, returning paths relative to that root.
 expand_globs() {
   local root="$1"
@@ -61,19 +74,36 @@ prune_removed_links() {
 
 cmd_install() {
   echo "Installing copilot config: $COPILOT_REPO → $COPILOT_HOME"
-  local files
+  local files filtered=() skipped=()
   files=$(expand_globs "$COPILOT_REPO" "${PORTABLE_GLOBS[@]}")
 
   while IFS= read -r rel; do
     [[ -z "$rel" ]] && continue
     local src="$COPILOT_REPO/$rel"
+
+    if [[ "$rel" == skills/*/SKILL.md ]] && is_disabled_skill "$src"; then
+      skipped+=("$rel")
+      continue
+    fi
+
+    filtered+=("$rel")
     local dst="$COPILOT_HOME/$rel"
     mkdir -p "$(dirname "$dst")"
     ln -sf "$src" "$dst"
     green "  linked $rel"
   done <<< "$files"
 
-  prune_removed_links "$files"
+  local filtered_list
+  filtered_list=$(printf '%s\n' "${filtered[@]}")
+  prune_removed_links "$filtered_list"
+
+  if (( ${#skipped[@]} > 0 )); then
+    echo
+    yellow "Skipped (disabled: true):"
+    for rel in "${skipped[@]}"; do
+      yellow "  $rel"
+    done
+  fi
 }
 
 cmd_import() {

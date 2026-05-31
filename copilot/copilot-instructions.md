@@ -52,21 +52,21 @@ Use `choosing-workflow` when the right skill source is ambiguous. Do not promote
 
 These fire on specific phases of the work loop. Load them when their trigger applies — don't reinvent the discipline in chat:
 
-- **`designing-before-coding`** — before behavior, API, or architecture changes; the lightweight design gate.
-- **`testing-before-coding`** — when behavior can be specified with tests or executable verification before production code.
-- **`debugging-systematically`** — investigating a bug, regression, flaky behavior, or unclear root cause.
+- **`design-before-coding`** — before behavior, API, or architecture changes; the lightweight design gate.
+- **`test-before-coding`** — when behavior can be specified with tests or executable verification before production code.
+- **`debug`** — investigating a bug, regression, flaky behavior, or unclear root cause.
 - **`reading-source-code`** — before calling an unfamiliar library/crate API, when a dependency's behavior is surprising, or when training-data memory might be stale; pin the version and read the actual source.
 - **`fixing-root-causes`** — when tempted to add a defensive layer, fallback, retry, or "just in case" check alongside the real fix.
-- **`verifying-before-claiming`** — before claiming work is complete, fixed, passing, installed, synced, or ready for review.
+- **`verify-before-claiming`** — before claiming work is complete, fixed, passing, installed, synced, or ready for review.
 - **`pr-merge-readiness`** — when getting a PR ready to merge by addressing review threads, CI failures, or conflicts, without performing the merge.
-- **`assessing-deploy-risk`** — before merging or approving a PR that will deploy or release to users; hunts for failure modes that could force a revert.
+- **`deploy-risk-check`** — before merging or approving a PR that will deploy or release to users; hunts for failure modes that could force a revert.
 - **`deprecating-and-removing`** — retiring an API, sunsetting a feature, consolidating duplicates, or removing zombie code; advisory vs compulsory, deprecator owns the migration, removal is the goal.
-- **`authoring-adrs`** — when proposing or recording a significant technical decision that should land as an ADR.
-- **`authoring-design-docs`** — when explaining the shape of a subsystem, architecture, or significant feature.
+- **`adr-author`** — when proposing or recording a significant technical decision that should land as an ADR.
+- **`design-doc-author`** — when explaining the shape of a subsystem, architecture, or significant feature.
 
 ## Pull Request Authoring Gate
 
-Before authoring or editing a PR by any mechanism, load the `pr-authoring` skill first. This is non-negotiable, even if the change seems straightforward or you think you remember the conventions. The skill covers both creating new PRs and rewriting an existing PR's title/body when it has drifted from the code.
+Before authoring or editing a PR by any mechanism, load the `pr-author` skill first. This is non-negotiable, even if the change seems straightforward or you think you remember the conventions. The skill covers both creating new PRs and rewriting an existing PR's title/body when it has drifted from the code.
 
 The gate fires for **any** of these — including when they appear inside a `bash` (or other shell) call:
 
@@ -75,9 +75,9 @@ The gate fires for **any** of these — including when they appear inside a `bas
 - CLI: `gh pr create`, `gh pr edit`, `gh pr ready`, `gh pr merge`'s body/title flags.
 - Raw REST/GraphQL: `gh api … /pulls/…` with `-X POST`/`-X PATCH`, `curl` against the pulls API, etc.
 
-"It's just a bash call" does not exempt it. If the command will create or mutate a PR's title, body, base, or draft state, load `pr-authoring` first.
+"It's just a bash call" does not exempt it. If the command will create or mutate a PR's title, body, base, or draft state, load `pr-author` first.
 
-Prefer an app-native PR edit tool when one is available in the current session — they typically use REST PATCH under the hood and avoid the SAML/`read:org` scope errors that `gh pr edit` hits on this token. If no app-native tool is available, use the REST API directly (see `pr-authoring` for the fallback); only fall back to `gh pr edit` if neither works.
+Prefer an app-native PR edit tool when one is available in the current session — they typically use REST PATCH under the hood and avoid the SAML/`read:org` scope errors that `gh pr edit` hits on this token. If no app-native tool is available, use the REST API directly (see `pr-author` for the fallback); only fall back to `gh pr edit` if neither works.
 
 ## Code Philosophy
 
@@ -109,7 +109,7 @@ A few more details:
 - **Maintainability is a feature.** Code is read far more than it's written. Optimize for the next person (or future me).
 - **Whitespace is intentional.** Files must end with a trailing newline. Don't move code around unnecessarily. Use blank lines only to separate distinct semantic phases of a function (setup / execute / respond) — not between consecutive statements in the same logical step. Keep functions compact enough to read without scrolling.
 - **ASCII art only.** In code comments, doc comments, and markdown, use plain ASCII characters (`+`, `-`, `|`, `>`) for diagrams and boxes. Never use unicode box-drawing characters (`┌`, `─`, `│`, `└`, `▶`, etc.) — they render at inconsistent widths across monospaced fonts and break alignment.
-- **ADRs for major decisions.** All my projects use Architecture Decision Records. Major technical decisions (architecture changes, new dependency patterns, public API changes, hard-to-reverse choices) get a formal ADR. Load `authoring-adrs` when proposing one — it covers filename conventions (always follow the repo's existing pattern), the header template, status lifecycle, and the "ADR as a separate PR before implementation" rule. I'll handle getting the ADR reviewed by the team.
+- **ADRs for major decisions.** All my projects use Architecture Decision Records. Major technical decisions (architecture changes, new dependency patterns, public API changes, hard-to-reverse choices) get a formal ADR. Load `adr-author` when proposing one — it covers filename conventions (always follow the repo's existing pattern), the header template, status lifecycle, and the "ADR as a separate PR before implementation" rule. I'll handle getting the ADR reviewed by the team.
 
 ## Language Preferences
 
@@ -207,4 +207,4 @@ Rule of thumb: if the agent composed the text, use the "Generated via" signature
 
 ## Responding to PR Review Comments
 
-When addressing PR review feedback, load `handling-review-feedback` first — it covers fetching threads, triaging which comments are real, replying to each one, and the GitHub Posting Protocol. Don't blindly fix everything (review agents flag dumb stuff). If a comment is ambiguous, ask me with your take before acting. Always reply to the thread, even if leaving it as-is.
+When addressing PR review feedback, load `pr-review-reply` first — it covers fetching threads, triaging which comments are real, replying to each one, and the GitHub Posting Protocol. Don't blindly fix everything (review agents flag dumb stuff). If a comment is ambiguous, ask me with your take before acting. Always reply to the thread, even if leaving it as-is.

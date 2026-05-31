@@ -20,15 +20,15 @@ Choose the narrowest workflow that fits. Do not load competing skills just becau
 | Situation | Prefer |
 |---|---|
 | Editing Rust in a repo with a repo-local Rust skill | Repo-local Rust skill |
-| Editing Rust with no repo-local Rust skill | `rust-coding` (dotfiles fallback) |
+| Editing Rust with no repo-local Rust skill | `code-rust` (dotfiles fallback) |
 | Working in a repo with app/runtime skills | Repo-local skills and app-native tools |
 | Running a project-specific on-call/runbook workflow | Repo-local skill or runbook |
-| Deciding how to approach implementation | `designing-before-coding` or the app's plan mode |
-| Investigating a bug or regression | `debugging-systematically` |
-| Implementing testable behavior | `testing-before-coding` |
-| Claiming work is complete | `verifying-before-claiming` |
-| Handling review comments | `handling-review-feedback` |
-| Searching code across repos, by symbol, or by concept | `blackbird-search` |
+| Deciding how to approach implementation | `design-before-coding` or the app's plan mode |
+| Investigating a bug or regression | `debug` |
+| Implementing testable behavior | `test-before-coding` |
+| Claiming work is complete | `verify-before-claiming` |
+| Handling review comments | `pr-review-reply` |
+| Searching code across repos, by symbol, or by concept | `blackbird` |
 | About to call an unfamiliar library API, or surprised by a dep's behavior | `reading-source-code` |
 | Retiring an old API, sunsetting a feature, or removing zombie code | `deprecating-and-removing` |
 | Creating a broadly useful personal workflow | Dotfiles skill |
@@ -45,11 +45,12 @@ Some dotfiles skills exist as **explicit fallbacks** for tasks the user does acr
 
 | Task | Repo skill if it exists | Otherwise |
 |---|---|---|
-| Editing Rust | repo's `rust-coding-skill` (or equivalent) | `rust-coding` |
-| Investigating an alert or incident | repo's alert/incident skill | `investigate-alert` |
+| Editing Rust | repo's `rust-coding-skill` (or equivalent) | `code-rust` |
+| Editing Go | repo's `go-coding-skill` (or equivalent) | `code-go` |
+| Investigating an alert or incident | repo's alert/incident skill | `alert-investigator` |
 | Writing an incident postmortem | repo's `incident-postmortem` (or equivalent) | `incident-postmortem` |
-| Updating dependencies | repo's `update-deps` (or equivalent) | `updating-dependencies` |
-| Assessing deploy/release risk on a PR | repo's deploy-risk or release-readiness skill | `assessing-deploy-risk` |
+| Updating dependencies | repo's `update-deps` (or equivalent) | `deps-update` |
+| Assessing deploy/release risk on a PR | repo's deploy-risk or release-readiness skill | `deploy-risk-check` |
 | Deprecating or removing an API, feature, or system | repo's deprecation or release-management skill | `deprecating-and-removing` |
 
 Authoring rule for these skills: their description **must** say "Use when... and the repository has no equivalent skill of its own." That signals fallback role at discovery time even though current tooling can't enumerate other skills to enforce it.
@@ -58,5 +59,5 @@ Authoring rule for these skills: their description **must** say "Use when... and
 
 A small number of dotfiles skills are pure cross-repo personal workflow — they have no repo-level specialization and should not be copied into any project's `.copilot/skills/` or `.github/skills/`. Doing so causes drift and confuses discovery.
 
-- `blackbird-search` — purely a personal workflow over `gh blackbird`. If a repo wants users to learn the workflow, link to it from the repo's docs rather than vendoring it.
-- `pr-authoring`, `pr-merge-readiness`, `daily-handoff`, `thinking-about`, `copy-editing`, `delegating-plan-work`, `planning-multi-agent-projects`, `authoring-skills`, `choosing-workflow` — personal workflow only.
+- `blackbird` — purely a personal workflow over `gh blackbird`. If a repo wants users to learn the workflow, link to it from the repo's docs rather than vendoring it.
+- `pr-author`, `pr-merge-readiness`, `daily-handoff`, `thinking-about`, `copy-editor`, `delegating-plan-work`, `planning-multi-agent-projects`, `skill-author`, `choosing-workflow` — personal workflow only.

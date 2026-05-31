@@ -1,0 +1,78 @@
+#!/usr/bin/env python3
+"""
+Print a status table of user-level Copilot skills (enabled/disabled).
+
+Usage:
+  script/skills-status            # print table to stdout
+  script/skills-status --update   # rewrite the table block in copilot/skills/README.md
+
+The README table lives between these markers (no edits outside them):
+
+    <!-- skills-status:begin -->
+    ...
+    <!-- skills-status:end -->
+"""
+from __future__ import annotations
+import argparse
+import pathlib
+import re
+import sys
+
+ROOT = pathlib.Path(__file__).resolve().parent.parent
+SKILLS_DIR = ROOT / "copilot" / "skills"
+README = SKILLS_DIR / "README.md"
+BEGIN = "<!-- skills-status:begin -->"
+END = "<!-- skills-status:end -->"
+
+
+def parse_skill(path: pathlib.Path) -> tuple[str, bool, str]:
+    name = path.parent.name
+    parts = path.read_text().split("---", 2)
+    fm = parts[1] if len(parts) > 2 else ""
+    disabled = bool(re.search(r"^disabled:\s*true\s*$", fm, re.M))
+    m = re.search(r"^description:\s*['\"]?(.+?)['\"]?\s*$", fm, re.M)
+    desc = m.group(1) if m else ""
+    short = desc.split(". ")[0].rstrip(".")
+    if len(short) > 110:
+        short = short[:107] + "..."
+    return name, disabled, short
+
+
+def build_table() -> str:
+    rows = [parse_skill(p) for p in sorted(SKILLS_DIR.glob("*/SKILL.md"))]
+    lines = ["| Skill | Status | Trigger |", "|---|---|---|"]
+    for name, disabled, short in rows:
+        badge = "🚫 off" if disabled else "✅ on"
+        lines.append(f"| `{name}` | {badge} | {short} |")
+    return "\n".join(lines)
+
+
+def update_readme() -> int:
+    if not README.exists():
+        sys.exit(f"missing: {README}")
+    txt = README.read_text()
+    if BEGIN not in txt or END not in txt:
+        sys.exit(f"{README} is missing {BEGIN!r}/{END!r} markers")
+    table = build_table()
+    pat = re.compile(re.escape(BEGIN) + r".*?" + re.escape(END), re.S)
+    new = pat.sub(f"{BEGIN}\n\n{table}\n\n{END}", txt)
+    if new == txt:
+        print("no changes")
+        return 0
+    README.write_text(new)
+    print(f"updated: {README.relative_to(ROOT)}")
+    return 0
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--update", action="store_true", help="rewrite the README table block in place")
+    args = ap.parse_args()
+    if args.update:
+        return update_readme()
+    print(build_table())
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
