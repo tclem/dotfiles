@@ -30,15 +30,7 @@ For chain-stacked PRs the base is the prior PR's head branch, not the repo defau
 
 **Guard:** if `$base` is not the repo default, do not silently merge the default branch instead. Use `$base`. Only fall back to the default branch if the user explicitly overrides.
 
-### 2. Enable `git rerere` once per repo
-
-```bash
-git config rerere.enabled true
-```
-
-Recurring conflicts (typical in a stack where the same files are touched in multiple PRs) get auto-resolved on subsequent merges using your prior resolution. Enable this before the first merge of a stack so the resolutions are recorded.
-
-### 3. Merge, then verify before resolving
+### 2. Merge, then verify before resolving
 
 ```bash
 git merge "origin/$base"
@@ -52,7 +44,7 @@ git show :2:<file> | <inspect>
 git show :3:<file> | <inspect>
 ```
 
-### 4. Common conflict shapes
+### 3. Common conflict shapes
 
 **a) "Ours is strictly newer"** — when the feature branch has N commits stacked on the base, and the base picks up commits that overlap with that work (e.g. the prior PR in the stack merged a subset of what HEAD already has), the conflicting hunks in overlapping files resolve with `--ours` because HEAD strictly supersedes base for that surface.
 
@@ -80,7 +72,7 @@ Usually accept the deletion with `git rm <file>` and adopt the new structure. Re
 
 After resolving (either shape), immediately run the language's typecheck (`cargo check`, `tsc --noEmit`, `go build ./...`, etc.) to catch any semantic conflict the file-level resolution missed. Run relevant tests. Commit only after both pass.
 
-### 5. Scan merged commits for tooling drift
+### 4. Scan merged commits for tooling drift
 
 Before pushing, look at what the merge brought in beyond source code:
 
@@ -90,7 +82,7 @@ git log --stat HEAD@{1}..HEAD -- '*.toml' '*.lock' 'package.json' 'bun.lock' 'go
 
 If dependency manifests or lockfiles changed, re-run the install step (`bun install`, `cargo build`, `bundle install`, etc.) before validating — otherwise the typecheck runs against stale deps. If toolchain or lint config changed, flag it in the commit/PR comment so new errors read as drift, not regressions you introduced.
 
-### 6. Push and let CI re-verify
+### 5. Push and let CI re-verify
 
 ```bash
 git push
@@ -103,7 +95,6 @@ No force-push. Merge commits are fine; they're the honest record of the base upd
 - Trusting the prompt template's "base branch: `origin/main`" instead of querying `gh pr view --json baseRefName`. The two diverge for every stacked PR.
 - Resolving conflicts with `--ours` or `--theirs` without spot-checking the stages first.
 - Skipping the post-resolve typecheck because the file-level merge "looked clean". File-level resolutions routinely miss semantic conflicts (a caller in one file, a signature change in another).
-- Forgetting to enable `git rerere`, then re-resolving the same three-file conflict on every merge in a long-running stack.
 - Force-pushing after the merge to "clean up history". The merge commit is the artifact reviewers and CI expect.
 - Validating without re-installing after a lockfile bump came in with the merge — the typecheck passes against stale deps, then CI explodes on fresh ones.
 - Reflexively restoring a `modify/delete` file instead of checking whether the upstream PR moved or split it.
