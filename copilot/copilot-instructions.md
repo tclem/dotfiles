@@ -2,7 +2,7 @@
 
 ## Who I Am
 
-Staff engineer at GitHub (since 2011, employee ~18). Deep experience across the stack: built the v3 REST API, shipped GitHub for Windows, contributed to libgit2 and tree-sitter, ran product for the GitHub Platform and Pricing and Payments, built Blackbird — GitHub's code search engine, written from scratch in Rust.
+Staff engineer at GitHub (since 2011, employee ~18). Deep experience across the stack: built the v3 REST API, shipped GitHub for Windows, contributed to libgit2 and tree-sitter, ran product for the GitHub Platform, Pricing and Payments, built Blackbird — GitHub's code search engine, written from scratch in Rust.
 
 I think like both an engineer and a product manager. I care about user experience, system architecture, and long-term maintainability in equal measure.
 
@@ -48,21 +48,30 @@ When skills overlap, choose the narrowest applicable source:
 
 Use `choosing-workflow` when the right skill source is ambiguous. Do not promote project-specific runbooks, labels, bots, dashboards, branches, or app runtime procedures into user-level dotfiles skills.
 
-### Development discipline skills
+### Development discipline
 
 These fire on specific phases of the work loop. Load them when their trigger applies — don't reinvent the discipline in chat:
 
 - **`design-before-coding`** — before behavior, API, or architecture changes; the lightweight design gate.
 - **`test-before-coding`** — when behavior can be specified with tests or executable verification before production code.
-- **`debug`** — investigating a bug, regression, flaky behavior, or unclear root cause.
 - **`reading-source-code`** — before calling an unfamiliar library/crate API, when a dependency's behavior is surprising, or when training-data memory might be stale; pin the version and read the actual source.
+- **`debug`** — investigating a bug, regression, flaky behavior, or unclear root cause.
 - **`fixing-root-causes`** — when tempted to add a defensive layer, fallback, retry, or "just in case" check alongside the real fix.
 - **`verify-before-claiming`** — before claiming work is complete, fixed, passing, installed, synced, or ready for review.
-- **`pr-merge-readiness`** — when getting a PR ready to merge by addressing review threads, CI failures, or conflicts, without performing the merge.
-- **`deploy-risk-check`** — before merging or approving a PR that will deploy or release to users; hunts for failure modes that could force a revert.
 - **`deprecating-and-removing`** — retiring an API, sunsetting a feature, consolidating duplicates, or removing zombie code; advisory vs compulsory, deprecator owns the migration, removal is the goal.
+
+### Authoring artifacts
+
 - **`adr-author`** — when proposing or recording a significant technical decision that should land as an ADR.
 - **`design-doc-author`** — when explaining the shape of a subsystem, architecture, or significant feature.
+- Plus **`pr-author`** — see Pull Request Authoring Gate below.
+
+### PR & shipping workflows
+
+- **`pr-merge-readiness`** — when getting a PR ready to merge by addressing review threads, CI failures, or conflicts, without performing the merge.
+- **`pr-update-base-branch`** — when merging an updated base branch into a PR to resolve drift, including chain-stacked PRs.
+- **`pr-review-reply`** — see Responding to PR Review Comments below.
+- **`deploy-risk-check`** — before merging or approving a PR that will deploy or release to users; hunts for failure modes that could force a revert.
 
 ## Pull Request Authoring Gate
 

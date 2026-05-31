@@ -15,23 +15,9 @@ Choose the narrowest workflow that fits. Do not load competing skills just becau
 4. **Process skills** - use dotfiles skills for development discipline: design, planning, debugging, testing, review, verification.
 5. **App-native affordances** - prefer built-in session, PR, worktree, review, and orchestration UI when available instead of procedural prompt skills.
 
-## Route away from broad skills
+## What this skill is not
 
-| Situation | Prefer |
-|---|---|
-| Editing Rust in a repo with a repo-local Rust skill | Repo-local Rust skill |
-| Editing Rust with no repo-local Rust skill | `code-rust` (dotfiles fallback) |
-| Working in a repo with app/runtime skills | Repo-local skills and app-native tools |
-| Running a project-specific on-call/runbook workflow | Repo-local skill or runbook |
-| Deciding how to approach implementation | `design-before-coding` or the app's plan mode |
-| Investigating a bug or regression | `debug` |
-| Implementing testable behavior | `test-before-coding` |
-| Claiming work is complete | `verify-before-claiming` |
-| Handling review comments | `pr-review-reply` |
-| Searching code across repos, by symbol, or by concept | `blackbird` |
-| About to call an unfamiliar library API, or surprised by a dep's behavior | `reading-source-code` |
-| Retiring an old API, sunsetting a feature, or removing zombie code | `deprecating-and-removing` |
-| Creating a broadly useful personal workflow | Dotfiles skill |
+This skill resolves **precedence** when multiple workflows could apply. For the per-trigger "when X happens, load skill Y" index — including discipline, authoring, and PR/shipping workflows — see the Development discipline, Authoring artifacts, and PR & shipping workflows lists in `copilot/copilot-instructions.md`. Don't duplicate those triggers here.
 
 ## Do not promote
 
