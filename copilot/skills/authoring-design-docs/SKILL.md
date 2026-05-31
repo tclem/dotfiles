@@ -1,6 +1,6 @@
 ---
 name: authoring-design-docs
-description: Use when explaining the shape of a subsystem, architecture, or significant feature — design docs are the "here's what's there and why" companion to an ADR's terse decision record.
+description: 'Use when authoring or substantially editing a design doc, architecture doc, or subsystem explanation — the "here''s what''s there and why" companion to an ADR''s terse decision record.'
 ---
 
 # Authoring Design Docs
@@ -50,11 +50,13 @@ Locations vary by repo:
 
 Look at sibling docs before picking a location. **Match the established pattern** — don't introduce a parallel convention.
 
-If the repo has no design-doc convention at all, default to `docs/design/<topic>.md`. Confirm with the user before creating the directory.
+If the repo has no design-doc convention at all, default to `docs/design/<topic>.md` and mention the choice in your next message so the user can correct it.
 
-**Drafts live in the repo, on the branch.** Don't stash design docs in a session scratch directory, `/tmp`, or any other location the user can't see in the file tree — a doc the user can't read is a doc they can't iterate on. A doc on a feature branch is, by definition, a draft; the branch and PR are what mark it as in-progress. Land the file at its real path from the first version and edit it in place.
+### 2. Drafts live in the repo, on the branch
 
-### 2. Lead with orientation
+Don't stash design docs in a session scratch directory, `/tmp`, or any other location the user can't see in the file tree — a doc the user can't read is a doc they can't iterate on. A doc on a feature branch is, by definition, a draft; the branch and PR are what mark it as in-progress. Land the file at its real path from the first version and edit it in place.
+
+### 3. Lead with orientation
 
 Open the doc with a short "read this first" block: companion docs (ADR, SKILL, related design docs, active plans), and a one-paragraph summary of what the doc covers. Future readers should know within 30 seconds whether they're in the right place.
 
@@ -69,23 +71,23 @@ Open the doc with a short "read this first" block: companion docs (ADR, SKILL, r
 One paragraph: what this doc explains, and what it does **not** cover.
 ```
 
-### 3. Explain the *why* before the *what*
+### 4. Explain the *why* before the *what*
 
 The first substantive section should answer "why does this exist?" — what forced the current shape. Without that frame, the rest of the doc reads as arbitrary structure. Reference the ADR if there is one, but restate the framing in the design doc's own voice.
 
-### 4. State the contract
+### 5. State the contract
 
 If the subsystem has invariants — complexity bounds, layering rules, ordering guarantees, performance budgets, security properties — name them explicitly. A contract turns the doc from prose into something reviewers can hold a PR against.
 
 If the contract has hard laws that contributors must apply during day-to-day work, those belong in a SKILL, not duplicated in the design doc. Link out, don't repeat.
 
-### 5. Walk the mechanism
+### 6. Walk the mechanism
 
 After the why and the contract, walk the actual mechanism: pipeline stages, data flow, key types, interaction sequences. Use ASCII or mermaid diagrams when they earn their place. Be concrete — name actual files, functions, and types.
 
 Avoid generic boilerplate ("the request enters the system, is validated, and routed"). If the same sentence could appear in any design doc, delete it.
 
-### 6. Name what's *not* settled
+### 7. Name what's *not* settled
 
 Design docs that pretend everything is figured out age badly. Include a section for:
 
@@ -95,7 +97,7 @@ Design docs that pretend everything is figured out age badly. Include a section 
 
 This is what makes the doc honest. A reader can trust the rest if they see the unknowns named.
 
-### 7. Pair with the other artifacts
+### 8. Pair with the other artifacts
 
 Once written, cross-link:
 
@@ -105,13 +107,13 @@ Once written, cross-link:
 
 Bidirectional links keep the four artifacts navigable.
 
-### 8. Keep design docs and plans separate
+### 9. Keep design docs and plans separate
 
 A design doc says **what the system is**. A plan says **how we get there from here**. Plans are time-bound and become history once executed; design docs are durable references.
 
 If a plan accumulates design content during execution, harvest the design into a real design doc and leave the plan as a record of the work. Don't let the plan doc become the de facto design doc — it ages out the moment the work ships.
 
-### 9. Maintain or supersede; don't silently rewrite
+### 10. Maintain or supersede; don't silently rewrite
 
 When the system changes:
 
@@ -130,3 +132,7 @@ When the system changes:
 - **Burying the why.** If the first section is "the API exposes endpoints X, Y, Z," readers don't know why they're here. Lead with the forces, not the surface.
 - **Pretending the doc is complete.** Name the unsettled bits explicitly; readers will trust the doc more, not less.
 - **Hard-wrapping the markdown.** Let lines flow naturally; renderers handle wrapping.
+
+## Pressure-test
+
+The temptation this skill prevents: reaching for a design doc whenever a system feels "important enough" to deserve one, when an ADR, a few code comments, or a README update would actually serve readers better. The excuse: "future contributors will want this written down." The loophole closer: a design doc earns its existence only when there's a *recurring* need for the explanation — onboarding pain, repeated misunderstandings, invariants reviewers can't enforce without it. If you cannot name the recurring need, write the ADR or the code comment and stop.

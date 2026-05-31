@@ -75,7 +75,7 @@ Keep repo-specific workflows in the repo where they apply. Do not promote one re
 | `incident-postmortem` | User-level, fallback | General postmortem assembly when the repo has no equivalent skill. |
 | `updating-dependencies` | User-level, fallback | Generic dependency update workflow when the repo has no equivalent skill. |
 | `rust-coding` | User-level, fallback | Generic Rust style and discipline when the repo has no `rust-coding-skill` of its own. Template at `copilot/templates/rust-coding-skill/` for new repos. |
-| `searching-github-code` | User-level | When to use `gh blackbird` for lexical, symbol, or semantic code search across one or many GitHub repos. |
+| `blackbird-search` | User-level | When to use `gh blackbird` for lexical, symbol, or semantic code search across one or many GitHub repos. |
 | `reading-source-code` | User-level | Source-first discipline for unfamiliar or possibly-stale dependency APIs. |
 | `deprecating-and-removing` | User-level, fallback | Deprecation and removal workflow for decoupled consumers; lockstep-deployed code skips the ceremony. Repo-local deprecation runbook wins. |
 | `thinking-about` | User-level | Capture thoughts into `tclem/notes` and run the daily rollup that re-themes `top-of-mind.md` and prunes resolved/stale entries. |

@@ -28,7 +28,7 @@ Choose the narrowest workflow that fits. Do not load competing skills just becau
 | Implementing testable behavior | `testing-before-coding` |
 | Claiming work is complete | `verifying-before-claiming` |
 | Handling review comments | `handling-review-feedback` |
-| Searching code across repos, by symbol, or by concept | `searching-github-code` |
+| Searching code across repos, by symbol, or by concept | `blackbird-search` |
 | About to call an unfamiliar library API, or surprised by a dep's behavior | `reading-source-code` |
 | Retiring an old API, sunsetting a feature, or removing zombie code | `deprecating-and-removing` |
 | Creating a broadly useful personal workflow | Dotfiles skill |
@@ -58,5 +58,5 @@ Authoring rule for these skills: their description **must** say "Use when... and
 
 A small number of dotfiles skills are pure cross-repo personal workflow — they have no repo-level specialization and should not be copied into any project's `.copilot/skills/` or `.github/skills/`. Doing so causes drift and confuses discovery.
 
-- `searching-github-code` — purely a personal workflow over `gh blackbird`. If a repo wants users to learn the workflow, link to it from the repo's docs rather than vendoring it.
+- `blackbird-search` — purely a personal workflow over `gh blackbird`. If a repo wants users to learn the workflow, link to it from the repo's docs rather than vendoring it.
 - `pr-authoring`, `pr-merge-readiness`, `daily-handoff`, `thinking-about`, `copy-editing`, `delegating-plan-work`, `planning-multi-agent-projects`, `writing-skills`, `choosing-workflow` — personal workflow only.

@@ -109,7 +109,7 @@ When creating or editing a user-level skill that could plausibly have a repo-lev
 
 ## Skills that should never be mirrored into a repo
 
-Some user-level skills are pure cross-repo personal workflow with no repo-level specialization (e.g. `searching-github-code`, `pr-authoring`, `thinking-about`, `daily-handoff`, `copy-editing`, `delegating-plan-work`, `planning-multi-agent-projects`, `writing-skills`, `choosing-workflow`). They should not be copied into any project's `.copilot/skills/` or `.github/skills/`.
+Some user-level skills are pure cross-repo personal workflow with no repo-level specialization (e.g. `blackbird-search`, `pr-authoring`, `thinking-about`, `daily-handoff`, `copy-editing`, `delegating-plan-work`, `planning-multi-agent-projects`, `writing-skills`, `choosing-workflow`). They should not be copied into any project's `.copilot/skills/` or `.github/skills/`.
 
 When authoring one of these, note in the body that the skill is user-level only. The "Skills that should never be mirrored" list in `choosing-workflow/SKILL.md` is the canonical roster.
 

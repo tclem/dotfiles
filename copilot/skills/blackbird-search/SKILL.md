@@ -1,9 +1,9 @@
 ---
-name: searching-github-code
-description: Use when searching code across repos you don't have checked out, finding repo/component ownership, tracing callers across repos, or asking conceptual "how does X work" questions across the org.
+name: blackbird-search
+description: 'Use when reaching for `gh blackbird` (Blackbird code search) for cross-repo lexical, symbol, or semantic search on GitHub — finding callers, ownership, or how systems work without cloning.'
 ---
 
-# Searching GitHub Code
+# Blackbird Search
 
 `gh blackbird` is a superset of grep for indexed GitHub code. Use it when the question is bigger than a local checkout: multi-repo scope, GitHub code-search qualifiers (`language:`, `path:`, `symbol:`), language-aware symbol lookup, or vector search over embeddings. If the needed repos are checked out locally and the task is exhaustive, use `rg`.
 
@@ -167,17 +167,11 @@ Handle 429s deliberately:
 
 ## Common mistakes
 
-- Grepping `pretty` output instead of using `--json`.
-- Reaching for `rg` reflexively when the right tool is `--symbol` or `--semantic`.
-- Approximating symbol search with a regex when `--symbol` exists.
-- Starting semantic search in a guessed repo when the real task is ownership discovery.
-- Continuing broad search after finding the relevant docs, routes, schema, or README.
-- Claiming "all callers" from top-N Blackbird results without local exhaustive search or another exhaustive source.
-- Searching only raw request types and missing wrapper methods used by production callers.
-- Using lexical search for a conceptual question inside a known repo when `--semantic` (vector search) would find better matches.
-- Starting with an expensive broad query (`OR`, no path/language/repo scope, high `-n`) when a narrower literal or symbol lookup would answer the question.
-- Retrying a 429 immediately, repeatedly, or with the same expensive query when retry/reset metadata says to wait.
-- Treating lexical and semantic rate limits as interchangeable; they are separate quota buckets with different costs.
-- Multiple `-R` flags with `--semantic` (rejected).
-- Forgetting `--auto-index` on `--semantic` against an unindexed repo (404).
-- Treating Blackbird results as exhaustive in any mode - it is top-N ranked, not every match. For exhaustiveness, clone and `rg`.
+- **Reaching for `rg` reflexively** when the right tool is `--symbol`, `--semantic`, or a cross-repo lexical query.
+- **Approximating symbol search with a regex** when `--symbol` exists.
+- **Starting semantic search in a guessed repo** when the real task is ownership discovery — find the owner repo lexically first.
+- **Continuing broad search after finding the canonical doc/route/schema/README.** Read it instead of running another query.
+- **Searching only raw request types** and missing the wrapper methods production callers actually use.
+- **Claiming "all callers"** from top-N Blackbird results without falling back to local `rg` or another exhaustive source.
+- **Retrying a 429 immediately**, repeatedly, or with the same expensive query when retry/reset metadata says to wait.
+- **Treating Blackbird results as exhaustive** in any mode — it is top-N ranked, not every match.

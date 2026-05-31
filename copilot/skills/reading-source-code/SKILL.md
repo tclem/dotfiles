@@ -52,7 +52,7 @@ Stack Overflow, blog posts, and your own training data are starting points, not 
 
 Don't try to internalize the whole crate or package. Find the type, function, or trait you're about to use and read *its* definition and immediate neighbors. For unfamiliar APIs, also read one or two usage sites in the dependency's own tests — Rust's `tests/` and `src/**/*.rs` `#[cfg(test)]` blocks, Go's `*_test.go`, Ruby's `spec/`, JS's `__tests__/` — they show the contract better than the prose docs do.
 
-For cross-repo reading at GitHub, `gh blackbird` (see `searching-github-code`) jumps straight to symbols and usages without cloning. For local source, `rg` inside the registry cache, `GOMODCACHE`, gem path, or `node_modules` is usually faster than a web fetch.
+For cross-repo reading at GitHub, `gh blackbird` (see `blackbird-search`) jumps straight to symbols and usages without cloning. For local source, `rg` inside the registry cache, `GOMODCACHE`, gem path, or `node_modules` is usually faster than a web fetch.
 
 ### 4. Say what you read, not how you "STACK DETECTED"
 
