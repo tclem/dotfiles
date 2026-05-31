@@ -52,9 +52,9 @@ git show :2:<file> | <inspect>
 git show :3:<file> | <inspect>
 ```
 
-### 4. "Ours is strictly newer" pattern
+### 4. Common conflict shapes
 
-When the feature branch has N commits stacked on the base, and the base picks up commits that overlap with that work (e.g. the prior PR in the stack merged a subset of what HEAD already has), the conflicting hunks in overlapping files resolve with `--ours` because HEAD strictly supersedes base for that surface.
+**a) "Ours is strictly newer"** — when the feature branch has N commits stacked on the base, and the base picks up commits that overlap with that work (e.g. the prior PR in the stack merged a subset of what HEAD already has), the conflicting hunks in overlapping files resolve with `--ours` because HEAD strictly supersedes base for that surface.
 
 Verify the assumption before using `--ours`. Pick a concrete marker that should be present in ours and absent (or different) in theirs — e.g. a removed type, a renamed function, a deleted module — and check both stages:
 
@@ -70,9 +70,27 @@ git checkout --ours <files>
 git add <files>
 ```
 
-Then immediately run the language's typecheck (`cargo check`, `tsc --noEmit`, `go build ./...`, etc.) to catch any semantic conflict the file-level resolution missed. Run relevant tests. Commit only after both pass.
+**b) `modify/delete` from a sub-split** — base deleted a file you modified, usually because the upstream PR split or relocated it. Find where it went before deciding:
 
-### 5. Push and let CI re-verify
+```bash
+git log --oneline --diff-filter=D origin/$base -- <file>
+```
+
+Usually accept the deletion with `git rm <file>` and adopt the new structure. Restoring the file is rare; call it out explicitly when you do.
+
+After resolving (either shape), immediately run the language's typecheck (`cargo check`, `tsc --noEmit`, `go build ./...`, etc.) to catch any semantic conflict the file-level resolution missed. Run relevant tests. Commit only after both pass.
+
+### 5. Scan merged commits for tooling drift
+
+Before pushing, look at what the merge brought in beyond source code:
+
+```bash
+git log --stat HEAD@{1}..HEAD -- '*.toml' '*.lock' 'package.json' 'bun.lock' 'go.mod' 'go.sum' '.tool-versions' 'rust-toolchain*' '.eslintrc*' '.rubocop.yml'
+```
+
+If dependency manifests or lockfiles changed, re-run the install step (`bun install`, `cargo build`, `bundle install`, etc.) before validating — otherwise the typecheck runs against stale deps. If toolchain or lint config changed, flag it in the commit/PR comment so new errors read as drift, not regressions you introduced.
+
+### 6. Push and let CI re-verify
 
 ```bash
 git push
@@ -87,3 +105,5 @@ No force-push. Merge commits are fine; they're the honest record of the base upd
 - Skipping the post-resolve typecheck because the file-level merge "looked clean". File-level resolutions routinely miss semantic conflicts (a caller in one file, a signature change in another).
 - Forgetting to enable `git rerere`, then re-resolving the same three-file conflict on every merge in a long-running stack.
 - Force-pushing after the merge to "clean up history". The merge commit is the artifact reviewers and CI expect.
+- Validating without re-installing after a lockfile bump came in with the merge — the typecheck passes against stale deps, then CI explodes on fresh ones.
+- Reflexively restoring a `modify/delete` file instead of checking whether the upstream PR moved or split it.
