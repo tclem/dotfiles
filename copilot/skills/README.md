@@ -4,7 +4,7 @@ This directory contains my user-level Copilot skills, synced into `~/.copilot/sk
 
 ## Attribution
 
-Some skill-writing practices here are adapted from Jesse Vincent's Superpowers project, especially the `writing-skills` skill:
+Some skill-authoring practices here are adapted from Jesse Vincent's Superpowers project, especially the `writing-skills` skill:
 
 - Source: https://github.com/obra/superpowers/tree/main/skills/writing-skills
 - License: MIT
