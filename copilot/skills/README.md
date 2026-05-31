@@ -34,7 +34,7 @@ Run `script/skills-status` to print the latest table, or `script/skills-status -
 | `pr-author` | ✅ on | Use when creating a GitHub pull request, or when updating an existing PR's title or body so it matches what... |
 | `pr-merge-readiness` | ✅ on | Use when getting a pull request ready to merge by addressing review threads, CI failures, or conflicts, wit... |
 | `pr-review-reply` | ✅ on | Use when receiving PR review comments, code review feedback, suggested changes, or reviewer concerns that m... |
-| `pr-update-base-branch` | ✅ on | Use when merging an updated base branch into a PR branch to resolve drift, especially when the PR may be ch... |
+| `pr-update-base-branch` | 🚫 off | Use when merging an updated base branch into a PR branch to resolve drift, especially when the PR may be ch... |
 | `reading-source-code` | ✅ on | Use when about to call a library, crate, or framework API you haven't verified, when a dependency's behavio... |
 | `skill-author` | ✅ on | Use when creating, editing, splitting, renaming, or reviewing Copilot skills in this dotfiles repo |
 | `test-before-coding` | ✅ on | Use when implementing a feature or bugfix where behavior can be specified with tests or another executable ... |

@@ -69,7 +69,6 @@ These fire on specific phases of the work loop. Load them when their trigger app
 ### PR & shipping workflows
 
 - **`pr-merge-readiness`** — when getting a PR ready to merge by addressing review threads, CI failures, or conflicts, without performing the merge.
-- **`pr-update-base-branch`** — when merging an updated base branch into a PR to resolve drift, including chain-stacked PRs.
 - **`pr-review-reply`** — see Responding to PR Review Comments below.
 - **`deploy-risk-check`** — before merging or approving a PR that will deploy or release to users; hunts for failure modes that could force a revert.
 

@@ -1,6 +1,7 @@
 ---
 name: pr-update-base-branch
 description: Use when merging an updated base branch into a PR branch to resolve drift, especially when the PR may be chain-stacked on another PR rather than the repo default.
+disabled: true
 ---
 
 # Merging Base into a PR
