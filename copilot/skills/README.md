@@ -39,6 +39,7 @@ Run `script/skills-status` to print the latest table, or `script/skills-status -
 | `skill-author` | ✅ on | Use when creating, editing, splitting, renaming, or reviewing Copilot skills in this dotfiles repo |
 | `test-before-coding` | ✅ on | Use when implementing a feature or bugfix where behavior can be specified with tests or another executable ... |
 | `thinking-about` | ✅ on | Use when the user wants to capture a thought into their tclem/notes inbox, or when running the daily rollup... |
+| `tick-test` | ✅ on | A safe demo automation that mirrors agent-merge's drive-to-done loop on the tick cycle |
 | `verify-before-claiming` | ✅ on | Use when about to claim work is complete, fixed, passing, installed, synced, or ready for review |
 
 <!-- skills-status:end -->
