@@ -22,7 +22,6 @@ Run `script/skills-status` to print the latest table, or `script/skills-status -
 | `daily-handoff` | ✅ on | Use when authoring a daily Slack handoff for the Blackbird team - status-first narrative with indented PR b... |
 | `debug` | ✅ on | Use when investigating a bug, failing test, production issue, unexpected behavior, flaky behavior, regressi... |
 | `delegating-plan-work` | ✅ on | Use when preparing a repo-tracked multi-agent plan phase or todo for handoff to another agent |
-| `deploy-risk-check` | ✅ on | Use when reviewing a PR that will deploy or release to users, to hunt for failure modes that could force a ... |
 | `deprecating-and-removing` | ✅ on | Use when removing old code, sunsetting a feature, consolidating duplicate implementations, or migrating con... |
 | `deps-update` | ✅ on | Use when updating project dependencies, processing Dependabot PRs or alerts, grouping dependency updates, r... |
 | `design-before-coding` | ✅ on | Use when creating features, changing behavior, adding components, or making design-affecting implementation... |
@@ -34,6 +33,7 @@ Run `script/skills-status` to print the latest table, or `script/skills-status -
 | `pr-author` | ✅ on | Use when creating a GitHub pull request, or when updating an existing PR's title or body so it matches what... |
 | `pr-merge-readiness` | ✅ on | Use when getting a pull request ready to merge by addressing review threads, CI failures, or conflicts, wit... |
 | `pr-review-reply` | ✅ on | Use when receiving PR review comments, code review feedback, suggested changes, or reviewer concerns that m... |
+| `pr-risk-check` | ✅ on | Use when assessing the risk profile of a PR — what could break, how blast-radius reaches users, and whether... |
 | `pr-update-base-branch` | 🚫 off | Use when merging an updated base branch into a PR branch to resolve drift, especially when the PR may be ch... |
 | `reading-source-code` | ✅ on | Use when about to call a library, crate, or framework API you haven't verified, when a dependency's behavio... |
 | `skill-author` | ✅ on | Use when creating, editing, splitting, renaming, or reviewing Copilot skills in this dotfiles repo |

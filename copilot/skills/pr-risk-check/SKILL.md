@@ -1,18 +1,21 @@
 ---
-name: deploy-risk-check
-description: Use when reviewing a PR that will deploy or release to users, to hunt for failure modes that could force a revert or rollback, and the repository has no equivalent skill of its own.
+name: pr-risk-check
+description: Use when assessing the risk profile of a PR — what could break, how blast-radius reaches users, and whether the change is safely revertible — independent of whether merge means immediate deploy. Use when the repository has no equivalent skill of its own.
 ---
 
-# Assessing Deploy Risk
+# Assessing PR Risk
 
-Before a PR ships, hunt the diff for changes whose failure mode is "page someone / roll back / restore from backup." Correctness review and deploy-risk review are different lenses — passing tests don't tell you whether the change is safe to roll out.
+Hunt the diff for changes whose failure mode is "page someone / roll back / restore from backup." Correctness review and risk review are different lenses — passing tests don't tell you whether the change is safe to land.
 
-If the repository has its own deploy-risk, release-readiness, or change-review skill, that wins. Use this skill when nothing more specific applies.
+The PR is the unit. "Risk of merging" is the same question whether merge ships immediately (web service auto-deploy), behind a release train (desktop app, mobile, on-prem), or behind a flag. Time-to-users changes how urgently a risk matters, not whether it exists.
+
+If the repository has its own risk-review, deploy-risk, release-readiness, or change-review skill, that wins. Use this skill when nothing more specific applies.
 
 ## When to use
 
-- Finishing a PR that auto-deploys on merge, or that ships in the next release.
-- Reviewing someone else's PR before approval.
+- Reviewing a PR (yours or someone else's) to understand what could go wrong after it lands.
+- The user asks "what's the risk profile of this PR?" or "anything risky here?"
+- Finishing a PR that auto-deploys on merge, ships in the next release, or rides a flag.
 - After a rebase or large refactor that touches production code paths.
 
 Skip for: docs-only changes, test-only changes, internal tooling that can't reach users, prototypes behind unreleased flags.

@@ -68,7 +68,7 @@ Keep repo-specific workflows in the repo where they apply. Do not promote one re
 | `test-before-coding` | User-level | Test/verification-first implementation discipline. |
 | `verify-before-claiming` | User-level | Fresh verification before completion claims. |
 | `pr-merge-readiness` | User-level | Get a pull request ready to merge by addressing review threads, CI failures, or conflicts, without performing the merge. |
-| `deploy-risk-check` | User-level, fallback | Hunt for revert/rollback-worthy failure modes in a PR diff before it deploys or releases. Repo-local equivalent wins. |
+| `pr-risk-check` | User-level, fallback | Assess the risk profile of a PR — what could break, blast-radius, revertibility — independent of whether merge means immediate deploy. Repo-local equivalent wins. |
 | `pr-review-reply` | User-level | Review feedback triage, fixes, and replies. |
 | `pr-update-base-branch` | User-level | Merge a PR's actual base ref (not hardcoded `main`), with stacked-PR conflict resolution and `git rerere`. |
 | `alert-investigator` | User-level, fallback | General alert/incident investigation when the repo has no equivalent skill. |

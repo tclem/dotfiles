@@ -70,7 +70,7 @@ These fire on specific phases of the work loop. Load them when their trigger app
 
 - **`pr-merge-readiness`** — when getting a PR ready to merge by addressing review threads, CI failures, or conflicts, without performing the merge.
 - **`pr-review-reply`** — see Responding to PR Review Comments below.
-- **`deploy-risk-check`** — before merging or approving a PR that will deploy or release to users; hunts for failure modes that could force a revert.
+- **`pr-risk-check`** — when assessing the risk profile of a PR: what could break, how blast-radius reaches users, and whether the change is safely revertible. Independent of whether merge means immediate deploy.
 
 ## Pull Request Authoring Gate
 
