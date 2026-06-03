@@ -1,6 +1,6 @@
 ---
 name: pr-merge-readiness
-description: Use when getting a pull request ready to merge by addressing review threads, CI failures, or conflicts, or when choosing a merge mode (squash, rebase, merge commit) for a PR — especially stacked PRs whose base is not the repo default branch.
+description: Use when getting a pull request ready to merge by addressing review threads, CI failures, or conflicts, without performing the merge.
 ---
 
 # PR Merge Readiness
@@ -97,30 +97,6 @@ Report:
 Tell the user the PR is ready to merge. **Stop.** Do not merge.
 
 If `mergeStateStatus` is `BLOCKED` because approval is missing, say so plainly and stop. That is a wait on a human, not something to work around.
-
-## Stacked-PR merge-mode guardrail
-
-This skill bars you from pressing merge. But sometimes the user explicitly authorizes the merge ("merge it", `gh pr merge --auto`, an auto-merge orchestration). Before any merge actually fires — through `gh pr merge`, an app-native merge tool, the GitHub MCP `merge_pull_request` tool, or `curl` against `/pulls/{n}/merge` — run the preflight and pick the right mode.
-
-**Preflight:**
-
-```bash
-GH_PAGER="" gh pr view <n> --repo <owner>/<repo> \
-  --json baseRefName,baseRepository
-```
-
-Compare `baseRefName` to the repo's default branch (`baseRepository.defaultBranchRef.name`, or `gh repo view --json defaultBranchRef`).
-
-**Rule:**
-
-- `baseRefName == default branch` → squash is the house style in many repos; `--squash` is fine when that's the repo's convention.
-- `baseRefName != default branch` → the PR is **stacked**. Do **not** squash.
-  - Prefer `--rebase` so the child's commits replay cleanly onto the parent.
-  - If the child branch has merged the default branch (or its parent) into itself during its work, even `--rebase` can fold the upstream delta back into the parent. In that case, cherry-pick only the child's own commits onto the parent branch by hand and push.
-
-Why this matters: squashing a stacked PR collapses every commit on the child — including any "merge main into branch" commits the child has absorbed — into one commit on the parent. The parent PR's diff balloons with files it had nothing to do with. A real failure of this: `gh pr merge 6303 --squash --auto --delete-branch` on a PR stacked on `tclem/massive-pr-perf-research` produced a single squash of 1,609 files / +287,757 / -48,552 that landed as noise on the parent planning PR.
-
-If you cannot determine the right mode, stop and ask. Do not guess.
 
 ## Common mistakes
 

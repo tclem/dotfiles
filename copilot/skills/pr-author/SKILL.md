@@ -114,8 +114,6 @@ When basing on a prior PR's head, add a line near the top of the PR body:
 
 Pass `--base <stacked-branch>` to `gh pr create`. After the upstream PR merges, retarget using an app-native PR edit tool if one is available (no `read:org` required). Only fall back to `gh pr edit <num> --base <default>` if no app-native tool is available, and expect the REST API fallback from [Edge cases](#edge-cases) if that errors on scopes.
 
-When this PR is later merged, see `pr-merge-readiness` for the stacked-PR merge-mode rule — do not squash a PR whose base isn't the default branch.
-
 ### 6. Draft the PR
 
 **Title:** Concise summary. Follow repo conventions if any (e.g., `feat:`, `fix:`).
