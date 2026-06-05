@@ -37,6 +37,10 @@ Then verify:
 
 If dependencies are unclear, stop and ask before handoff.
 
+## One session, one PR
+
+The app's session model is one worktree per session = one branch = one PR; the `create_pull_request` tool targets the current session branch. If a phase needs multiple independent PRs (different directories, no semantic dependency), spawn **multiple sessions** — sequential if they share validation flakiness or compete for review attention, parallel only when the parallelism rules in this skill allow. Never instruct one session to "land PR A then start PR B from main" in the same worktree.
+
 ## Handoff brief
 
 Start from the pre-made prompt in the plan README when one exists. Treat it as the source prompt, then make only the minimal additions needed for the current handoff. If there is no pre-made prompt, keep the brief short and point at the plan docs.
@@ -50,6 +54,7 @@ Include:
 - Current status and dependency assumptions.
 - Expected output: code changes, tests, validation, PR, or report.
 - Constraints: what not to touch, that plan docs must not be edited from the child session, whether to commit/push.
+- Branch hygiene: once the PR is open, do **not** run `git pull`, `git merge main`, `git rebase main`, `git fetch && git merge origin/main`, or `git branch -u`. The coordinator handles main-syncs at merge time (squash-merge resolves drift). Refactor PRs especially must stay linear — merge-from-main commits balloon the diff and destroy reviewability. Use `gh pr view` / `gh pr checks` (read-only) to inspect the session's own PR; never `gh pr checkout` your own PR (when local has diverged, gh creates a phantom `pr/<num>/<branch>` local branch that confuses tooling).
 - Validation commands from the phase doc.
 - A requirement to run `/review` with a different frontier model after implementation and before handing work back.
 - A short instruction to report changed files, validation results, and blockers.
@@ -81,3 +86,5 @@ Only mark work complete after verification and the independent model review. If 
 - Letting the implementing agent skip the different-model `/review` step before handing work back.
 - Letting agents silently update plan docs while implementing code.
 - Claiming a phase is complete based only on an agent summary without checking validation.
+- Asking one session to produce two PRs from one worktree, instead of spawning a second session for the second PR.
+- Omitting branch-hygiene guardrails (no `git pull` / `merge main` / `branch -u` / `gh pr checkout self`) from the handoff brief — long-running refactor sessions accumulate merge-from-main commits that destroy the PR's reviewability.
