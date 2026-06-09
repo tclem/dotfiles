@@ -20,6 +20,18 @@ PORTABLE_GLOBS=(
   "docs/*"
 )
 
+# Extensions are symlinked at the directory level rather than per-file: an
+# extension is an opaque tree (extension.mjs + arbitrary lib/web/assets), and
+# enumerating every nested file would be brittle.
+EXTENSIONS_DIR_NAME="extensions"
+
+# External extensions are cloned from GitHub instead of living in this repo.
+# Each entry in $EXTERNAL_EXTENSIONS_FILE is `owner/repo[@ref] [subpath] [install-name]`.
+# Clones live in $EXT_CACHE_ROOT and are linked into ~/.copilot/extensions/<install-name>/
+# the same way as repo-local extensions.
+EXTERNAL_EXTENSIONS_FILE="$COPILOT_REPO/external-extensions"
+EXT_CACHE_ROOT="${XDG_DATA_HOME:-$HOME/.local/share}/copilot-external-extensions"
+
 green()  { printf "\033[32m%s\033[0m\n" "$1"; }
 yellow() { printf "\033[33m%s\033[0m\n" "$1"; }
 
@@ -97,6 +109,9 @@ cmd_install() {
   filtered_list=$(printf '%s\n' "${filtered[@]}")
   prune_removed_links "$filtered_list"
 
+  install_extensions
+  install_external_extensions
+
   if (( ${#skipped[@]} > 0 )); then
     echo
     yellow "Skipped (disabled: true):"
@@ -104,6 +119,205 @@ cmd_install() {
       yellow "  $rel"
     done
   fi
+}
+
+# Symlink every top-level entry of <src> into <dst> (a real directory).
+# Prunes stale links inside <dst> whose target starts with <safe-prefix>.
+# Emits a green "linked ..." line tagged with <label>.
+_link_tree_into_extensions_dir() {
+  local src="$1" dst="$2" safe_prefix="$3" label="$4"
+
+  if [[ -L "$dst" ]]; then
+    rm "$dst"
+  elif [[ -e "$dst" && ! -d "$dst" ]]; then
+    yellow "  skip $label (exists, not a directory)"
+    return 0
+  fi
+  mkdir -p "$dst"
+
+  local seen_entries=()
+  for entry in "$src"/* "$src"/.[!.]*; do
+    [[ -e "$entry" ]] || continue
+    local base
+    base=$(basename "$entry")
+    case "$base" in
+      .git|.github|.gitignore|.gitattributes|node_modules) continue ;;
+    esac
+    seen_entries+=("$base")
+    ln -sfn "$entry" "$dst/$base"
+  done
+
+  for entry in "$dst"/* "$dst"/.[!.]*; do
+    [[ -L "$entry" ]] || continue
+    local base
+    base=$(basename "$entry")
+    local keep=0
+    for s in "${seen_entries[@]}"; do
+      [[ "$s" == "$base" ]] && { keep=1; break; }
+    done
+    if (( !keep )); then
+      local target
+      target=$(readlink "$entry")
+      if [[ "$target" == "$safe_prefix"* ]]; then
+        rm "$entry"
+        yellow "  removed $label/$base"
+      fi
+    fi
+  done
+
+  green "  linked $label (${#seen_entries[@]} entries)"
+}
+
+# Remove dirs in $dst_root that are entirely composed of symlinks pointing into
+# $safe_prefix and whose name is not in the newline-delimited $keep_list.
+_prune_managed_extension_dirs() {
+  local dst_root="$1" safe_prefix="$2" keep_list="$3" label_prefix="$4"
+  for existing in "$dst_root"/*; do
+    [[ -d "$existing" && ! -L "$existing" ]] || continue
+    local name
+    name=$(basename "$existing")
+    grep -qxF "$name" <<< "$keep_list" && continue
+
+    local safe=1
+    for entry in "$existing"/* "$existing"/.[!.]*; do
+      [[ -e "$entry" ]] || continue
+      if [[ ! -L "$entry" ]] || [[ "$(readlink "$entry")" != "$safe_prefix"* ]]; then
+        safe=0
+        break
+      fi
+    done
+    if (( safe )); then
+      rm -rf "$existing"
+      yellow "  removed $label_prefix/$name"
+    fi
+  done
+}
+
+# Make $COPILOT_HOME/extensions/<name>/ a *real* directory (because the CLI
+# discovery does not follow symlinks at the extension-directory level) with
+# every entry inside symlinked back to the source tree. Top-level files
+# (extension.mjs) and subdirectories (lib/, web/, assets/) are both linked —
+# Node follows symlinks when resolving imports, so nested links are fine.
+install_extensions() {
+  local src_root="$COPILOT_REPO/$EXTENSIONS_DIR_NAME"
+  local dst_root="$COPILOT_HOME/$EXTENSIONS_DIR_NAME"
+  [[ -d "$src_root" ]] || return 0
+  mkdir -p "$dst_root"
+
+  local kept=()
+  for src in "$src_root"/*/; do
+    [[ -d "$src" ]] || continue
+    src="${src%/}"
+    local name
+    name=$(basename "$src")
+    kept+=("$name")
+    _link_tree_into_extensions_dir "$src" "$dst_root/$name" "$COPILOT_REPO/" "extensions/$name"
+  done
+
+  local keep_list
+  keep_list=$(printf '%s\n' "${kept[@]}")
+  _prune_managed_extension_dirs "$dst_root" "$COPILOT_REPO/" "$keep_list" "extensions"
+}
+
+# Clone (or fast-forward pull) each external extension listed in
+# $EXTERNAL_EXTENSIONS_FILE into $EXT_CACHE_ROOT, then symlink its contents
+# into ~/.copilot/extensions/<install-name>/ using the same strategy as
+# install_extensions. Cache dirs for entries no longer in the manifest are
+# removed.
+install_external_extensions() {
+  [[ -f "$EXTERNAL_EXTENSIONS_FILE" ]] || return 0
+  local dst_root="$COPILOT_HOME/$EXTENSIONS_DIR_NAME"
+  mkdir -p "$dst_root" "$EXT_CACHE_ROOT"
+
+  local kept_installs=()
+  local kept_clones=()
+
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    # Strip comments and trim whitespace.
+    line="${line%%#*}"
+    line="${line#"${line%%[![:space:]]*}"}"
+    line="${line%"${line##*[![:space:]]}"}"
+    [[ -z "$line" ]] && continue
+
+    # Tokenize on whitespace: spec [subpath] [install-name]
+    # shellcheck disable=SC2206
+    local tokens=($line)
+    local spec="${tokens[0]}"
+    local subpath="${tokens[1]:-.}"
+    local install_name="${tokens[2]:-}"
+
+    local ref=""
+    if [[ "$spec" == *@* ]]; then
+      ref="${spec##*@}"
+      spec="${spec%@*}"
+    fi
+    if [[ "$spec" != */* ]]; then
+      yellow "  skip external entry (expected owner/repo): $line"
+      continue
+    fi
+    local owner="${spec%%/*}"
+    local repo="${spec##*/}"
+    [[ -z "$install_name" ]] && install_name="$repo"
+
+    local clone_dir="$EXT_CACHE_ROOT/$owner/$repo"
+    if [[ ! -d "$clone_dir/.git" ]]; then
+      mkdir -p "$(dirname "$clone_dir")"
+      if ! gh repo clone "$owner/$repo" "$clone_dir" -- --quiet; then
+        yellow "  skip $owner/$repo (clone failed)"
+        continue
+      fi
+    else
+      git -C "$clone_dir" fetch --quiet origin || yellow "  warn: $owner/$repo fetch failed"
+    fi
+
+    if [[ -n "$ref" ]]; then
+      git -C "$clone_dir" checkout --quiet "$ref" || { yellow "  skip $owner/$repo@$ref (checkout failed)"; continue; }
+      # Fast-forward only if we're on a branch.
+      if git -C "$clone_dir" symbolic-ref -q HEAD >/dev/null; then
+        git -C "$clone_dir" merge --quiet --ff-only "origin/$ref" 2>/dev/null || true
+      fi
+    else
+      local default_branch
+      default_branch=$(git -C "$clone_dir" symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null | sed 's@^origin/@@')
+      [[ -z "$default_branch" ]] && default_branch=main
+      git -C "$clone_dir" checkout --quiet "$default_branch" 2>/dev/null || true
+      git -C "$clone_dir" merge --quiet --ff-only "origin/$default_branch" 2>/dev/null || true
+    fi
+
+    local src="$clone_dir/$subpath"
+    src="${src%/}"
+    if [[ ! -f "$src/extension.mjs" ]]; then
+      yellow "  skip $owner/$repo (no extension.mjs at ${subpath})"
+      continue
+    fi
+
+    kept_installs+=("$install_name")
+    kept_clones+=("$owner/$repo")
+    _link_tree_into_extensions_dir "$src" "$dst_root/$install_name" "$clone_dir/" "extensions/$install_name (external: $owner/$repo)"
+  done < "$EXTERNAL_EXTENSIONS_FILE"
+
+  # Prune installs whose links point into $EXT_CACHE_ROOT but are no longer listed.
+  local install_keep_list
+  install_keep_list=$(printf '%s\n' "${kept_installs[@]}")
+  _prune_managed_extension_dirs "$dst_root" "$EXT_CACHE_ROOT/" "$install_keep_list" "extensions (external)"
+
+  # Prune cache dirs for repos no longer in the manifest.
+  local clone_keep_list
+  clone_keep_list=$(printf '%s\n' "${kept_clones[@]}")
+  for owner_dir in "$EXT_CACHE_ROOT"/*; do
+    [[ -d "$owner_dir" ]] || continue
+    local owner
+    owner=$(basename "$owner_dir")
+    for repo_dir in "$owner_dir"/*; do
+      [[ -d "$repo_dir" ]] || continue
+      local repo
+      repo=$(basename "$repo_dir")
+      grep -qxF "$owner/$repo" <<< "$clone_keep_list" && continue
+      rm -rf "$repo_dir"
+      yellow "  removed cache $owner/$repo"
+    done
+    rmdir "$owner_dir" 2>/dev/null || true
+  done
 }
 
 cmd_import() {

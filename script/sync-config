@@ -1,0 +1,98 @@
+#!/bin/bash
+#
+# Sync private config from tclem/config into ~/.config/ via symlinks.
+#
+#   script/sync-config install   — clone/pull tclem/config, symlink files into ~/.config
+#   script/sync-config import P  — move ~/.config/P into the repo at the matching path, symlink back
+#
+# Layout convention: tclem/config mirrors ~/.config/. A file at
+# <repo>/<app>/<file> is symlinked to ~/.config/<app>/<file>. Pre-existing
+# non-symlink files are moved to <path>.pre-config-sync rather than overwritten.
+
+set -euo pipefail
+
+CONFIG_REPO_SLUG="tclem/config"
+CONFIG_REPO_DIR="$HOME/github/config"
+TARGET_ROOT="${XDG_CONFIG_HOME:-$HOME/.config}"
+
+green()  { printf "\033[32m%s\033[0m\n" "$1"; }
+yellow() { printf "\033[33m%s\033[0m\n" "$1"; }
+red()    { printf "\033[31m%s\033[0m\n" "$1"; }
+
+ensure_clone() {
+  if [ -d "$CONFIG_REPO_DIR/.git" ]; then
+    (cd "$CONFIG_REPO_DIR" && git pull --quiet --ff-only) \
+      || yellow "warn: could not fast-forward $CONFIG_REPO_DIR; leaving as-is"
+  else
+    mkdir -p "$(dirname "$CONFIG_REPO_DIR")"
+    green "cloning $CONFIG_REPO_SLUG → $CONFIG_REPO_DIR"
+    gh repo clone "$CONFIG_REPO_SLUG" "$CONFIG_REPO_DIR" -- --quiet
+  fi
+}
+
+# Symlink one repo file into ~/.config, backing up any pre-existing real file.
+link_one() {
+  local src="$1" rel="$2"
+  local dest="$TARGET_ROOT/$rel"
+  mkdir -p "$(dirname "$dest")"
+
+  if [ -L "$dest" ]; then
+    local current
+    current="$(readlink "$dest")"
+    if [ "$current" = "$src" ]; then
+      return 0
+    fi
+    yellow "replacing symlink $dest (was → $current)"
+    rm "$dest"
+  elif [ -e "$dest" ]; then
+    local backup="$dest.pre-config-sync"
+    yellow "backing up existing $dest → $backup"
+    mv "$dest" "$backup"
+  fi
+
+  ln -s "$src" "$dest"
+  green "linked $rel"
+}
+
+cmd_install() {
+  ensure_clone
+
+  # Walk the repo, skipping VCS/meta files. Everything else is sync target.
+  while IFS= read -r -d '' src; do
+    local rel="${src#$CONFIG_REPO_DIR/}"
+    case "$rel" in
+      .git/*|.github/*|.gitignore|README.md|LICENSE) continue ;;
+    esac
+    link_one "$src" "$rel"
+  done < <(find "$CONFIG_REPO_DIR" -type f -not -path "*/.git/*" -print0)
+}
+
+cmd_import() {
+  local rel="${1:?usage: sync-config import <relative-path-under-.config>}"
+  ensure_clone
+
+  local src="$TARGET_ROOT/$rel"
+  local dest="$CONFIG_REPO_DIR/$rel"
+
+  if [ ! -e "$src" ]; then
+    red "no file at $src"; exit 1
+  fi
+  if [ -L "$src" ]; then
+    red "$src is already a symlink; nothing to import"; exit 1
+  fi
+  if [ -e "$dest" ]; then
+    red "$dest already exists in repo; resolve manually"; exit 1
+  fi
+
+  mkdir -p "$(dirname "$dest")"
+  mv "$src" "$dest"
+  ln -s "$dest" "$src"
+  green "imported $rel into $CONFIG_REPO_SLUG"
+  green "next: cd $CONFIG_REPO_DIR && git add -A && git commit && git push"
+}
+
+case "${1:-install}" in
+  install) cmd_install ;;
+  import)  shift; cmd_import "$@" ;;
+  *) red "usage: sync-config {install|import <rel-path>}"; exit 1 ;;
+esac

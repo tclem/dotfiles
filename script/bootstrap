@@ -101,6 +101,7 @@ install_dotfiles () {
 
 install_dotfiles
 script/bootstrap-git
+script/sync-config install
 # script/bootstrap-vim
 
 gh alias import gh/aliases.yml

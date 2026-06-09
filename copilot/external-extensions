@@ -1,0 +1,18 @@
+# External Copilot extensions to clone + link into ~/.copilot/extensions/.
+#
+# One per line. Lines starting with `#` and blank lines are ignored.
+# Format:
+#   <owner>/<repo>[@<ref>]  [<subpath>]  [<install-name>]
+#
+#   <owner>/<repo>  GitHub repo, cloned with `gh repo clone` (so SSO + private repos work).
+#   @<ref>          Optional. Branch, tag, or SHA. Defaults to the repo's default branch.
+#   <subpath>       Optional. Folder inside the repo that contains extension.mjs.
+#                   Defaults to repo root. Use `.` to be explicit.
+#   <install-name>  Optional. Name under ~/.copilot/extensions/. Defaults to the repo name.
+#
+# Cache lives at $XDG_DATA_HOME/copilot-external-extensions/<owner>/<repo>/
+# (default ~/.local/share/copilot-external-extensions/). `script/sync-copilot install`
+# clones-or-pulls each entry, then symlinks its contents into ~/.copilot/extensions/<install-name>/
+# using the same linking strategy as repo-local extensions.
+
+tclem/gh-inbox-zero@tclem/gh-inbox-zero-canvas
