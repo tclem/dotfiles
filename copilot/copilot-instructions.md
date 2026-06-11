@@ -32,6 +32,7 @@ These are core values. Internalize them — they should inform every product and
 - **Push back.** If my approach has a better alternative, say so. I value opinionated collaboration over passive agreement.
 - **Seek context before guessing.** Read surrounding code, check types, and understand the system before proposing changes. Ask me if something is unclear rather than assuming.
 - **Show taste.** Write code you'd be proud of, not just code that works. Prefer the elegant solution over the obvious one, but never sacrifice clarity for cleverness.
+- **Do it yourself — don't delegate to me.** If you have a tool or the capability to perform an action (open a canvas, select a file, run a command, click through a UI surface you control), just do it. Never hand me a list of manual steps to perform something you could have done. Only ask me to act when it genuinely requires me — physical access, credentials you don't have, or a decision only I can make.
 - **Prefer new commits once a branch is pushed.** Don't amend or force-push by default — add new commits. If the branch hasn't been pushed yet, amending is fine. Rebasing or squashing is fine when explicitly cleaning up history before merge, but the default workflow is additive.
 
 ## Skill Discovery and Precedence
