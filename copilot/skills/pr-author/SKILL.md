@@ -14,7 +14,7 @@ If an app-native PR creation/edit tool is available in the current session, pref
 
 - **Describe the final state, not the dev journey.** The reviewer is reading the final diff. Do not narrate how the branch got there. No "originally tried X, then switched to Y", no "fixup after review", no "addressed feedback in commit abc123", no changelog of iterations.
 - **Do not restate the diff.** A file-by-file or function-by-function recap is noise — the reviewer already has the diff. Describe the change at the level of *what it does and why*, one level of abstraction above the code.
-- **Do include non-obvious implementation nuance.** Anything a careful reader of the diff would still wonder about belongs in the body: why this approach over an obvious alternative, surprising constraints, performance considerations, ordering/locking concerns, deliberate non-goals, known follow-ups, edge cases the code handles silently. If a sharp reviewer would ask "wait, why?" — answer it preemptively.
+- **Do include non-obvious implementation nuance.** Anything a careful reader of the diff would still wonder about belongs in the body: why this approach over an obvious alternative, surprising constraints, performance considerations, ordering/locking concerns, edge cases the code handles silently. If a sharp reviewer would ask "wait, why?" — answer it preemptively.
 - **Do not include process status as prose.** Skip standalone `make lint` / `make test` / CI green-red status paragraphs, force-push notes, "had a fixup", and self-review findings already fixed. The reviewer can see CI status in GitHub.
 - **Use the PR template when one exists.** Fill every section or ask for the missing information.
 - **Keep trailers out of PR bodies.** `Co-authored-by:` belongs in git commit messages only. PR bodies end with the GitHub Posting Protocol signature block from the global instructions.
@@ -29,9 +29,8 @@ If an app-native PR creation/edit tool is available in the current session, pref
 | Non-obvious design decisions and the rationale for the chosen approach | Restating what the diff already shows clearly |
 | Trade-offs accepted, alternatives considered and rejected, with why | "Originally I tried X, then switched to Y" |
 | Surprising constraints (perf, ordering, compatibility, security) the code is responding to | Self-review findings already fixed |
-| Deliberate non-goals and follow-ups | CI status, lint output, force-push notes |
-| Edge cases handled silently in the code | Apologies, hedges, filler |
-| Stacked-on note, tracking-issue blockquote, validation the reviewer asked for | A summary of the commit log |
+| Edge cases handled silently in the code | CI status, lint output, force-push notes |
+| Stacked-on note, tracking-issue blockquote, validation the reviewer asked for | Apologies, hedges, filler, a summary of the commit log |
 
 ## Decide: create or update
 
@@ -121,7 +120,7 @@ Pass `--base <stacked-branch>` to `gh pr create`. After the upstream PR merges, 
 **Body:** Lead with one or two sentences that capture *what this PR does and why*. Then add only the non-obvious nuance a reviewer would want.
 
 - If a template exists: fill each section with 1-3 sentences max. Use bullet points. No filler.
-- If no template: start with the what/why summary, then a short section for any non-obvious implementation notes (design rationale, trade-offs, surprising constraints, deliberate non-goals). Skip anything obvious from the diff.
+- If no template: start with the what/why summary, then a short section for any non-obvious implementation notes (design rationale, trade-offs, surprising constraints). Skip anything obvious from the diff. Do **not** add a boilerplate "Non-goals" or "Follow-ups" section — only call one out when its absence would mislead a reviewer.
 - Reference issues if the branch name or context suggests one (e.g., `Fixes #123`).
 - Never recap the diff file-by-file. Never narrate the dev journey.
 - If a non-obvious decision needs context, state it as the current rationale ("uses Y because Z"), not as a fix-up story.
@@ -238,3 +237,4 @@ Do not add this blockquote speculatively; it's a team-level convention, not a de
 - **Padding the body with process status.** CI results, force-push notes, "switched approach from X to Y", and self-review findings already fixed do not belong in the body. The reviewer sees CI in GitHub and reads the final diff.
 - **Recapping the diff in prose.** A bullet list of "changed `foo.rs` to add X, changed `bar.rs` to update Y" is just the diff in worse format. State what the PR *does* and why, not what files moved.
 - **Omitting non-obvious nuance to stay short.** Concise doesn't mean empty. If a careful reader of the diff would still wonder "why this way?" or "what about case Z?" — that's exactly the content the body should carry. Brevity applies to filler, not to substance.
+- **Adding a boilerplate "Non-goals" or "Follow-ups" section by default.** Only call out a non-goal when a reviewer would reasonably expect a related change that's deliberately out of scope. A small, self-evident PR does not need one. When in doubt, leave it out.
