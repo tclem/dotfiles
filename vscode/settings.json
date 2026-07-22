@@ -187,5 +187,6 @@
   "github.copilot.chat.githubMcpServer.readonly": true,
   "javascript.updateImportsOnFileMove.enabled": "always",
   "github.copilot.chat.advanced.workspace.codeSearchExternalIngest.enabled": "force",
-  "@azure.argTenant": ""
+  "@azure.argTenant": "",
+  "security.promptForLocalFileProtocolHandling": false
 }
