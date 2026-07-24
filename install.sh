@@ -39,11 +39,6 @@ ln -s "$(pwd)/ghostty/config" "$HOME/Library/Application Support/com.mitchellh.g
 # Sync Copilot config (agents, skills, docs, instructions)
 script/sync-copilot install
 
-# Copilot agent project config
-mkdir -p ~/.config/copilot-agent
-rm -rf ~/.config/copilot-agent/projects.conf
-ln -s "$(pwd)/copilot/projects.conf" ~/.config/copilot-agent/projects.conf
-
 # Ruby
 # git clone https://github.com/rbenv/ruby-build.git "$(rbenv root)"/plugins/ruby-build
 # rbenv install 3.3.1

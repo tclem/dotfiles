@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Personal dotfiles for tclem (Staff Engineer, GitHub). Manages shell config, editor settings, Homebrew packages, and Copilot agent setup across macOS and Linux.
+Personal dotfiles for tclem (Staff Engineer, GitHub). Manages shell config, editor settings, Homebrew packages, and Copilot skills and instructions across macOS and Linux.
 
 ## This repo is public
 
@@ -34,8 +34,8 @@ When in doubt, **stop and ask** before staging. This includes edits invited by a
 | `tmux.conf` | Tmux config (symlinked to `~/.tmux.conf`) |
 | `cargo/config.toml` | Cargo config (symlinked to `~/.cargo/config.toml`) — sccache wrapper, git-fetch-with-cli |
 | `Brewfile` | Homebrew packages and casks |
-| `bin/` | Executable scripts (agent workflows, GitHub log) |
-| `copilot/` | Copilot agent config, skills, project definitions |
+| `bin/` | Executable scripts (currently just `gh-log`) |
+| `copilot/` | Copilot skills, instructions, and shared assets |
 | `copilot/skills/<name>/SKILL.md` | User-level Copilot skills symlinked into `~/.copilot/skills/` |
 | `copilot/templates/<name>/SKILL.md` | Starter skills to copy into other repos (not symlinked) |
 | `script/` | Bootstrap and sync utilities |
@@ -47,20 +47,10 @@ When in doubt, **stop and ask** before staging. This includes edits invited by a
 
 ## Key Scripts
 
-- **`bin/agent`** — Launch a tmux session for Copilot agent work. Modes: default (worktrees), `-l` (local, no worktrees). Reads project config from `copilot/projects.conf`.
-- **`bin/agent-cleanup`** — Tear down worktrees and tmux session after agent work.
 - **`bin/gh-log`** — Query GitHub Issues/PRs you're involved with since a given date.
 - **`script/sync-copilot`** — Sync copilot config (instructions, agents, skills) between this repo and `~/.copilot`. `install` symlinks, `import` copies new files back.
 
-## Copilot Agent Setup
-
-`copilot/projects.conf` defines multi-repo projects in INI format:
-
-```ini
-[myproject]
-repos=owner/repo owner/other-repo:base-branch
-local=true  # optional — skip worktrees
-```
+## Copilot Setup
 
 `copilot/copilot-instructions.md` contains global agent instructions (symlinked to `~/.copilot/`).
 
@@ -108,7 +98,6 @@ Keep project-specific operational, app-runtime, UI, and repo-style skills in the
 - **Adding a package**: Edit `Brewfile`, run `brew bundle`.
 - **Changing shell config**: Edit `.zshrc` or files in `zsh/`. Changes take effect in new shells.
 - **Changing agent instructions**: Edit `copilot/copilot-instructions.md`, run `script/sync-copilot install`.
-- **Adding a project**: Add a section to `copilot/projects.conf`.
 - **Adding a skill**: Create `copilot/skills/<name>/SKILL.md`, keep the description trigger-focused, avoid competing with repo-local skills, then run `script/sync-copilot install`.
 - **Disabling a skill**: Add `disabled: true` to its frontmatter. `script/sync-copilot install` skips it and prunes the existing symlink. Reversible by removing the line.
 - **After any install-level changes**: Re-run `./install.sh` to re-symlink and reconfigure.
