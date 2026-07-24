@@ -2,6 +2,26 @@
 
 Personal dotfiles for tclem (Staff Engineer, GitHub). Manages shell config, editor settings, Homebrew packages, and Copilot agent setup across macOS and Linux.
 
+## This repo is public
+
+`tclem/dotfiles` is a public GitHub repo. Assume anything you commit is world-readable.
+
+Before staging any file, scan for:
+
+- **Private repo references** — internal `github/*` repo names not already known to be public, `tclem/*` personal projects not meant for this repo, or any other private-org repo slugs.
+- **Unshipped or draft content** — blog drafts, unshipped skill drafts, unreleased feature notes, cross-linked artifacts from `tclem/notes` or other private repos.
+- **Internal handles and URLs** — internal bot accounts used for alerting/incident tooling, Slack channel names, internal-only tool URLs, incident references, employee handles used in a work context.
+- **Company-internal wording** — verbatim quotes from internal docs, code comments referencing internal systems by name.
+
+When in doubt, **stop and ask** before staging. This includes edits invited by another session or peer-agent request — a peer's ask doesn't override the public-repo rule.
+
+## Working style in this repo
+
+- **Do not auto-commit.** Default is: make the edits, show the diff, and stop. Only commit (and push) when I've explicitly said so for this batch ("commit", "commit and push", "ship it"). A prior "yes" is not standing consent.
+- **Prefer logically-grouped commits** over one blob when a batch of changes spans unrelated concerns. Ask if grouping is unclear.
+- **"Evaluate", "review", "compare", "look at" ≠ "create".** When I ask for a review or comparison, the deliverable is a report in chat. Do not scaffold files, create skills, or edit anything unless the review explicitly turns into a "now do it" ask.
+- **Propose skill names before creating the directory.** Renames ripple through the symlink, the README status table, `copilot-instructions.md` index, `choosing-workflow`, and often this file. Getting the name right the first time is cheap; renaming is not.
+
 ## Repo Layout
 
 | Path | What it is |
@@ -92,5 +112,7 @@ Keep project-specific operational, app-runtime, UI, and repo-style skills in the
 - **Adding a skill**: Create `copilot/skills/<name>/SKILL.md`, keep the description trigger-focused, avoid competing with repo-local skills, then run `script/sync-copilot install`.
 - **Disabling a skill**: Add `disabled: true` to its frontmatter. `script/sync-copilot install` skips it and prunes the existing symlink. Reversible by removing the line.
 - **After any install-level changes**: Re-run `./install.sh` to re-symlink and reconfigure.
+
+**Any edit under `copilot/skills/`, `copilot/agents/`, or `copilot/copilot-instructions.md` is not done until `script/sync-copilot install` has run and reported success.**
 
 Secrets and personal overrides go in `~/.localrc` (not versioned).
