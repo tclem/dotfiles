@@ -214,8 +214,10 @@ install_extensions() {
     _link_tree_into_extensions_dir "$src" "$dst_root/$name" "$COPILOT_REPO/" "extensions/$name"
   done
 
-  local keep_list
-  keep_list=$(printf '%s\n' "${kept[@]}")
+  local keep_list=""
+  if (( ${#kept[@]} > 0 )); then
+    keep_list=$(printf '%s\n' "${kept[@]}")
+  fi
   _prune_managed_extension_dirs "$dst_root" "$COPILOT_REPO/" "$keep_list" "extensions"
 }
 
@@ -297,13 +299,17 @@ install_external_extensions() {
   done < "$EXTERNAL_EXTENSIONS_FILE"
 
   # Prune installs whose links point into $EXT_CACHE_ROOT but are no longer listed.
-  local install_keep_list
-  install_keep_list=$(printf '%s\n' "${kept_installs[@]}")
+  local install_keep_list=""
+  if (( ${#kept_installs[@]} > 0 )); then
+    install_keep_list=$(printf '%s\n' "${kept_installs[@]}")
+  fi
   _prune_managed_extension_dirs "$dst_root" "$EXT_CACHE_ROOT/" "$install_keep_list" "extensions (external)"
 
   # Prune cache dirs for repos no longer in the manifest.
-  local clone_keep_list
-  clone_keep_list=$(printf '%s\n' "${kept_clones[@]}")
+  local clone_keep_list=""
+  if (( ${#kept_clones[@]} > 0 )); then
+    clone_keep_list=$(printf '%s\n' "${kept_clones[@]}")
+  fi
   for owner_dir in "$EXT_CACHE_ROOT"/*; do
     [[ -d "$owner_dir" ]] || continue
     local owner
