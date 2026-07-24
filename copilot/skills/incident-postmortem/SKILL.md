@@ -1,5 +1,6 @@
 ---
 name: incident-postmortem
+disabled: true
 description: Use when assembling, updating, or reviewing an incident postmortem, and the repository has no postmortem skill of its own.
 ---
 

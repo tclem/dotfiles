@@ -1,5 +1,6 @@
 ---
 name: peer-session-reply
+disabled: true
 description: 'Use when sending any cross-session message after kickoff (send_session_message, send_chat_message), or deciding whether to send one at all.'
 ---
 

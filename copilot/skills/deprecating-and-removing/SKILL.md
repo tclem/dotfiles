@@ -1,5 +1,6 @@
 ---
 name: deprecating-and-removing
+disabled: true
 description: Use when removing old code, sunsetting a feature, consolidating duplicate implementations, or migrating consumers off an API — and the repository has no equivalent skill of its own.
 ---
 

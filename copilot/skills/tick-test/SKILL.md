@@ -1,5 +1,6 @@
 ---
 name: tick-test
+disabled: true
 description: A safe demo automation that mirrors agent-merge's drive-to-done loop on the tick cycle. Use when this skill is selected as the workspace tick automation. Drives a scratch checklist to completion — one item per tick — then self-stops.
 ---
 

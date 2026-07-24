@@ -1,5 +1,6 @@
 ---
 name: deps-update
+disabled: true
 description: Use when updating project dependencies, processing Dependabot PRs or alerts, grouping dependency updates, resolving breakage, or preparing dependency update pull requests.
 user-invocable: true
 ---

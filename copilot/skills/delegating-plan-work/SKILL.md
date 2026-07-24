@@ -1,5 +1,6 @@
 ---
 name: delegating-plan-work
+disabled: true
 description: Use when preparing a repo-tracked multi-agent plan phase or todo for handoff to another agent.
 ---
 

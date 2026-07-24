@@ -1,5 +1,6 @@
 ---
 name: test-before-coding
+disabled: true
 description: Use when implementing a feature or bugfix where behavior can be specified with tests or another executable verification before production code changes.
 ---
 

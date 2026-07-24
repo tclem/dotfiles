@@ -1,5 +1,6 @@
 ---
 name: pr-merge-readiness
+disabled: true
 description: Use when getting a pull request ready to merge by addressing review threads, CI failures, or conflicts, without performing the merge.
 ---
 

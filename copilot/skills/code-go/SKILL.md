@@ -1,5 +1,6 @@
 ---
 name: code-go
+disabled: true
 description: "Use when editing or reviewing Go files (*.go) and the repository has no go-coding-skill of its own."
 ---
 

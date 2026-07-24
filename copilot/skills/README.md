@@ -13,33 +13,33 @@ Run `script/skills-status` to print the latest table, or `script/skills-status -
 | Skill | Status | Trigger |
 |---|---|---|
 | `adr-author` | ✅ on | Use when proposing or recording a significant technical decision (architecture change, new dependency patte... |
-| `alert-investigator` | ✅ on | Use when investigating an alert, monitor, incident, error spike, degraded service, or production anomaly, a... |
+| `alert-investigator` | 🚫 off | Use when investigating an alert, monitor, incident, error spike, degraded service, or production anomaly, a... |
 | `blackbird` | ✅ on | Use when reaching for `gh blackbird` (Blackbird code search) for cross-repo lexical, symbol, or semantic se... |
-| `choosing-workflow` | ✅ on | Use when deciding which workflow or skill should handle a task, especially when repo-local, dotfiles, proce... |
-| `code-go` | ✅ on | Use when editing or reviewing Go files (*.go) and the repository has no go-coding-skill of its own |
-| `code-rust` | ✅ on | Use when editing or reviewing Rust files (*.rs) and the repository has no rust-coding-skill of its own |
+| `choosing-workflow` | 🚫 off | Use when deciding which workflow or skill should handle a task, especially when repo-local, dotfiles, proce... |
+| `code-go` | 🚫 off | Use when editing or reviewing Go files (*.go) and the repository has no go-coding-skill of its own |
+| `code-rust` | 🚫 off | Use when editing or reviewing Rust files (*.rs) and the repository has no rust-coding-skill of its own |
 | `copy-editor` | ✅ on | Use when copy editing user-written prose while preserving quirky voice, style, phrasing, and minor imperfec... |
 | `daily-handoff` | ✅ on | Use when authoring a daily Slack handoff for the Blackbird team - status-first narrative with indented PR b... |
 | `debug` | ✅ on | Use when investigating a bug, failing test, production issue, unexpected behavior, flaky behavior, regressi... |
-| `delegating-plan-work` | ✅ on | Use when preparing a repo-tracked multi-agent plan phase or todo for handoff to another agent |
-| `deprecating-and-removing` | ✅ on | Use when removing old code, sunsetting a feature, consolidating duplicate implementations, or migrating con... |
-| `deps-update` | ✅ on | Use when updating project dependencies, processing Dependabot PRs or alerts, grouping dependency updates, r... |
+| `delegating-plan-work` | 🚫 off | Use when preparing a repo-tracked multi-agent plan phase or todo for handoff to another agent |
+| `deprecating-and-removing` | 🚫 off | Use when removing old code, sunsetting a feature, consolidating duplicate implementations, or migrating con... |
+| `deps-update` | 🚫 off | Use when updating project dependencies, processing Dependabot PRs or alerts, grouping dependency updates, r... |
 | `design-before-coding` | ✅ on | Use when creating features, changing behavior, adding components, or making design-affecting implementation... |
 | `design-doc-author` | ✅ on | Use when authoring or substantially editing a design doc, architecture doc, or subsystem explanation — the ... |
 | `fixing-root-causes` | ✅ on | Use when fixing a bug, regression, or unexpected behavior — especially when tempted to add a defensive laye... |
-| `incident-postmortem` | ✅ on | Use when assembling, updating, or reviewing an incident postmortem, and the repository has no postmortem sk... |
-| `peer-session-reply` | ✅ on | Use when sending any cross-session message after kickoff (send_session_message, send_chat_message), or deci... |
+| `incident-postmortem` | 🚫 off | Use when assembling, updating, or reviewing an incident postmortem, and the repository has no postmortem sk... |
+| `peer-session-reply` | 🚫 off | Use when sending any cross-session message after kickoff (send_session_message, send_chat_message), or deci... |
 | `planning-multi-agent-projects` | ✅ on | Use when creating a repo-tracked multi-agent planning PR for a large project, especially when phases, livin... |
 | `pr-author` | ✅ on | Use when creating a GitHub pull request, or when updating an existing PR's title or body so it matches what... |
-| `pr-merge-readiness` | ✅ on | Use when getting a pull request ready to merge by addressing review threads, CI failures, or conflicts, wit... |
+| `pr-merge-readiness` | 🚫 off | Use when getting a pull request ready to merge by addressing review threads, CI failures, or conflicts, wit... |
 | `pr-review-reply` | ✅ on | Use when receiving PR review comments, code review feedback, suggested changes, or reviewer concerns that m... |
 | `pr-risk-check` | ✅ on | Use when assessing the risk profile of a PR — what could break, how blast-radius reaches users, and whether... |
 | `pr-update-base-branch` | 🚫 off | Use when merging an updated base branch into a PR branch to resolve drift, especially when the PR may be ch... |
 | `reading-source-code` | ✅ on | Use when about to call a library, crate, or framework API you haven't verified, when a dependency's behavio... |
 | `skill-author` | ✅ on | Use when creating, editing, splitting, renaming, or reviewing Copilot skills in this dotfiles repo |
-| `test-before-coding` | ✅ on | Use when implementing a feature or bugfix where behavior can be specified with tests or another executable ... |
+| `test-before-coding` | 🚫 off | Use when implementing a feature or bugfix where behavior can be specified with tests or another executable ... |
 | `thinking-about` | ✅ on | Use when the user wants to capture a thought into their tclem/notes inbox, or when running the daily rollup... |
-| `tick-test` | ✅ on | A safe demo automation that mirrors agent-merge's drive-to-done loop on the tick cycle |
+| `tick-test` | 🚫 off | A safe demo automation that mirrors agent-merge's drive-to-done loop on the tick cycle |
 | `verify-before-claiming` | ✅ on | Use when about to claim work is complete, fixed, passing, installed, synced, or ready for review |
 
 <!-- skills-status:end -->

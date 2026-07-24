@@ -1,5 +1,6 @@
 ---
 name: code-rust
+disabled: true
 description: "Use when editing or reviewing Rust files (*.rs) and the repository has no rust-coding-skill of its own."
 ---
 

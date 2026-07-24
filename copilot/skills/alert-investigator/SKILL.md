@@ -1,5 +1,6 @@
 ---
 name: alert-investigator
+disabled: true
 description: Use when investigating an alert, monitor, incident, error spike, degraded service, or production anomaly, and the repository has no incident-investigation skill of its own.
 ---
 

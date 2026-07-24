@@ -1,5 +1,6 @@
 ---
 name: choosing-workflow
+disabled: true
 description: Use when deciding which workflow or skill should handle a task, especially when repo-local, dotfiles, process, and app-native workflows may overlap.
 ---
 
