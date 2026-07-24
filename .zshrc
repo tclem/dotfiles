@@ -234,7 +234,7 @@ export RUST_BACKTRACE=1
 # Incremental compilation fights sccache's caching model — disable it so more
 # artifacts are cacheable.
 export CARGO_INCREMENTAL=0
-export SCCACHE_CACHE_SIZE="30G"
+export SCCACHE_CACHE_SIZE="100G"
 
 # sccache opens many files in parallel; the default macOS soft limit (256) is
 # too low and causes "Too many open files" during large builds.
