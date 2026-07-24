@@ -47,19 +47,17 @@ When skills overlap, choose the narrowest applicable source:
 4. Dotfiles process skills for development discipline such as design, planning, debugging, testing, review, and verification.
 5. App-native affordances for sessions, PRs, review, worktrees, and orchestration when available.
 
-Use `choosing-workflow` when the right skill source is ambiguous. Do not promote project-specific runbooks, labels, bots, dashboards, branches, or app runtime procedures into user-level dotfiles skills.
+Do not promote project-specific runbooks, labels, bots, dashboards, branches, or app runtime procedures into user-level dotfiles skills.
 
 ### Development discipline
 
 These fire on specific phases of the work loop. Load them when their trigger applies — don't reinvent the discipline in chat:
 
 - **`design-before-coding`** — before behavior, API, or architecture changes; the lightweight design gate.
-- **`test-before-coding`** — when behavior can be specified with tests or executable verification before production code.
 - **`reading-source-code`** — before calling an unfamiliar library/crate API, when a dependency's behavior is surprising, or when training-data memory might be stale; pin the version and read the actual source.
 - **`debug`** — investigating a bug, regression, flaky behavior, or unclear root cause.
 - **`fixing-root-causes`** — when tempted to add a defensive layer, fallback, retry, or "just in case" check alongside the real fix.
 - **`verify-before-claiming`** — before claiming work is complete, fixed, passing, installed, synced, or ready for review.
-- **`deprecating-and-removing`** — retiring an API, sunsetting a feature, consolidating duplicates, or removing zombie code; advisory vs compulsory, deprecator owns the migration, removal is the goal.
 
 ### Authoring artifacts
 
@@ -69,7 +67,6 @@ These fire on specific phases of the work loop. Load them when their trigger app
 
 ### PR & shipping workflows
 
-- **`pr-merge-readiness`** — when getting a PR ready to merge by addressing review threads, CI failures, or conflicts, without performing the merge.
 - **`pr-review-reply`** — see Responding to PR Review Comments below.
 - **`pr-risk-check`** — when assessing the risk profile of a PR: what could break, how blast-radius reaches users, and whether the change is safely revertible. Independent of whether merge means immediate deploy.
 

@@ -13,7 +13,7 @@ This is a user-level skill — repo-local conventions, when they exist, always w
 
 These four artifacts pair up. Knowing which to reach for is half the work:
 
-- **ADR** — the *decision*. Short, structured: Context / Decision / Consequences. Records "we chose X over Y, and these are the trade-offs we accepted." See `authoring-adrs`.
+- **ADR** — the *decision*. Short, structured: Context / Decision / Consequences. Records "we chose X over Y, and these are the trade-offs we accepted." See `adr-author`.
 - **Design doc** — the *explanation*. Longer-form: how the system is shaped, why the pieces fit together, what the invariants are, diagrams and math where they help. Lives at `docs/<topic>-architecture.md`, `docs/design/<topic>.md`, or the repo's equivalent.
 - **SKILL** — the *enforced rules*. Short, durable: "don't violate these laws." High bar: prefer extending or pointing at an existing skill. Write a new one only when an agent's default behavior would be wrong without it, and the rules are durable enough that future agents need to start off doing the right thing.
 - **Plan** — the *execution sequence*. Time-bound: "to get from here to there, do these steps in this order." Usually lives in the app's plan mode for in-session work, or `planning-multi-agent-projects` for durable repo-tracked planning hubs.

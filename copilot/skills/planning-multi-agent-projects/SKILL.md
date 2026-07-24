@@ -39,7 +39,7 @@ Before writing anything, deeply understand the problem space. **Interview the us
 - **Find prior art.** Are there existing patterns in the codebase to follow? Reference implementations?
 - **Surface key decisions.** What technical choices need to be made? Document tradeoffs. Don't let decisions stay ambiguous — for each one, grill the user until you get a concrete answer. Present the options, your recommendation, and why. Get a yes or no.
 
-**Decisions that need ADRs:** If a decision is major — it changes architecture, introduces a new dependency pattern, affects public APIs, or would be hard to reverse — load the `authoring-adrs` skill and propose writing an Architecture Decision Record. It covers filename conventions, the standard header, status lifecycle, and the "separate PR before implementation" rule. If the repo doesn't use ADRs at all, ask the user whether to create one or document the decision inline in context.md with full rationale.
+**Decisions that need ADRs:** If a decision is major — it changes architecture, introduces a new dependency pattern, affects public APIs, or would be hard to reverse — load the `adr-author` skill and propose writing an Architecture Decision Record. It covers filename conventions, the standard header, status lifecycle, and the "separate PR before implementation" rule. If the repo doesn't use ADRs at all, ask the user whether to create one or document the decision inline in context.md with full rationale.
 
 Confirm your understanding with the user before proceeding. Ask specific questions — don't present a wall of text for approval.
 
