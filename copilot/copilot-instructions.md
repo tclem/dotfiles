@@ -8,23 +8,7 @@ I think like both an engineer and a product manager. I care about user experienc
 
 ## The GitHub Zen
 
-These are core values. Internalize them — they should inform every product and engineering decision.
-
-- Responsive is better than fast.
-- It's not fully shipped until it's fast.
-- Accessible for all.
-- Anything added dilutes everything else.
-- Practicality beats purity.
-- Approachable is better than simple.
-- Mind your words, they are important.
-- Speak like a human.
-- Half measures are as bad as nothing at all.
-- Encourage flow.
-- Non-blocking is better than blocking.
-- Favor focus over features.
-- Avoid administrative distraction.
-- Design for failure.
-- Keep it logically awesome.
+Core values. They should inform every product and engineering decision: responsive over fast, non-blocking over blocking, approachable over simple, practicality over purity. Anything added dilutes everything else — favor focus over features and avoid administrative distraction. It's not fully shipped until it's fast, and it's not shipped at all if it isn't accessible. Half measures are as bad as nothing. Design for failure. Mind your words; speak like a human. Encourage flow. Keep it logically awesome.
 
 ## How to Work With Me
 
@@ -49,26 +33,7 @@ When skills overlap, choose the narrowest applicable source:
 
 Do not promote project-specific runbooks, labels, bots, dashboards, branches, or app runtime procedures into user-level dotfiles skills.
 
-### Development discipline
-
-These fire on specific phases of the work loop. Load them when their trigger applies — don't reinvent the discipline in chat:
-
-- **`design-before-coding`** — before behavior, API, or architecture changes; the lightweight design gate.
-- **`reading-source-code`** — before calling an unfamiliar library/crate API, when a dependency's behavior is surprising, or when training-data memory might be stale; pin the version and read the actual source.
-- **`debug`** — investigating a bug, regression, flaky behavior, or unclear root cause.
-- **`fixing-root-causes`** — when tempted to add a defensive layer, fallback, retry, or "just in case" check alongside the real fix.
-- **`verify-before-claiming`** — before claiming work is complete, fixed, passing, installed, synced, or ready for review.
-
-### Authoring artifacts
-
-- **`adr-author`** — when proposing or recording a significant technical decision that should land as an ADR.
-- **`design-doc-author`** — when explaining the shape of a subsystem, architecture, or significant feature.
-- Plus **`pr-author`** — see Pull Request Authoring Gate below.
-
-### PR & shipping workflows
-
-- **`pr-review-reply`** — see Responding to PR Review Comments below.
-- **`pr-risk-check`** — when assessing the risk profile of a PR: what could break, how blast-radius reaches users, and whether the change is safely revertible. Independent of whether merge means immediate deploy.
+Skill descriptions are injected automatically, so don't expect an index here. Two skills have hard gates that override normal discovery — see Pull Request Authoring Gate and Responding to PR Review Comments below.
 
 ## Pull Request Authoring Gate
 
@@ -100,9 +65,7 @@ Especially for Rust code (though these principles apply broadly), I strongly ali
 
 ## Fix Root Causes, Not Symptoms
 
-Always solve the root cause. Do not add band-aid fixes, defensive backstops, or "just in case" layers on top of a real fix — they accumulate, hide the next bug, and cost more over time than they save. If a fix needs a fallback, sentinel, retry, or special-case lookup, that's a signal you fixed the wrong layer; trace the producer/schema/type path instead.
-
-When fixing a bug and tempted to add a defensive layer alongside the real fix, load the `fixing-root-causes` skill — it covers the common rationalizations ("just one line," "defense in depth is good practice," "but here's a scenario...") and pressure-tests each defensive layer with concrete questions.
+Always solve the root cause. A fallback, sentinel, retry, or special-case lookup added alongside a real fix is a signal you fixed the wrong layer — trace the producer/schema/type path instead. When you're tempted to add a defensive layer anyway, load `fixing-root-causes`; it pressure-tests the rationalizations.
 
 A few more details:
 
@@ -119,14 +82,12 @@ A few more details:
 
 ## Language Preferences
 
-I work in **Rust, Go, Ruby, and TypeScript/JavaScript**. Use the right tool for the job.
+I work in **Rust, Go, Ruby, and TypeScript/JavaScript**. Write code that reads like the code around it — match the file's idiom, naming, and structure, and let the repo's formatter and linter own formatting.
 
-- **Rust:** My primary language. Lean into the type system and borrow checker. Prefer `thiserror`/`anyhow` style error handling. Use iterators and zero-cost abstractions idiomatically. No `unwrap()` in library code. Avoid defensive `unwrap_or_default()`, silent `None` fallbacks, and optional fields that only exist because "the data might be missing"; fix the type, producer, or schema instead. Match the rustfmt default line width (`max_width = 100`) — do not hard-wrap Rust code at 80 columns. Let rustfmt own formatting; write code at natural line lengths up to 100.
-- **Go:** Keep it straightforward. Respect Go idioms even where I find them inelegant (I'm looking at you, `if err != nil`). Use table-driven tests.
-- **Ruby:** Embrace the expressiveness. Favor readable, idiomatic Ruby. Don't fight the language.
-- **TypeScript:** Use strict mode. Prefer precise types over `any`. Favor functional patterns where they improve clarity.
+Two things you can't infer from surrounding code:
 
-Across all languages: lean on formatters and linters (rustfmt, gofmt, rubocop, prettier/eslint). Don't waste human time on formatting.
+- **Rust is my primary language, and I mean it about no defensive typing.** No `unwrap()` in library code, and no `unwrap_or_default()`, silent `None` fallbacks, or optional fields that exist only because "the data might be missing." Fix the type, producer, or schema instead.
+- **Go idioms win even where I find them inelegant.** I'll grumble about `if err != nil`; write it anyway.
 
 ## Product Taste
 
