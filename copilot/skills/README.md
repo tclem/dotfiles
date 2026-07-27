@@ -28,7 +28,6 @@ Run `script/skills-status` to print the latest table, or `script/skills-status -
 | `design-doc-author` | ✅ on | Use when authoring or substantially editing a design doc, architecture doc, or subsystem explanation — the ... |
 | `fixing-root-causes` | ✅ on | Use when fixing a bug, regression, or unexpected behavior — especially when tempted to add a defensive laye... |
 | `incident-postmortem` | 🚫 off | Use when assembling, updating, or reviewing an incident postmortem, and the repository has no postmortem sk... |
-| `peer-session-reply` | 🚫 off | Use when sending any cross-session message after kickoff (send_session_message, send_chat_message), or deci... |
 | `planning-multi-agent-projects` | ✅ on | Use when creating a repo-tracked multi-agent planning PR for a large project, especially when phases, livin... |
 | `pr-author` | ✅ on | Use when creating a GitHub pull request, or when updating an existing PR's title or body so it matches what... |
 | `pr-merge-readiness` | 🚫 off | Use when getting a pull request ready to merge by addressing review threads, CI failures, or conflicts, wit... |
