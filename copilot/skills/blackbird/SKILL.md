@@ -77,4 +77,4 @@ A 429 means you have exhausted the rate limit for that mode; a semantic 429 says
 - `--semantic` accepts at most one `-R`; lexical accepts many.
 - Pair `--semantic` with `--auto-index` on repos that may not be indexed yet, or expect a 404.
 - Prefer `jq` one-liners or reading the file over ad-hoc post-processing scripts.
-- `--fileset` (a client-ingested corpus, searched instead of GitHub-indexed repos) is dotcom only. Normal lexical and semantic search work fine against `*.ghe.com`.
+- `--fileset` (external, client-ingested corpora) is dotcom only.
