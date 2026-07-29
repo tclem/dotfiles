@@ -7,7 +7,9 @@ description: 'Use when reaching for `gh blackbird` (Blackbird code search) for c
 
 `gh blackbird` is a superset of grep for indexed GitHub code: many repos at once, GitHub code-search qualifiers, language-aware symbol lookup, and vector search over embeddings.
 
-**Blackbird or `rg`?** `rg` when the repo is checked out *and* you need every occurrence — refactors, security sweeps, "did we miss a caller." Blackbird for everything else: repos you don't have, a symbol, a concept. Blackbird returns top-N ranked results, so never present them as exhaustive.
+**Blackbird or `rg`?** `rg` when the repo is checked out *and* you need every occurrence — refactors, security sweeps, "did we miss a caller." Blackbird for everything else: repos you don't have, a symbol, a concept.
+
+Two limits, because the results look authoritative either way. Blackbird returns top-N ranked results, so never present them as exhaustive. And it indexes the **default branch only** — it cannot see your working tree, a feature branch, or an unmerged PR, so anything you are actively changing has to be checked with `rg`.
 
 ## Canonical invocations
 
