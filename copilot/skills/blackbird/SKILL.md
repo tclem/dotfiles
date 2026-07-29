@@ -26,7 +26,7 @@ Everything else is in `gh blackbird search --help`. Read that instead of guessin
 
 ## Lexical ANDs every term
 
-A lexical query is not a prompt. Every bare term must appear in the same file, so prose returns nothing:
+A lexical query is not a prompt. Every bare term is ANDed, so a result comes back only when *all* of them appear in the same file. Stacking terms you hope are related — a sentence, or just a bag of plausible-sounding identifiers — usually matches nothing:
 
 ```sh
 # Wrong — three unrelated identifiers ANDed, zero results, retries burn quota
@@ -42,7 +42,7 @@ Mode decision rule:
 
 - A concrete identifier, literal, path, or regex → **lexical**.
 - A name you already know → **`--symbol`**. Do not approximate it with a regex.
-- A sentence or a concept → **`--semantic`**. If you catch yourself writing prose into lexical, you wanted semantic.
+- A concept, or a question you can't name a token for → **`--semantic`**. If you're stacking terms because you aren't sure what you're looking for, that's the tell.
 
 None of these is `rg`. Falling back to a local grep is right when the repo is checked out and the scope is local — not when the question is a symbol, a concept, or spans repos you don't have.
 
