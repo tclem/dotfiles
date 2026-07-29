@@ -20,7 +20,7 @@ gh blackbird search 'parseURL' -R a/b -R c/d --json -C 3 -M 200
 gh blackbird search --symbol parse_url -R owner/name --for-llm
 ```
 
-`--for-llm` is the default because it bounds response size; a bare `--json` has no token cap and one broad query can flood context. Reach for `--json` only when you need the grep-style flags, a non-4000 `--max-tokens`, or a previous `--for-llm` run returned `results_incomplete: true`. Never parse `pretty`.
+`--for-llm` caps the response at 4000 tokens; a bare `--json` has no cap, so one broad query can flood context. Switch to `--json` only for the grep-style flags (`-A`/`-B`/`-C`/`-M`/`--full-snippet` — lexical-only, and mutually exclusive with `--for-llm`), a different `--max-tokens`, or after a `--for-llm` run reports `results_incomplete: true`. Always pass one of the two: with no format flag you get whatever the TTY heuristic picks — `pretty` on a terminal, `oneline` when piped — and neither is capped.
 
 Everything else is in `gh blackbird search --help`. Read that instead of guessing at flags; this skill does not mirror it.
 
@@ -81,6 +81,5 @@ Honor the metadata **once**: wait the stated interval plus a cushion, make the q
 
 - `--semantic` accepts at most one `-R`; lexical accepts many.
 - Pair `--semantic` with `--auto-index` on repos that may not be indexed yet, or expect a 404.
-- `-A`/`-B`/`-C`/`-M`/`--full-snippet` are lexical-only and mutually exclusive with `--for-llm`. Pick the LLM mode or the grep-style mode, not both.
 - Prefer `jq` one-liners or reading the file over ad-hoc post-processing scripts.
 - `--fileset` (a client-ingested corpus, searched instead of GitHub-indexed repos) is dotcom only. Normal lexical and semantic search work fine against `*.ghe.com`.
