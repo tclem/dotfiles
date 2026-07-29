@@ -30,17 +30,19 @@ Everything else is in `gh blackbird search --help`.
 
 ## Lexical ANDs every term
 
-A lexical query is not a prompt. Every bare term is ANDed, so a result comes back only when *all* of them appear in the same file. Stacking terms you hope are related — a sentence, or just a bag of plausible-sounding identifiers — usually matches nothing:
+A lexical query is not a prompt. A single bare term is already broad — it ORs across three domains, matching the file's **path**, its **content**, or a **symbol** name. Multiple bare terms are ANDed, so each one you add is another filter the same file must satisfy. Guess one identifier wrong and the query silently returns nothing, which reads like "absent from this repo" rather than "I made that name up":
 
 ```sh
-# Wrong — three unrelated identifiers ANDed, zero results, retries burn quota
-gh blackbird search 'repositoryStateCache changesState diff' -R desktop/desktop --json -n 10
+# Wrong — `getChangedFilesState` is a guess, and one bad term zeroes the result
+gh blackbird search 'repositoryStateCache getChangedFilesState' -R desktop/desktop --for-llm -n 10
 
 # Right — one distinctive identifier, then read the file it lands in
 gh blackbird search 'repositoryStateCache' -R desktop/desktop --for-llm -n 10
 ```
 
 Pick the **single most distinctive** token — the rarest identifier, string literal, route, or config key — and let the file it lands in supply the rest. If you have several candidate names and don't know which exists, `OR` them into one query rather than running them in sequence. Bare multi-term AND is for narrowing a hit you already have, not for describing what you're looking for.
+
+To sharpen a term rather than add one, qualify it. `symbol:`, `def:`, `path:`, and `content:` each scope to a single domain and accept a regex, so `def:RepositoryStateCache` finds the definition where the bare term returns every file that mentions it. A bare `/regex/` searches content only.
 
 Mode decision rule:
 
