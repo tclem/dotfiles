@@ -81,3 +81,4 @@ A 429 means you have exhausted the rate limit for that mode; a semantic 429 says
 - `--semantic` accepts at most one `-R`; lexical accepts many.
 - Pair `--semantic` with `--auto-index` on repos that may not be indexed yet, or expect a 404.
 - Prefer `jq` one-liners or reading the file over ad-hoc post-processing scripts.
+- Supported hosts are `github.com` and Proxima data-residency tenants (`<tenant>.ghe.com`). Self-hosted GHES is out of scope — that hostname fails with `UnsupportedHost` before a request is made.
