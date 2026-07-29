@@ -84,4 +84,3 @@ Honor the metadata **once**: wait the stated interval plus a cushion, make the q
 - `-A`/`-B`/`-C`/`-M`/`--full-snippet` are lexical-only and mutually exclusive with `--for-llm`. Pick the LLM mode or the grep-style mode, not both.
 - Prefer `jq` one-liners or reading the file over ad-hoc post-processing scripts.
 - `--fileset` (a client-ingested corpus, searched instead of GitHub-indexed repos) is dotcom only. Normal lexical and semantic search work fine against `*.ghe.com`.
-- Do not pass `--lab` (staff-only, currently defaulted on anyway).
