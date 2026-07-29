@@ -79,4 +79,3 @@ A 429 means you have exhausted the rate limit for that mode; a semantic 429 says
 - `--semantic` accepts at most one `-R`; lexical accepts many.
 - Pair `--semantic` with `--auto-index` on repos that may not be indexed yet, or expect a 404.
 - Prefer `jq` one-liners or reading the file over ad-hoc post-processing scripts.
-- `--fileset` (external, client-ingested corpora) is dotcom only.
