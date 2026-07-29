@@ -44,6 +44,8 @@ Mode decision rule:
 - A name you already know → **`--symbol`**. Do not approximate it with a regex.
 - A sentence or a concept → **`--semantic`**. If you catch yourself writing prose into lexical, you wanted semantic.
 
+None of these is `rg`. Falling back to a local grep is right when the repo is checked out and the scope is local — not when the question is a symbol, a concept, or spans repos you don't have.
+
 ## Scoping
 
 `-R owner/name` folds into the lexical query as a `repo:` qualifier — it is the same thing as writing `repo:owner/name` inline. **Use `-R`, always.** It is repeatable, it reads clearly, and it is the only form that scopes `--semantic`: semantic sends the query verbatim as the embedding prompt and builds its scoping filter from `-R` alone, so an inline `repo:` there is embedded as prompt text and silently filters nothing. Do not mix the two conventions.
@@ -83,13 +85,3 @@ Honor the metadata **once**: wait the stated interval plus a cushion, make the q
 - Prefer `jq` one-liners or reading the file over ad-hoc post-processing scripts.
 - `--fileset` (a client-ingested corpus, searched instead of GitHub-indexed repos) is dotcom only. Normal lexical and semantic search work fine against `*.ghe.com`.
 - Do not pass `--lab` (staff-only, currently defaulted on anyway).
-
-## Common mistakes
-
-- **Passing prose to lexical search** and reading the empty result as "not in this repo."
-- **Batching case or spelling variants** into one shell call, which spends the same quota as running them one at a time.
-- **Reaching for `rg` reflexively** when the right tool is `--symbol`, `--semantic`, or a cross-repo lexical query.
-- **Starting semantic search in a guessed repo** when the task is ownership discovery.
-- **Continuing broad search after finding the canonical doc, route, or schema.** Read it.
-- **Searching only raw request types** and missing the wrappers production callers actually use.
-- **Claiming "all callers"** from top-N results without falling back to `rg`.
