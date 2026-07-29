@@ -7,8 +7,6 @@ description: 'Use when reaching for `gh blackbird` (Blackbird code search) for c
 
 `gh blackbird` is a superset of grep for indexed GitHub code. Reach for it when the question is bigger than a local checkout: multiple repos, GitHub code-search qualifiers, language-aware symbol lookup, or vector search. It returns top-N ranked results, never every match — when you need exhaustiveness, clone and `rg`.
 
-User-level skill. Do not mirror it into a project repo.
-
 ## Canonical invocations
 
 ```sh
