@@ -36,7 +36,7 @@ gh blackbird search 'repositoryStateCache changesState diff' -R desktop/desktop 
 gh blackbird search 'repositoryStateCache' -R desktop/desktop --for-llm -n 10
 ```
 
-Pick the **single most distinctive** token — the rarest identifier, string literal, route, or config key — and let the file it lands in supply the rest. Multi-term lexical is for narrowing a known-good hit, not for describing what you're looking for.
+Pick the **single most distinctive** token — the rarest identifier, string literal, route, or config key — and let the file it lands in supply the rest. If you have several candidate names and don't know which one exists, `OR` them into one query rather than running them in sequence. Bare multi-term AND is for narrowing a hit you already have, not for describing what you're looking for.
 
 Mode decision rule:
 
@@ -55,11 +55,11 @@ Query cheaply; quotas are cost-based, with separate lexical and semantic buckets
 1. If the repo is checked out and the scope is local, use `rg` instead.
 2. Scope before broadening: add `-R`, `path:`, `language:`, or a more distinctive literal before raising `-n`.
 3. Start at `-n 5` or `-n 10`. Raise it only after the first page proves the query is correctly scoped.
-4. Split broad `OR` queries into narrower ones. A five-term `OR` across a large repo is one expensive query that also floods output.
+4. `OR` is the cheap shape for a disjunction — one query beats N sequential ones for the same candidates. It turns expensive when the terms are *generic*: each one floods on its own and the union is noise. Distinctiveness decides, not the operator.
 5. Clip pathological lines with `-M 200` when results include minified or generated code.
 6. Stop once you have a canonical file, owner repo, route, or schema. Reading one result beats another broad search.
 
-Code search is case-insensitive: `octokit` already finds `Octokit`. Do not fire off case or spelling variants of the same query — not sequentially, and not batched into one shell call behind `|| true`. Batching hides the cost; it is still N queries against the same quota. Run one query, read the result, then decide.
+Code search is case-insensitive, so `octokit` already finds `Octokit` — case variants are never worth a query. For genuine spelling variants, `OR` them into one query; do not fire them off as separate searches, sequentially or batched into one shell call behind `|| true`. Batching hides the cost without reducing it: it is still N queries against the same quota, where the `OR` is one.
 
 ## Ownership discovery
 
