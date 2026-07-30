@@ -79,3 +79,7 @@ Real callers usually go through a wrapper, not the raw type. Start at the callee
 - Pair `--semantic` with `--auto-index` on repos that may not be indexed yet, or expect a 404.
 - Prefer `jq` one-liners or reading the file over ad-hoc post-processing scripts.
 - Supported hosts are `github.com` and Proxima data-residency tenants (`<tenant>.ghe.com`). Self-hosted GHES is out of scope — that hostname fails with `UnsupportedHost` before a request is made.
+
+## Managing external filesets
+
+If you need to search a corpus that isn't a GitHub repo — vendored sources, scratch directories, anything you can put on disk — `gh blackbird fileset {list, ingest, delete}` manages the lifecycle. Ingest from a local path, then query with `--fileset NAME` (dotcom only). Run `gh blackbird fileset --help` for the full lifecycle; don't reinvent it here.
