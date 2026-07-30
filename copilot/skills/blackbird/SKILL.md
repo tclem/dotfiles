@@ -21,6 +21,9 @@ gh blackbird search 'parseURL' -R a/b -R c/d --json -C 3 -M 200
 
 # Exact symbol lookup, language-aware
 gh blackbird search --symbol parse_url -R owner/name --for-llm
+
+# Cross-repo question, no repo in hand: scope to the org
+gh blackbird search 'TokenResolver org:some-org' --for-llm -n 10
 ```
 
 `--for-llm` caps the response at 4000 tokens; a bare `--json` has no cap, so one broad query can flood context. Switch to `--json` only for the grep-style flags (`-A`/`-B`/`-C`/`-M`/`--full-snippet`, mutually exclusive with `--for-llm`), a different `--max-tokens`, or after a run reports `results_incomplete: true`. Always pass one explicitly rather than relying on the default, which varies with whether stdout is a TTY.
@@ -50,11 +53,15 @@ Mode decision rule:
 
 ## Scoping
 
-`-R owner/name` folds into the lexical query as a `repo:` qualifier — for lexical the two are identical. **Use `-R`.** It is also the only form that scopes `--semantic`, where an inline `repo:` is embedded as prompt text and filters nothing.
+Know the repo → `-R owner/name`, repeatable for a set. Don't know it → `org:`, `user:`, or `enterprise:` inline in the query; there are no flags for those. Narrow further with `path:` and `language:`.
+
+Unscoped works too, but results are top-N over everything you can see — fine for a distinctive token, thin for a common one. Scope when you can say where the answer lives.
+
+`--semantic` **requires exactly one** `-R`. Unscoped is a 422, and an inline `repo:` is embedded as prompt text and filters nothing. When you don't know the repo, find it lexically first.
 
 Query cheaply; quotas are cost-based, and lexical and semantic have separate limits:
 
-1. Scope before broadening: add `-R`, `path:`, `language:`, or a more distinctive literal before raising `-n`.
+1. Scope before broadening: add `-R`, `org:`, `path:`, `language:`, or a more distinctive literal before raising `-n`.
 2. Start at `-n 5` or `-n 10`. Raise it only after the first page proves the query is correctly scoped.
 3. `OR` is the cheap shape for a disjunction — one query beats N sequential ones for the same candidates. It turns expensive when the terms are *generic*: each floods on its own and the union is noise. Distinctiveness decides, not the operator.
 4. Clip pathological lines with `-M 200` when results include minified or generated code.
@@ -68,7 +75,6 @@ Real callers usually go through a wrapper, not the raw type. Start at the callee
 
 ## Rules
 
-- `--semantic` accepts at most one `-R`; lexical accepts many. Don't start semantic in a guessed repo — find the owner repo lexically first.
 - On a 429, honor the error's `retry_after_seconds` once with a cheaper query, then stop and report. Lexical and semantic limits are separate.
 - Pair `--semantic` with `--auto-index` on repos that may not be indexed yet, or expect a 404.
 - Prefer `jq` one-liners or reading the file over ad-hoc post-processing scripts.
