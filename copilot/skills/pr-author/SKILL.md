@@ -8,7 +8,7 @@ user-invocable: true
 
 Author or refresh a PR's title and body so they describe the final diff — same rules whether creating a new PR or rewriting one that drifted from the code.
 
-Iterate on the live PR body, not on draft text in chat. Create it (draft if unsure) or update it, then refine in place — a real PR is easier to react to than loose text in a conversation. Don't stage the body for yes/no sign-off before posting.
+Iterate on the live PR body, not on draft text in chat. Create or update it, then refine in place — a real PR is easier to react to than loose text in a conversation. Don't stage the body for yes/no sign-off before posting.
 
 ## What the body is for
 
@@ -49,7 +49,7 @@ From the branch, run `gh pr view --json number,title,body,baseRefName 2>/dev/nul
 
    If stacked, surface it ("Stacked on `<branch>` (PR #N). Base on it or on `<default>`?"), default to the stacked base, and add a blockquote near the top of the body noting it's stacked on the prior PR and will be retargeted to the default branch when that merges. Pass `--base <stacked-branch>` to `gh pr create`; retarget after the upstream merges via [an API edit](#applying-edits).
 6. **Draft.** Title: concise, following repo conventions (`feat:`, `fix:`). Body: apply the content test above. Reference an issue if context suggests one (`Fixes #123`). Don't add boilerplate "Non-goals"/"Follow-ups" sections — call a non-goal out only when its absence would mislead. Append the GitHub Posting Protocol signature; keep `Co-authored-by:` out of the body (commit messages only).
-7. **Create** via [an API edit](#applying-edits): an app-native tool, or `gh pr create --title … --body-file … --base <default>`. Prefer a draft when uncertain. Display the PR URL.
+7. **Create as a draft** via [an API edit](#applying-edits): an app-native tool, or `gh pr create --draft --title … --body-file … --base <default>`. Mark ready for review when I ask. Display the PR URL.
 
 ## Update an existing PR
 
