@@ -13,20 +13,20 @@ description: 'Use when reaching for `gh blackbird` (Blackbird code search) for c
 ## Canonical invocations
 
 ```sh
-# Agent default: token-capped JSONL (--for-llm == --max-tokens 4000 --format jsonl)
-gh blackbird search 'TokenResolver path:src/auth' -R owner/name --for-llm -n 10
+# Agent default: no output flags. Piped output is already token-capped JSONL.
+gh blackbird search 'TokenResolver path:src/auth' -R owner/name -n 10
 
-# Grep-style: explicit context + width clip
-gh blackbird search 'parseURL' -R a/b -R c/d --json -C 3 -M 200
+# Grep-style: explicit context + width clip, which drops the token cap
+gh blackbird search 'parseURL' -R a/b -R c/d -C 3 -M 200
 
 # Exact symbol lookup, language-aware
-gh blackbird search --symbol parse_url -R owner/name --for-llm
+gh blackbird search --symbol parse_url -R owner/name
 
 # Cross-repo question, no repo in hand: scope to the org
-gh blackbird search 'TokenResolver org:some-org' --for-llm -n 10
+gh blackbird search 'TokenResolver org:some-org' -n 10
 ```
 
-`--for-llm` caps the response at 4000 tokens; a bare `--json` has no cap, so one broad query can flood context. Switch to `--json` only for the grep-style flags (`-A`/`-B`/`-C`/`-M`/`--full-snippet`, mutually exclusive with `--for-llm`), a different `--max-tokens`, or after a run reports `results_incomplete: true`. Always pass one explicitly rather than relying on the default, which varies with whether stdout is a TTY.
+Override only for a reason. Grep-style flags (`-A`/`-B`/`-C`/`-M`/`--full-snippet`) keep JSONL but drop the budget — reach for them when you need fixed context or to clip minified lines. `--max-tokens N` sets a different budget, worth using after a run reports `results_incomplete: true`, not pre-emptively. `--format pretty` and `--format oneline` are for humans and drop the budget too; never parse them.
 
 Everything else is in `gh blackbird search --help`.
 
@@ -36,10 +36,10 @@ A lexical query is not a prompt. A single bare term is already broad — it matc
 
 ```sh
 # Wrong — `getChangedFilesState` is a guess, and one bad term zeroes the result
-gh blackbird search 'repositoryStateCache getChangedFilesState' -R desktop/desktop --for-llm -n 10
+gh blackbird search 'repositoryStateCache getChangedFilesState' -R desktop/desktop -n 10
 
 # Right — one distinctive identifier, then read the file it lands in
-gh blackbird search 'repositoryStateCache' -R desktop/desktop --for-llm -n 10
+gh blackbird search 'repositoryStateCache' -R desktop/desktop -n 10
 ```
 
 Pick the **single most distinctive** token — the rarest identifier, string literal, route, or config key — and let the file it lands in supply the rest. If you have several candidate names and don't know which exists, `OR` them into one query rather than running them in sequence. Bare multi-term AND is for narrowing a hit you already have, not for describing what you're looking for.
@@ -73,10 +73,21 @@ Code search is case-insensitive, so case variants are never worth a query: `octo
 
 Real callers usually go through a wrapper, not the raw type. Start at the callee definition, find the generated client or SDK helper around it, and search **that** symbol. For an RPC endpoint, fully-qualified names beat bare ones: `Example::V1::CountRequest` over `CountRequest`. Check paths before concluding — tests, fakes, fixtures, and generated code all look like callsites.
 
+## Exit codes
+
+| Exit | Meaning |
+| ---- | ------- |
+| `0`  | Success, **including zero results** and a reader that closed the pipe early (`head`, `jq -e first`) |
+| `1`  | API, network, or validation error — a `{"type":"error", ...}` JSONL record on stdout |
+| `2`  | Argument parse error |
+
+Zero results is not a failure. Do not wrap calls in `|| true` or redirect stderr with `2>&1`; a non-zero exit is real and worth reading.
+
 ## Rules
 
 - On a 429, honor the error's `retry_after_seconds` once with a cheaper query, then stop and report. Lexical and semantic limits are separate.
 - Pair `--semantic` with `--auto-index` on repos that may not be indexed yet, or expect a 404.
+- The result cap is `-n` / `--limit`. `--max-results` is not a flag and exits 2 with a pointer.
 - Prefer `jq` one-liners or reading the file over ad-hoc post-processing scripts.
 - Supported hosts are `github.com` and Proxima data-residency tenants (`<tenant>.ghe.com`). Self-hosted GHES is out of scope — that hostname fails with `UnsupportedHost` before a request is made.
 
