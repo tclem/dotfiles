@@ -9,9 +9,7 @@ description: 'Use when reaching for `gh blackbird` (Blackbird code search) for c
 
 **Blackbird or `rg`?** `rg` when the repo is checked out *and* you need every occurrence — refactors, security sweeps, "did we miss a caller." Blackbird for everything else: repos you don't have, a symbol, a concept.
 
-Two things the results won't tell you about themselves:
-
-- They are **top-N ranked**, not every match. Never present them as exhaustive.
+- Results are **top-N ranked**, not every match. Never present them as exhaustive.
 - The index covers the **default branch only** — no working tree, no feature branch, no unmerged PR. Check anything you are actively changing with `rg`.
 
 ## Canonical invocations
