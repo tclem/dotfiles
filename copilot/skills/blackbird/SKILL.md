@@ -25,7 +25,7 @@ gh blackbird search 'parseURL' -R a/b -R c/d --json -C 3 -M 200
 gh blackbird search --symbol parse_url -R owner/name --for-llm
 ```
 
-`--for-llm` caps the response at 4000 tokens; a bare `--json` has no cap, so one broad query can flood context. Switch to `--json` only for the grep-style flags (`-A`/`-B`/`-C`/`-M`/`--full-snippet`, mutually exclusive with `--for-llm`), a different `--max-tokens`, or after a run reports `results_incomplete: true`. Always pass one of them — with no format flag the output depends on whether stdout is a TTY, and neither default is capped.
+`--for-llm` caps the response at 4000 tokens; a bare `--json` has no cap, so one broad query can flood context. Switch to `--json` only for the grep-style flags (`-A`/`-B`/`-C`/`-M`/`--full-snippet`, mutually exclusive with `--for-llm`), a different `--max-tokens`, or after a run reports `results_incomplete: true`. Always pass one explicitly rather than relying on the default, which varies with whether stdout is a TTY.
 
 Everything else is in `gh blackbird search --help`.
 
