@@ -5,9 +5,7 @@ description: 'Use when reaching for `gh blackbird` (Blackbird code search) for c
 
 # Blackbird Search
 
-`gh blackbird` is a superset of grep for indexed GitHub code: many repos at once, GitHub code-search qualifiers, language-aware symbol lookup, and vector search over embeddings.
-
-**Blackbird or `rg`?** `rg` when the repo is checked out *and* you need every occurrence — refactors, security sweeps, "did we miss a caller." Blackbird for everything else: repos you don't have, a symbol, a concept.
+`gh blackbird` is a superset of grep for indexed GitHub code. **Blackbird or `rg`?** `rg` when the repo is checked out *and* you need every occurrence — refactors, security sweeps, "did we miss a caller." Blackbird for everything else: repos you don't have, a symbol, a concept.
 
 - Results are **top-N ranked**, not every match. Never present them as exhaustive.
 - The index covers the **default branch only** — no working tree, no feature branch, no unmerged PR. Check anything you are actively changing with `rg`.
@@ -18,7 +16,7 @@ description: 'Use when reaching for `gh blackbird` (Blackbird code search) for c
 # Agent default: token-capped JSONL (--for-llm == --max-tokens 4000 --format jsonl)
 gh blackbird search 'TokenResolver path:src/auth' -R owner/name --for-llm -n 10
 
-# Grep-style: explicit context + width clip. Mutually exclusive with --for-llm.
+# Grep-style: explicit context + width clip
 gh blackbird search 'parseURL' -R a/b -R c/d --json -C 3 -M 200
 
 # Exact symbol lookup, language-aware
@@ -31,7 +29,7 @@ Everything else is in `gh blackbird search --help`.
 
 ## Lexical ANDs every term
 
-A lexical query is not a prompt. A single bare term is already broad — it matches a file's **content**, its **path**, or a **symbol** it defines, so `ingest_pipeline` finds `tests/ingest_pipeline.rs` and `Client::code_search` finds `src/client.rs`, though neither string appears in the file. Multiple bare terms are ANDed, so each one you add is another filter the same file must satisfy. Guess one identifier wrong and the query silently returns nothing, which reads like "absent from this repo" rather than "I made that name up":
+A lexical query is not a prompt. A single bare term is already broad — it matches a file's **content**, its **path**, or a **symbol** it defines, so it hits files that contain the string nowhere. Multiple bare terms are ANDed, so each one you add is another filter the same file must satisfy. Guess one identifier wrong and the query silently returns nothing, which reads like "absent from this repo" rather than "I made that name up":
 
 ```sh
 # Wrong — `getChangedFilesState` is a guess, and one bad term zeroes the result
@@ -47,13 +45,12 @@ To sharpen a term rather than add one, qualify it. `symbol:`, `def:`, `path:`, a
 
 Mode decision rule:
 
-- A concrete identifier, literal, path, or regex → **lexical**.
 - A name you already know → **`--symbol`**. Do not approximate it with a regex.
 - A concept, or a question you can't name a token for → **`--semantic`**. If you're stacking terms because you aren't sure what you're looking for, that's the tell.
 
 ## Scoping
 
-`-R owner/name` folds into the lexical query as a `repo:` qualifier — for lexical the two are identical. **Use `-R`.** It is also the only form that scopes `--semantic`, which sends your query verbatim as the embedding prompt and builds its filter from `-R` alone; an inline `repo:` there embeds as prompt text and filters nothing.
+`-R owner/name` folds into the lexical query as a `repo:` qualifier — for lexical the two are identical. **Use `-R`.** It is also the only form that scopes `--semantic`, where an inline `repo:` is embedded as prompt text and filters nothing.
 
 Query cheaply; quotas are cost-based, and lexical and semantic have separate limits:
 
@@ -65,21 +62,14 @@ Query cheaply; quotas are cost-based, and lexical and semantic have separate lim
 
 Code search is case-insensitive, so case variants are never worth a query: `octokit` already finds `Octokit`. `OR` genuine spelling variants into one query rather than firing separate searches — batching them into a single shell call behind `|| true` hides the cost without reducing it.
 
-## Ownership discovery
-
-`--semantic` is single-repo, so it is a bad first move for "who owns X?" — a guessed repo returns plausible, irrelevant neighbors. Lexically search the proper noun, service name, route, or config key across likely repos, then read the owner repo's docs and routes. Use `--semantic` inside that repo only if the docs don't answer the concept.
-
 ## Caller tracing
 
-Real callers usually go through a wrapper, not the raw type. Start at the callee definition, find the generated client or SDK helper around it, and search **that** symbol. For an RPC endpoint the fully-qualified names beat the bare ones: prefer `SomeService::Client.count`, `/twirp/example.v1.QueryAPI/Count`, or `Example::V1::CountRequest` over `CountRequest`. Check paths before concluding — tests, fakes, fixtures, and generated code all look like callsites.
-
-## Rate limits
-
-A 429 means you have exhausted the rate limit for that mode; a semantic 429 says nothing about lexical quota. With `--json` the error arrives as JSONL carrying `retry_after_seconds` and/or `rate_limit_reset_epoch_seconds`. Honor it **once**: wait the stated interval plus a cushion, tighten the query, retry. If that also 429s or the wait is long, stop and tell the user — include the mode and the cheaper query you would try next. Do not spin.
+Real callers usually go through a wrapper, not the raw type. Start at the callee definition, find the generated client or SDK helper around it, and search **that** symbol. For an RPC endpoint, fully-qualified names beat bare ones: `Example::V1::CountRequest` over `CountRequest`. Check paths before concluding — tests, fakes, fixtures, and generated code all look like callsites.
 
 ## Rules
 
-- `--semantic` accepts at most one `-R`; lexical accepts many.
+- `--semantic` accepts at most one `-R`; lexical accepts many. Don't start semantic in a guessed repo — find the owner repo lexically first.
+- On a 429, honor the error's `retry_after_seconds` once with a cheaper query, then stop and report. Lexical and semantic limits are separate.
 - Pair `--semantic` with `--auto-index` on repos that may not be indexed yet, or expect a 404.
 - Prefer `jq` one-liners or reading the file over ad-hoc post-processing scripts.
 - Supported hosts are `github.com` and Proxima data-residency tenants (`<tenant>.ghe.com`). Self-hosted GHES is out of scope — that hostname fails with `UnsupportedHost` before a request is made.
