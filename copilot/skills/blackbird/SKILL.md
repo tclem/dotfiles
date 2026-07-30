@@ -31,7 +31,7 @@ Everything else is in `gh blackbird search --help`.
 
 ## Lexical ANDs every term
 
-A lexical query is not a prompt. A single bare term is already broad — it ORs across three domains, matching the file's **path**, its **content**, or a **symbol** name. Multiple bare terms are ANDed, so each one you add is another filter the same file must satisfy. Guess one identifier wrong and the query silently returns nothing, which reads like "absent from this repo" rather than "I made that name up":
+A lexical query is not a prompt. A single bare term is already broad — it matches a file's **content** or its **path**, so `ingest_pipeline` finds `tests/ingest_pipeline.rs` even though the string appears nowhere inside it. Multiple bare terms are ANDed, so each one you add is another filter the same file must satisfy. Guess one identifier wrong and the query silently returns nothing, which reads like "absent from this repo" rather than "I made that name up":
 
 ```sh
 # Wrong — `getChangedFilesState` is a guess, and one bad term zeroes the result
