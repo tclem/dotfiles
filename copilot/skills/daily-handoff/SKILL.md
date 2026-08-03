@@ -116,22 +116,16 @@ Handoff:
 
 After producing the fenced block, always save the handoff to the `tclem/notes` repo without asking first.
 
-Use the user's notes checkout even when the current session is running in another repo. The usual path is:
+Use the user's notes checkout even when the current session is running in another repo. Handoffs live at the repo root:
 
 ```text
-~/github/notes/notes/
+~/github/notes/YYYY-MM-DD-handoff-NN.md
 ```
 
-Filename format:
-
-```text
-notes/YYYY-MM-DD-handoff-NN.md
-```
-
-Determine `NN` by finding the highest existing handoff number under `notes/notes/` and incrementing it. For example:
+Determine `NN` by finding the highest existing handoff number and incrementing it:
 
 ```bash
-find ~/github/notes/notes -name '*-handoff-*.md' -print |
+find ~/github/notes -maxdepth 1 -name '*-handoff-*.md' -print |
   sed -E 's/.*-handoff-([0-9]+)\.md$/\1/' |
   sort -n |
   tail -1
@@ -142,12 +136,14 @@ If the latest file is `2026-05-11-handoff-53.md`, the next file is `YYYY-MM-DD-h
 Saved file format:
 
 ```markdown
-# Handoff NN
+# YYYY-MM-DD handoff NN
 
 Tags: #handoff #project-tag
 
 <handoff fenced block, verbatim>
 ```
+
+The H1 repeats the date and number from the filename — older files use a bare `# Handoff NN`, but don't copy that.
 
 Infer project tags from the handoff content, e.g. `#blackbird`, `#github-app`, `#copilot`, or other obvious project names. Keep tags lowercase and hyphenated when needed. Preserve the fenced block verbatim in the saved file so the note exactly matches what the user can paste into Slack.
 
