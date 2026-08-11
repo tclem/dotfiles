@@ -56,6 +56,12 @@ A handoff covers activity since the last one — typically the last 24 hours, bu
    ```
    Treat `summary` as a raw hint, not prose to reuse — it's often the verbatim kickoff prompt. Use it to *remember* a work stream, then write the narrative yourself. This is the same data behind `/chronicle standup`.
 
+5. **Slack activity**, for the work that never became a PR or issue — decisions, help from teammates, incident chatter, and the meetings/context that opens the handoff. The handoff is *posted* to Slack, so Slack is also where much of the day's discussion already lives. Search your own recent messages with the `slack_search_public` tool, using the current user ID the tool reports:
+   ```
+   query: "from:<@SELF> after:YYYY-MM-DD"   sort: "timestamp"
+   ```
+   Narrow with a topic term (`from:<@SELF> <project> after:...`), or drop `from:` to catch threads where a teammate looped you in (`in:#channel to:<@SELF> after:...`). Mine Slack the same way as session history: a memory aid, never prose to copy. Pull collaborator credits (`@handle`), channel references (`#channel`), blockers, and a specific meetings/context line — then write the narrative yourself. Prefer `slack_search_public`; only reach for the private-channel variant when the work genuinely lived in a private channel and the user is okay searching it.
+
 Prefer what you already know from the current session over re-fetching.
 
 ## Structure the handoff
@@ -64,7 +70,7 @@ The handoff is **status-first**, with PRs as supporting evidence — not the oth
 
 ### Top-level bullets (rough order)
 
-1. **Meetings / context.** A bullet listing meetings and notable conversations. The user will usually rewrite this, but take a first pass from session context if you have it — don't just emit a generic "random 1:1s and meetings" placeholder.
+1. **Meetings / context.** A bullet listing meetings and notable conversations. The user will usually rewrite this, but take a first pass from session context and Slack (step 5) if you have it — don't just emit a generic "random 1:1s and meetings" placeholder.
 2. **On-call / ops** (if the user is on-call). A narrative capturing the shape of the day — how busy, what landed, what didn't, who helped. Credit collaborators with `@handle` and reference channels with `#channel`.
 3. **Active work streams**, one bullet per theme. Lead with story: what happened, what's blocked, what's next. Name blockers explicitly — who you've asked, what you're waiting on ("I'm blocked here"). PRs nest underneath.
 4. **Incidents / investigations** if any, with links to the incident issue and any security engagement.
@@ -94,7 +100,7 @@ Nest PR bullets under the narrative bullet they support. Use **four leading spac
 
 ## Output format
 
-One fenced code block, starting with `Handoff:`:
+One fenced code block, starting with `Handoff:`. **Everything goes in this single block** — every work stream is just another theme bullet here.
 
 ````
 ```
