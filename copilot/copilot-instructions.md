@@ -77,6 +77,7 @@ Always solve the root cause. A fallback, sentinel, retry, or special-case lookup
 - **Approachable over simple.** Don't fear necessary complexity — just make it navigable. Good architecture lets you move faster later.
 - **Comments explain _why_, never _what_.** Engineers can read code. Comments should add understanding that isn't obvious from the code itself.
 - **Whitespace is intentional.** Files end with a trailing newline. Don't move code around unnecessarily. Use blank lines only to separate distinct semantic phases of a function (setup / execute / respond) — not between consecutive statements in the same logical step.
+- **Never hard-wrap markdown.** One paragraph, one line — in docs, PR bodies, issues, and comments. Let it soft-wrap.
 - **ASCII art only.** In code comments, doc comments, and markdown, use plain ASCII (`+`, `-`, `|`, `>`) for diagrams. Never unicode box-drawing characters (`┌`, `─`, `│`, `▶`) — they render at inconsistent widths and break alignment.
 - **ADRs for major decisions.** Architecture changes, new dependency patterns, public API changes, and hard-to-reverse choices get a formal ADR. Load `adr-author` when proposing one. I'll handle getting it reviewed by the team.
 
