@@ -45,7 +45,7 @@ A handoff covers activity since the last one — typically the last 24 hours, bu
      }
    }'
    ```
-   Link these inline in the narrative bullet rather than as `:merged:`/`:review:` bullets — those two emoji mean PRs.
+   Link these inline in the theme bullet rather than as `:merged:`/`:review:` bullets — those two emoji mean PRs.
 
 4. **Session history**, for work that produced no artifact at all — an investigation, a review pass, a doc refined but not yet posted. Query the local session store:
    ```sql
@@ -60,27 +60,41 @@ A handoff covers activity since the last one — typically the last 24 hours, bu
    ```
    query: "from:<@SELF> after:YYYY-MM-DD"   sort: "timestamp"
    ```
-   Narrow with a topic term (`from:<@SELF> <project> after:...`), or drop `from:` to catch threads where a teammate looped you in (`in:#channel to:<@SELF> after:...`). Mine Slack the same way as session history: a memory aid, never prose to copy. Pull collaborator credits (`@handle`), channel references (`#channel`), blockers, and a specific meetings/context line — then write the narrative yourself. Prefer `slack_search_public`; only reach for the private-channel variant when the work genuinely lived in a private channel and the user is okay searching it.
+   Narrow with a topic term (`from:<@SELF> <project> after:...`), or drop `from:` to catch threads where a teammate looped you in (`in:#channel to:<@SELF> after:...`). Mine Slack the same way as session history: a memory aid, never prose to copy. Pull collaborator credits (`@handle`), channel references (`#channel`), blockers, and the meeting names and conversations that open the handoff — then write the narrative yourself. Slack also tells you what to *cut*: anything already posted in the channel the handoff goes to should be linked, not restated. Prefer `slack_search_public`; only reach for the private-channel variant when the work genuinely lived in a private channel and the user is okay searching it.
 
 Prefer what you already know from the current session over re-fetching.
 
 ## Structure the handoff
 
-The handoff is **status-first**, with PRs as supporting evidence — not the other way around. Each top-level bullet is a narrative paragraph about a work stream, blocker, or meta update; PR bullets nest underneath.
+The handoff is **status-first**, with PRs as supporting evidence — not the other way around. Each top-level bullet is one sentence about a work stream or blocker; PR bullets nest underneath.
 
 ### Top-level bullets (rough order)
 
-1. **Meetings / context.** A bullet listing meetings and notable conversations. The user will usually rewrite this, but take a first pass from session context and Slack (step 5) if you have it — don't just emit a generic "random 1:1s and meetings" placeholder.
-2. **On-call / ops** (if the user is on-call). A narrative capturing the shape of the day — how busy, what landed, what didn't, who helped. Credit collaborators with `@handle` and reference channels with `#channel`.
-3. **Active work streams**, one bullet per theme. Lead with story: what happened, what's blocked, what's next. Name blockers explicitly — who you've asked, what you're waiting on ("I'm blocked here"). PRs nest underneath.
+**Never open with a summary of the day.** No scene-setting, no characterizing bullet ("Prototype-heavy day: four parallel spikes…", "Half day — afternoon in the city"). The handoff starts at the first meeting and goes straight to work.
+
+1. **Meetings / context.** **One bullet per meeting**, bare name, no verb or framing — `* Town Hall`, `* Team sync`. A notable conversation gets one clause of substance and the person's handle: `* Good, long conversation with @handle about local search.` Take a first pass from session context and Slack (step 5); don't emit a generic "random 1:1s and meetings" placeholder.
+2. **On-call / ops** (if the user is on-call). A narrative capturing the shape of the day — how busy, what landed, what didn't, who helped. Reference channels with `#channel`.
+3. **Active work streams**, one bullet per theme — see [Writing a theme bullet](#writing-a-theme-bullet). Name blockers explicitly: who you've asked, what you're waiting on ("I'm blocked here"). PRs nest underneath.
 4. **Incidents / investigations** if any, with links to the incident issue and any security engagement.
+
+### Writing a theme bullet
+
+- **One sentence.** Not three, not a paragraph. State what happened and stop.
+- **Open with the handle of whoever cares** when the bullet *is* the ask: `* @handle, I'm going to drop the unused symbol fields:`. If the ask already lives in a linked thread where you cc'd them, link the thread and drop the handles — don't ask twice.
+- **Put the most important link in the sentence**, not the bullet list. The artifact you want opened — an epic, a demo PR — goes in the opening clause; sub-bullets are supporting evidence. Promoting it out of the list is what marks it as the thing to read.
+- **Frame by what the reader can do**, not what you built. Not "X is now a reusable action instead of ~16k vendored lines" but "X is avail to try (add the `<label>` label to a PR) once these land on main" — include the activation step.
+- **Link instead of retelling.** If the explanation already lives in a Slack thread, GitHub issue, or doc, link it and cut the recap: `See my update here for details and links: <permalink>`.
+- **Hedge honestly and say why.** Name the state of the thing ("a very rough e2e prototype working (with lots of holes)") and the reason for the path taken over the alternative ("the CLI makes it very easy to get the contracts right and iterate quickly"). Confidence and reasoning, not just status.
+- **State blockers in the first person, including human ones.** Not "waiting on >= 1.0.81" but "I need to wait for a release and permission to start." A person you're waiting on is a blocker; name it.
+- **Keep concrete detail with a consequence.** "Filed [repo#123](url) — the docs don't explain log filtering during validation, which cost me time." Specific, first-person, names the cost. This register survives; abstraction and scene-setting don't.
+- **Leave room for artifacts the user adds** — demo videos, Slack permalinks to their own earlier messages. Don't pad a theme to wall-to-wall PR bullets.
 
 ### PR bullet format
 
-Nest PR bullets under the narrative bullet they support. Use **four leading spaces** before nested PR bullets; two spaces can render inconsistently in Slack.
+Nest PR bullets under the theme bullet they support. Use **four leading spaces** before nested PR bullets; two spaces can render inconsistently in Slack.
 
 ```
-* Narrative paragraph for this theme — status, blockers, what's next.
+* One-sentence theme, ending in a colon:
     * :merged: [<title>](https://github.com/org/repo/pull/N)
     * :review: [<title>](https://github.com/org/repo/pull/N) -> optional inline commentary
 ```
@@ -90,31 +104,41 @@ Nest PR bullets under the narrative bullet they support. Use **four leading spac
 - Inline commentary after a PR bullet (e.g. `-> will try this out tomorrow, low priority.`) is encouraged when useful.
 - Use markdown link syntax so Slack renders titles as clickable links.
 
+**A PR that needs no narrative goes bare.** Put it as a top-level `:merged:`/`:review:` bullet near the end, with no theme sentence above it and no "Misc" header. Never manufacture a grouping to justify a link — if the only sentence you can write is "housekeeping — dependency PRs are automated now", drop the sentence and keep the links. Bare bullets can still carry inline commentary.
+
+**When in doubt, cut the link.** A tight handoff has noticeably fewer PR links than the set of PRs you touched. Every link should be one the reader might open.
+
 ### What to drop
 
 - **Personal-account PRs** (`tclem/*`). These are side projects and are excluded by default. Org-owned repos (`github/*` and any other orgs the user contributes to) are eligible — only the personal account is filtered.
 - **Yesterday's already-merged work** that's no longer in flight. Focus on what's active *now*.
 - **Dependabot / auto-generated / trivial chore PRs**, unless the user flags them.
 - **PRs you only reviewed or approved.** GitHub's `commenter:` search qualifier includes approvals, so `gh-log`'s "commented on" bucket conflates real discussion with routine approvals — use it only as narrative hints, never as bullets. Verify with `gh pr view <url> --comments` before framing anything as "discussing."
-- **"Misc" catch-all sections.** If a PR doesn't fit a theme, fold it into an existing narrative or drop it.
+- **Meta work about the user's own tooling or agent environment** — their Copilot setup, MCP bugs, skill maintenance. The team can't act on it. Include only when the user flags it.
+- **Anything already said in-channel.** If Slack search shows the user already posted it where the handoff goes, don't restate it — link the thread or cut it. Slack is a cut-reason as well as a source.
 
 ## Output format
 
-One fenced code block, starting with `Handoff:`. **Everything goes in this single block** — every work stream is just another theme bullet here.
+One fenced code block, starting with `Handoff:`. **Everything goes in this single block** — every work stream is just another theme bullet here. When posting late, say so in the label: `Handoff (from yesterday):`, `Handoff (covers Tue + Wed):`.
 
 ````
 ```
 Handoff:
-* Meetings / context line (specific if possible).
+* <Meeting name>
+* <Meeting name>
+* <Notable conversation — one clause, with @handle>
 
 * <On-call narrative if applicable — how the day went, what landed, what didn't, who helped>.
 
-* <Theme 1 narrative: status, blockers, what's next>:
+* <Theme 1, one sentence — the key artifact linked inline, not below>:
     * :merged: [<title>](https://github.com/org/repo/pull/N)
     * :review: [<title>](https://github.com/org/repo/pull/N)
 
-* <Theme 2 narrative, with explicit blockers if any>:
+* <Theme 2 — what the reader can now do, with the activation step>:
     * :review: [<title>](https://github.com/org/repo/pull/N) -> optional inline note
+
+* :merged: [<PR that needs no narrative>](https://github.com/org/repo/pull/N)
+* :review: [<another>](https://github.com/org/repo/pull/N) -> optional inline note
 ```
 ````
 
@@ -157,5 +181,4 @@ Infer project tags from the handoff content, e.g. `#blackbird`, `#github-app`, `
 
 - Match the user's voice: casual, first-person, specific.
 - Blockers, non-progress ("I did *not* get to X"), and help from colleagues are first-class content — name them explicitly.
-- Short narrative sentences. Don't pad.
 - Don't invent context. If a PR's purpose isn't clear from its title or session, ask or omit.
