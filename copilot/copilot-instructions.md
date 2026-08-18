@@ -46,6 +46,10 @@ Do not promote project-specific runbooks, labels, bots, dashboards, branches, or
 
 Two skills have hard gates that override normal discovery — see Pull Request Authoring Gate and Responding to PR Review Comments below.
 
+## Code Discovery
+
+To find code you can't already see — another repo, an unfamiliar symbol, "who calls this" — reach for `gh blackbird` and load the `blackbird` skill. Grep and glob are for the checkout in front of you.
+
 ## Pull Request Authoring Gate
 
 Before authoring or editing a PR by any mechanism, load the `pr-author` skill first. This is non-negotiable, even if the change seems straightforward or you think you remember the conventions. The skill covers both creating new PRs and rewriting an existing PR's title/body when it has drifted from the code.
