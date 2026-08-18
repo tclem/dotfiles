@@ -1,7 +1,7 @@
 ---
 name: planning-multi-agent-projects
 user-invocable: true
-description: "Use when creating a repo-tracked multi-agent planning PR for a large project, especially when phases, living docs, parallel agent prompts, and cross-PR coordination are needed."
+description: "Use when creating a repo-tracked multi-agent planning PR for a large project, especially when phases, living docs, parallel agent prompts, or a long-running WIP/demo branch with extraction PRs are needed."
 ---
 
 # Planning Multi-Agent Projects
@@ -213,7 +213,7 @@ branch — read them via `gh` or `git show`, do not check out or merge that bran
 **Rules for agent prompts:**
 
 - Always name the plan branch and PR number, and show the read-only fetch pattern.
-- Tell the agent which base branch its PR should target (almost always the repo default, not the plan branch).
+- Tell the agent which base branch its PR should target (almost always the repo default — never the plan branch, and never a WIP branch).
 - Keep them minimal otherwise — the phase doc and context.md have the detail, not the prompt.
 - Only list todos that are **currently unblocked** (dependencies met).
 - Group parallel-safe todos together with a note: "These can run simultaneously".
@@ -230,7 +230,9 @@ This PR stays open for the life of the project. It's the tracking hub.
 
 ### 7. Execute phases
 
-Execution is a separate step — the user (or agents) pick up phases from the plan and execute them as separate PRs. But the plan is a **living document** that this skill also maintains. When you're updating the plan during execution:
+Execution is a separate step — the user (or agents) pick up phases from the plan and execute them as separate PRs. That phase-at-a-time sequence is the default; [two-lane execution](#two-lane-execution-wip-and-extraction) is an alternative worth *offering* for large, uncertain features with early demo value.
+
+The plan is a **living document** that this skill also maintains. When you're updating the plan during execution:
 
 - Update phase status in both the phase doc header and the README table
 - Add PR links as work merges
@@ -263,12 +265,49 @@ The audience depends on the project:
 
 Ask the user where the post should be published before writing it.
 
+## Two-lane execution: WIP and extraction
+
+Adapted from [the WIP PR pattern](https://adaptivepatchwork.com/2015/01/09/wip/).
+
+An option, not the default. Phase-at-a-time is the normal path; this trades extra coordination for a demoable branch that runs ahead of production code. **Propose it, don't assume it** — it changes how the user reviews and demos work, so it's their call.
+
+It fits when the design is uncertain, someone wants to see the feature working early, the work holds several independently extractable pieces, and mainline moves fast enough that a long-lived branch would rot. Skip it for small or linear changes, and when nobody needs an early demo — a WIP branch nobody looks at is pure overhead.
+
+### The WIP lane
+
+One long-running draft PR per repo the demo touches, with `DO NOT MERGE` in the title. Together they demo as one feature. This is a code PR, separate from the documentation-only plan PR.
+
+- It integrates ideas fast into something buildable and demo-safe. Temporary code, stubs, and shortcuts are fine here.
+- Push it early and show it. It may never merge.
+- Each WIP feeds a stream of extraction PRs — the ratio is one-to-many, not one-to-one.
+- The coordinator owns it: keeps it demo-safe, merges the base branch in regularly, and routes what it learns into extraction prompts and contracts.
+
+### The extraction lane
+
+One fresh session, worktree, branch, and PR per extractable piece, **always based on the repo's real base branch** (`dev`/`main`), never on the WIP branch.
+
+- Extraction sessions independently port *proven behavior*, not prototype history. No cherry-picking or merging from the WIP branch; mainline never depends on it.
+- Full quality bar: verification-first tests, correct fundamentals, docs, normal review, CI.
+- Extraction PRs are **siblings**, not a stack. WIP branches are integration and demo branches, never stack bases.
+
+### Grow and shrink
+
+As each extraction PR merges, merge the updated base branch into the WIP branch as additive commits, resolve conflicts there, and delete the WIP code the production version replaced.
+
+The WIP diff **grows** during exploration and **shrinks** as production code lands.
+
+### Coordination
+
+- The living plan tracks both lanes: which extraction PRs are open, what the WIP has proven, what's still speculative.
+- When the WIP uncovers a bug or API gap, send it to the session that owns that mainline code and record it in the plan. Otherwise stay quiet.
+- Cross-repo projects need a WIP PR in each repo the demo touches — together they form one end-to-end prototype, and each carries its own stream of extraction PRs. Share versioned contracts and fixtures rather than restating the same meaning in each repo.
+
 ## Guidelines
 
 - **Be specific.** Vague todos like "refactor the module" are useless. Say exactly what changes, which files, and why.
 - **Be honest about scope.** If a phase is too big, split it. If something should be deferred, say so and move it to a "Deferred" section.
 - **Living documents.** The plan evolves. Update it as you learn more. Don't let it go stale.
-- **No code in plan PRs.** The plan PR is documentation only. Code changes go in separate PRs linked from the phase docs.
+- **No code in plan PRs.** The plan PR is documentation only. Code changes go in separate PRs linked from the phase docs — extraction PRs, or a WIP PR.
 - **Context.md is the source of truth** for shared knowledge. Don't duplicate architectural context across phase docs — reference it.
 - **Phase docs are self-contained** for execution. An agent should be able to read context.md + one phase doc and have everything it needs.
 - **Use ASCII art** for diagrams in markdown — not unicode box-drawing characters.

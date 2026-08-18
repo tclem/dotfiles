@@ -68,7 +68,7 @@ Keep repo-specific workflows in the repo where they apply. Do not promote one re
 | `pr-author` | User-level | Personal PR authoring workflow — create new PRs or rewrite an existing PR's title/body so it matches the final diff, with template handling, review-before-posting, and GitHub Posting Protocol. |
 | `copy-editor` | User-level | Minimal copy edits that preserve Tim's voice, quirks, and nonstandard phrasing. |
 | `skill-author` | User-level | Guidance for creating, editing, and reviewing dotfiles Copilot skills. |
-| `planning-multi-agent-projects` | User-level, narrow | Durable repo-tracked multi-agent planning PRs only; not normal app plan mode. |
+| `planning-multi-agent-projects` | User-level, narrow | Durable repo-tracked multi-agent planning PRs, including the two-lane WIP/extraction model; not normal app plan mode. |
 | `delegating-plan-work` | User-level, narrow | Readiness and scope checks before handing off repo-tracked plan phases/todos. |
 | `design-before-coding` | User-level | Lightweight design gate before behavior or architecture changes. |
 | `adr-author` | User-level | Writing or amending Architecture Decision Records — filename conventions, header template, status lifecycle, ADR-as-separate-PR rule. |
