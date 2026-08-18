@@ -111,6 +111,7 @@ Every message after kickoff goes to an agent that already has state. Kickoff pro
 - **Stop after two round-trips on the same topic** unless new information entered. If you're restating a position in new words, the conversation is over — make the call yourself or bring it to me.
 - **No section headers, no framing paragraphs.** If the message is three bullets, send three bullets.
 - **Detached work reports nothing.** A session spun up for an unrelated fix has no ongoing relationship after kickoff. Don't announce progress or completion.
+- **Say when a change came from me.** If you changed course because I steered you directly, label it: "tclem asked for X." Changes driven by review comments, CI, or your own findings need no such label — and a parent agent must treat a change I directed as settled, not as a proposal to weigh.
 - **No GitHub Posting Protocol signature.** Cross-session messages aren't GitHub posts.
 
 Match the register of a peer engineer on Slack, not an audience needing context.
