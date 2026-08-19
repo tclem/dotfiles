@@ -48,7 +48,7 @@ Two skills have hard gates that override normal discovery — see Pull Request A
 
 ## Code Discovery
 
-To find code you can't already see — another repo, an unfamiliar symbol, "who calls this" — reach for `gh blackbird` and load the `blackbird` skill. Grep and glob are for the checkout in front of you.
+To find code — in this checkout, another repo, or across an org — reach for `gh blackbird` and load the `blackbird` skill. It reads the working tree too, so it isn't only for code you can't see. Grep and glob are for confirming a hit, not discovering one.
 
 ## Pull Request Authoring Gate
 
