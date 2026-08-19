@@ -77,9 +77,9 @@ git config --global commit.verbose true
 git config --global rerere.enabled true
 git config --global rerere.autoupdate true
 
-# Maybe good for big repos or if git status is getting super slow?
-# git config --global core.fsmonitor true
-# git config --global core.untrackedCache true
+# Skip the full worktree scan on `git status`. Costs a daemon per repo.
+git config --global core.fsmonitor true
+git config --global core.untrackedCache true
 
 # Love this post (and stole a few config ideas from it, thanks Scott!):
 # https://blog.gitbutler.com/how-git-core-devs-configure-git/
