@@ -131,7 +131,7 @@ description: '...'
 - A repo-local or app-bundled skill genuinely replaces yours (not the case for `pr-merge-readiness` vs `agent-merge` — those are deliberately distinct: `pr-merge-readiness` drives to green and stops, `agent-merge` keeps going through the merge).
 - You want to A/B test removing a skill before deleting it.
 
-Find disabled skills with `script/skills-status` or `rg '^disabled: true' copilot/skills/*/SKILL.md`.
+Find disabled skills with `script/skills-status`, or grep for `^disabled: true` under `copilot/skills/`.
 
 ## Pressure-test discipline skills
 
