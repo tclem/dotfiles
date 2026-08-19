@@ -9,15 +9,17 @@ description: 'Use when searching code in a GitHub checkout or across remote GitH
 
 ## Recommended usage
 
-- Exploring concepts, new domains, and natural-language questions: use `gh blackbird search --semantic`. It takes at most one repo, so org-wide questions ("who calls X") are lexical-only.
-- Finding which files mention something, without their content: use `-l` / `--files-with-matches`.
+- Exploring concepts, new domains, and natural-language questions: use `gh blackbird search --semantic`. It accepts at most one `-R`, so it can't answer "who calls X across the org" — use a lexical query for that.
+- Finding which files mention something, before reading any of them: use `-l`. One row per file plus its match lines, so the next step is reading a window rather than a whole file.
 - Finding code across an org, enterprise, or several repos: use `org:`/`user:`/`enterprise:`, or repeat `-R owner/name`. This is especially useful when you don't have local clones.
 - Searching another known GitHub repo: use `-R owner/name`.
 - Searching the current full checkout: omit `-R`; Blackbird infers `origin` and includes working-tree changes.
 - Searching large repos with ranked or exhaustive results: Blackbird can avoid scanning files covered by the remote index.
 - Looking up named symbols, definitions, and references in GitHub's remote index.
 
-Search first, then verify. Blackbird locates the code; `view` and `rg` confirm what it found and supply surrounding detail. Reaching for grep to *discover* what exists is the common mistake.
+**Search first, then read.** Blackbird locates the code; you open what it found. Reaching for `grep` to *discover* what exists is the common mistake — a checkout in front of you makes it the reflex, but it only sees the repo you happen to have cloned, and it can't rank. Start at search even when the code is local.
+
+`grep` earns its place on what the corpus can't see — gitignored, binary, non-UTF-8, and generated or vendored files. A literal that's on disk can still return nothing.
 
 ## Canonical invocations
 
@@ -25,11 +27,11 @@ Search first, then verify. Blackbird locates the code; `view` and `rg` confirm w
 # Agent default in the target checkout: no repo or output flags.
 gh blackbird search 'TokenResolver path:src/auth' -n 10
 
+# Which files mention it, and where — cheapest way to orient
+gh blackbird search -l 'TokenResolver' -n 25
+
 # Grep-style: explicit context + width clip, which drops the token cap
 gh blackbird search 'parseURL' -R a/b -R c/d -C 3 -M 200
-
-# Which files mention it, no content
-gh blackbird search -l 'TokenResolver' -R owner/name
 
 # Exhaustive over the current full checkout's code-search corpus
 gh blackbird search --exhaustive 'parseURL'
@@ -48,40 +50,47 @@ gh blackbird search 'TokenResolver org:some-org' -n 10
 
 Working in the target checkout → omit `-R` and let Blackbird infer `origin`. Targeting another known repo → `-R owner/name`, repeatable for a set. Don't know it → `org:`, `user:`, or `enterprise:` inline in the query. Narrow further with `path:` and `language:`.
 
+`-R` is a flag: it goes outside the quoted query, while `org:`/`user:`/`enterprise:` go inside. `search 'foo -R owner/name'` doesn't error — `-R owner/name` becomes bare search terms, which often match that repo anyway, so the results look right while the scope was never applied.
+
 Outside a GitHub checkout, no scope means top-N results across everything you can see. An inline `repo:` in a semantic prompt is prompt text, not a scope; use `-R` or inferred `origin`.
 
 ## Modes
 
 - Lexical search is the default: ranked unless you pass `--exhaustive`.
-- Know the name → use `--symbol`. Know the concept → use `--semantic`.
+- Know the name → use `--symbol`. Know the concept → use `--semantic`. Want the file list → add `-l`.
 - `--semantic` accepts at most one `-R`; in a GitHub checkout, omitting it infers `origin`.
-- `--exhaustive` returns every match in the `.gitignore`-filtered code-search corpus. Binary, non-UTF-8, vendored/generated, and otherwise unsuitable files are excluded to match GitHub's remote corpus.
+- `--exhaustive` returns every match in the `.gitignore`-filtered code-search corpus. Binary, non-UTF-8, vendored/generated, and otherwise unsuitable files are excluded from it. "Every match" means every match in that corpus, not every match on disk.
 - `--remote-only` skips working-tree correction while retaining an inferred or explicit repository scope. Multiple `-R` values are already remote-only.
 
 ## Output
 
 - Piped output defaults to JSONL. Piped lexical search also defaults to a 4000-token snippet budget; semantic results are already chunked.
-- Grep-style flags are supported (`-A`/`-B`/`-C`/`-M`/`--full-snippet`). `--full-snippet` plus an explicit `-A`/`-B`/`-C`/`-M` exits 2; alone it's fine.
-- `--format pretty` and `--format oneline` are for humans. Never parse them — use JSONL and `jq`.
+- Grep-style flags are supported (`-A`/`-B`/`-C`/`-M`/`--full-snippet`). `--full-snippet` conflicts only with an *explicitly passed* `-A`/`-B`/`-C`/`-M` and exits 2; the default `-C 3` is not an explicit flag, so `--full-snippet` on its own is fine.
+- `-l` / `--files-with-matches` swaps the match stream for one row per file. The meta envelope says which you're getting: `"records": "files"` or `"matches"`.
 - Workspace JSONL differs from remote-only JSONL. Use `--remote-only` when an existing consumer requires the established remote schema.
 
-**`line_start` bounds the snippet, not the match.** Matched lines are in `match_ranges[].line`. The budget mode picks high-density regions, so the two can be dozens of lines apart. Lexical ranges are one-based and inclusive — `line_start..=line_end` is the window to read. Semantic chunk ranges are end-exclusive.
+`--format pretty` and `--format oneline` are for humans and drop the budget too; **never parse them.** Parse `jsonl`.
 
-`-l` returns one `{"type":"file"}` record per file with a `lines` array — reach for it when you only need locations:
+### Record shape
+
+`line_start` / `line_end` bound the **returned snippet window**, not the match. The matched lines are in `match_ranges[].line`. Under the default token budget the server picks high-density regions, so the two are often far apart — a result whose `line_start` is 2 can have its matches at 53 and 54. Reading `line_start` as the hit location is the common misreading and looks like a bug.
+
+Lexical `line_start`/`line_end` are one-based and **inclusive**: a one-line match is `42`/`42`, so `line_start..=line_end` is the window to read. Semantic records describe a chunk and are end-exclusive.
 
 ```sh
-# Paths only
-gh blackbird search -l 'TokenResolver' -R owner/name | jq -r 'select(.type=="file") | .path'
+# Which files matched
+gh blackbird search 'TokenResolver' | jq -r 'select(.type=="match") | .path' | sort -u
 
-# Paths with match lines, ready to read
-gh blackbird search -l 'TokenResolver' -R owner/name | jq -r 'select(.type=="file") | "\(.path):\(.lines[])"'
+# Where the matches actually are
+gh blackbird search 'TokenResolver' | jq -r 'select(.type=="match") | "\(.path):\(.match_ranges[].line)"'
+
+# Or skip the snippets entirely and get files plus lines directly
+gh blackbird search -l 'TokenResolver' | jq -r 'select(.type=="file") | "\(.path):\(.lines | join(","))"'
 ```
 
-`lines` is capped per file — where to start reading, not a full list. `meta` carries `records` so you can tell the two shapes apart from line one.
+**Truncate JSONL with `head -n`, never `head -c`.** A byte count cuts mid-object and yields invalid JSON that `jq` rejects; `-n` cuts on record boundaries. Use `-n` to bound records and `-l` or `-n`/`--limit` to bound cost.
 
-Truncate JSONL with `head -n`, never `head -c` — a byte cut lands mid-object.
-
-**Take the cheapest thing that answers the question.** `-l` for locations, snippets to read code (`--full-snippet` for the whole excerpt, semantic returns chunks), the file itself only when those fall short. Read it from disk when the repo is checked out — in a workspace search it always is — and `gh api repos/OWNER/REPO/contents/PATH --jq '.content' | base64 -d` only for repos you don't have.
+Search finds files; it doesn't read them. Once you have a path and a line, read the file directly rather than reaching for a wider snippet flag — `--full-snippet` still returns the API's snippet, not the file. In a checkout, open it; for a remote repo, `gh api repos/{owner}/{repo}/contents/{path} --jq .content | base64 -d`.
 
 Everything else is in `gh blackbird search --help`.
 
@@ -104,10 +113,11 @@ The CLI emits a `no_results_multiterm` hint when this is the likely failure.
 Query cheaply; quotas are cost-based, and lexical and semantic have separate limits:
 
 1. Scope before broadening: add `-R`, `org:`, `path:`, `language:`, or a more distinctive literal before raising `-n`.
-2. Use the default result limit. Set `-n` only when the task needs a specific bound; repeated searches just to raise the limit cost more server work.
-3. `OR` is the cheap shape for a disjunction — one query beats N sequential ones for the same candidates. It turns expensive when the terms are *generic*: each floods on its own and the union is noise. Distinctiveness decides, not the operator.
-4. Clip pathological lines with `-M 200` when results include minified or generated code.
-5. Stop once you have a canonical file, owner repo, route, or schema. Reading one result beats another broad search.
+2. Reach for `-l` when the question is "which files" or "does this exist here". It asks the server for match lines with no surrounding context, so the response carries no snippet bodies to pay for — and the lines let you read a window instead of a whole file.
+3. Use the default result limit. Set `-n` only when the task needs a specific bound; repeated searches just to raise the limit cost more server work.
+4. `OR` is the cheap shape for a disjunction — one query beats N sequential ones for the same candidates. It turns expensive when the terms are *generic*: each floods on its own and the union is noise. Distinctiveness decides, not the operator.
+5. Clip pathological lines with `-M 200` when results include minified or generated code.
+6. Stop once you have a canonical file, owner repo, route, or schema. Reading one result beats another broad search.
 
 Code search is case-insensitive, so case variants are never worth a query: `octokit` already finds `Octokit`. `OR` genuine spelling variants into one query rather than firing separate searches — batching them into a single shell call behind `|| true` hides the cost without reducing it.
 
@@ -115,17 +125,7 @@ Code search is case-insensitive, so case variants are never worth a query: `octo
 
 Real callers usually go through a wrapper, not the raw type. Start at the callee definition, find the generated client or SDK helper around it, and search **that** symbol. For an RPC endpoint, fully-qualified names beat bare ones: `Example::V1::CountRequest` over `CountRequest`. Check paths before concluding — tests, fakes, fixtures, and generated code all look like callsites.
 
-**Generated code isn't indexed.** Search a generated client type and you get back only the languages whose bindings are hand-written — an empty result means invisible, not absent. Search the quoted import path instead; every consumer spells it, whatever it aliases it to. That's the only handle in Go, where the type is aliased locally and never appears fully qualified in source.
-
-```sh
-# Misleading: generated bindings aren't indexed, so whole languages vanish
-gh blackbird search 'QueryAPIClient org:some-org'
-
-# Reliable: every consumer spells the import
-gh blackbird search '"some-org/service/gen/go/query/v1" org:some-org'
-```
-
-A generic name is generic in every language, so `language:` won't rescue `CountRequest` or `Client`. Qualify with the package, path, or import string.
+Generated bindings are unevenly indexed, so searching a generated type can miss whole languages without saying so. Search the quoted import path instead — it lives in hand-written source, and in Go it's the only handle, since the type is bound to a local alias and never appears fully qualified.
 
 ## Exit codes
 
@@ -141,7 +141,7 @@ Zero results is not a failure. Do not wrap calls in `|| true` or redirect stderr
 
 - On a 429, honor the error's `retry_after_seconds` once with a cheaper query, then stop and report. Lexical and semantic limits are separate.
 - Pair `--semantic` with `--auto-index` on repos that may not be indexed yet, or expect a 404.
-- The result cap is `-n` / `--limit`. `--max-results` is not a flag and exits 2 with a pointer.
+- The result cap is `-n` / `--limit`; it bounds files, since the API returns one result per file. `--max-results` is not a flag and exits 2 with a pointer.
 - Prefer `jq` one-liners or reading the file over ad-hoc post-processing scripts.
 - Supported hosts are `github.com` and Proxima data-residency tenants (`<tenant>.ghe.com`). Self-hosted GHES is out of scope — that hostname fails with `UnsupportedHost` before a request is made.
 - `gh blackbird` can search external filesets for a local corpus that is not a GitHub repo. Load the `blackbird-fileset` skill for that workflow. Run `gh blackbird fileset --help` for the full lifecycle; don't reinvent it here.
