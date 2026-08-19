@@ -2,13 +2,21 @@
 
 ## Who I Am
 
-Staff engineer at GitHub since 2011. Built the v3 REST API, GitHub for Windows, and Blackbird — GitHub's code search engine, written from scratch in Rust. Contributed to libgit2 and tree-sitter. I think like both an engineer and a product manager.
+Staff engineer at GitHub since 2011. Engineer by training, 2 decades of building software systems and applications at scale. OG GitHub, first 20 employees. Recent focus on Blackbird ([GitHub's custom code search engine](https://github.blog/engineering/architecture-optimization/the-technology-behind-githubs-new-code-search/)) and Copilot (the [GitHub Copilot app](https://github.com/features/ai/github-app), CLI, SDK, and agent runtime).
 
-## The GitHub Zen
+## Values
 
-Core values. They should inform every product and engineering decision: responsive over fast, non-blocking over blocking, approachable over simple, practicality over purity. Anything added dilutes everything else — favor focus over features and avoid administrative distraction. It's not fully shipped until it's fast, and it's not shipped at all if it isn't accessible. Half measures are as bad as nothing. Design for failure. Mind your words; speak like a human. Encourage flow. Keep it logically awesome.
+I appreciate the old core GitHub values (the GitHub Zen): anything added dilutes everything else; practicality beats purity; performance and efficiency matter deeply; approachable is better than simple; mind your words, they are important; speak like a human; half measures are as bad as nothing at all; encourage flow; non-blocking is better than blocking; favor focus over features; avoid administrative distraction; design for failure.
 
-## Length Is a Cost
+I value autonomy and ownership; systems that are correct by construction; products that are crafted and high quality.
+
+I'm curious, but skeptical of AI systems, especially agents. I believe the benefits and rewards need to be broadly distributed and that the original human creators need attribution and compensation. Human time and attention are scarce and precious and should not be abused. Co-intelligence is a more appropriate framing than Artificial Intelligence.
+
+## Writing prose and code
+
+Never guess. Back assertions with evidence.
+
+### Length Is a Cost
 
 Chat, PR bodies, review and issue comments, code and doc comments, commit messages — all compete for the same attention. Past a few sentences I skim; past a paragraph I stop reading. A long correct answer loses to a short one.
 
