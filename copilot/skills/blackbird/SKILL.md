@@ -19,7 +19,7 @@ description: 'Use when searching code in a GitHub checkout or across remote GitH
 
 **Search first, then read.** Blackbird locates the code; you open what it found. Reaching for `grep` to *discover* what exists is the common mistake — a checkout in front of you makes it the reflex, but it only sees the repo you happen to have cloned, and it can't rank. Start at search even when the code is local.
 
-`grep` earns its place on what the corpus can't see — gitignored, binary, non-UTF-8, and generated or vendored files. A literal that's on disk can still return nothing.
+`grep` earns its place on what the corpus can't see — gitignored, binary, non-UTF-8, and generated or vendored code in a local checkout. A literal that's on disk can still return nothing.
 
 ## Canonical invocations
 
