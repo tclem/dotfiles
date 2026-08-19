@@ -32,6 +32,12 @@ EXTENSIONS_DIR_NAME="extensions"
 EXTERNAL_EXTENSIONS_FILE="$COPILOT_REPO/external-extensions"
 EXT_CACHE_ROOT="${XDG_DATA_HOME:-$HOME/.local/share}/copilot-external-extensions"
 
+# Skills that live outside this repo — personal ones kept in a private repo
+# rather than published here. Each line of $EXTERNAL_SKILLS_FILE is a path to a
+# directory of `<name>/SKILL.md`. Only the path lives in this public repo; the
+# skills themselves stay wherever they are.
+EXTERNAL_SKILLS_FILE="$COPILOT_REPO/external-skills"
+
 green()  { printf "\033[32m%s\033[0m\n" "$1"; }
 yellow() { printf "\033[33m%s\033[0m\n" "$1"; }
 
@@ -62,6 +68,30 @@ expand_globs() {
   printf '%s\n' "${results[@]}"
 }
 
+# Resolve symlinks in the full path. `realpath` is present on macOS 12.3+ and
+# GNU coreutils; the manual walk covers older BSD systems that have neither it
+# nor `readlink -f`.
+resolve_path() {
+  local p="$1"
+  if command -v realpath >/dev/null 2>&1; then
+    realpath "$p" 2>/dev/null && return
+  fi
+  local dir base
+  dir="$(cd "$(dirname "$p")" 2>/dev/null && pwd -P)" || return
+  base="$(basename "$p")"
+  while [[ -L "$dir/$base" ]]; do
+    local target
+    target="$(readlink "$dir/$base")"
+    if [[ "$target" == /* ]]; then
+      dir="$(cd "$(dirname "$target")" 2>/dev/null && pwd -P)"
+    else
+      dir="$(cd "$dir/$(dirname "$target")" 2>/dev/null && pwd -P)"
+    fi
+    base="$(basename "$target")"
+  done
+  printf '%s/%s\n' "$dir" "$base"
+}
+
 prune_removed_links() {
   local files="$1"
   local installed
@@ -82,6 +112,52 @@ prune_removed_links() {
       yellow "  removed $rel"
     fi
   done <<< "$installed"
+}
+
+# Link `<name>/SKILL.md` from each root listed in $EXTERNAL_SKILLS_FILE into
+# ~/.copilot/skills/<name>/. Roots are plain paths, not clones — they point at
+# repos already checked out locally. A missing root warns rather than failing:
+# a machine without that checkout should still get a working install.
+install_external_skills() {
+  [[ -f "$EXTERNAL_SKILLS_FILE" ]] || return 0
+
+  local dst_root="$COPILOT_HOME/skills"
+  local linked=0
+
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    line="${line%%#*}"
+    line="$(printf '%s' "$line" | sed -E 's/^[[:space:]]+|[[:space:]]+$//g')"
+    [[ -z "$line" ]] && continue
+
+    local root="${line/#\~/$HOME}"
+    if [[ ! -d "$root" ]]; then
+      yellow "  skip external skills: $line (not checked out)"
+      continue
+    fi
+
+    local skill
+    for skill in "$root"/*/SKILL.md; do
+      [[ -f "$skill" ]] || continue
+      if is_disabled_skill "$skill"; then
+        yellow "  skip $(basename "$(dirname "$skill")") (disabled: true)"
+        continue
+      fi
+      local name dst
+      name="$(basename "$(dirname "$skill")")"
+      dst="$dst_root/$name/SKILL.md"
+      if [[ -e "$dst" && ! -L "$dst" ]]; then
+        yellow "  skip $name (real file at $dst, not replacing)"
+        continue
+      fi
+      mkdir -p "$(dirname "$dst")"
+      ln -sfn "$skill" "$dst"
+      green "  linked skills/$name/SKILL.md → $root/$name"
+      linked=$((linked + 1))
+    done
+  done < "$EXTERNAL_SKILLS_FILE"
+
+  (( linked > 0 )) && echo "External skills: $linked linked"
+  return 0
 }
 
 cmd_install() {
@@ -111,6 +187,7 @@ cmd_install() {
 
   install_extensions
   install_external_extensions
+  install_external_skills
 
   if (( ${#skipped[@]} > 0 )); then
     echo
@@ -336,14 +413,19 @@ cmd_import() {
     local src="$COPILOT_HOME/$rel"
     local dst="$COPILOT_REPO/$rel"
 
-    # Skip if already a symlink pointing into the repo
-    if [[ -L "$src" ]]; then
-      local target
-      target=$(readlink "$src")
-      if [[ "$target" == "$COPILOT_REPO"* ]]; then
+    # Skip anything whose real path lives outside ~/.copilot — it's managed
+    # from another repo (dotfiles itself, or a private source like notes).
+    # Resolving the full path rather than testing `-L "$src"` catches skills
+    # symlinked at the directory level, where the SKILL.md is not itself a link.
+    local real_src
+    real_src="$(resolve_path "$src")"
+    if [[ "$real_src" != "$COPILOT_HOME"/* ]]; then
+      if [[ "$real_src" == "$COPILOT_REPO"/* ]]; then
         yellow "  skip $rel (already linked)"
-        continue
+      else
+        yellow "  skip $rel (external source: $real_src)"
       fi
+      continue
     fi
 
     mkdir -p "$(dirname "$dst")"

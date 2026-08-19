@@ -58,6 +58,8 @@ When in doubt, **stop and ask** before staging. This includes edits invited by a
 
 This repo owns Tim's **user-level** Copilot skills. Add or edit personal skills under `copilot/skills/<name>/SKILL.md`, then run `script/sync-copilot install` to symlink them into `~/.copilot/skills/`.
 
+Skills too personal to publish here live in another repo and are listed by path in `copilot/external-skills`. `install` links them the same way; only the path is public. `import` never copies them back — it skips anything whose real path resolves outside `~/.copilot`.
+
 Keep repo-specific workflows in the repo where they apply. Do not promote one repo's labels, bots, branches, runbooks, dashboards, deployment scripts, app harnesses, or style rules into dotfiles unless they are genuinely useful across repos.
 
 ### Skill index

@@ -1,0 +1,14 @@
+# Skill roots outside this repo, linked into ~/.copilot/skills/.
+#
+# One path per line. `#` comments and blank lines are ignored. `~` expands.
+# Each path is a directory containing `<name>/SKILL.md`, the same layout as
+# copilot/skills/ here.
+#
+# Use this for skills too personal to publish in a public dotfiles repo. Only
+# the path lives here; the skills stay in whatever repo owns them.
+#
+# `script/sync-copilot install` links each one. A root that isn't checked out
+# on this machine warns and is skipped. `disabled: true` is honored the same
+# way as for repo-local skills, and an existing real file is never replaced.
+
+~/github/notes/copilot/skills
