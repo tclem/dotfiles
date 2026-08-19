@@ -9,7 +9,8 @@ description: 'Use when searching code in a GitHub checkout or across remote GitH
 
 ## Recommended usage
 
-- Exploring concepts, new domains, and natural-language questions: use `gh blackbird search --semantic`.
+- Exploring concepts, new domains, and natural-language questions: use `gh blackbird search --semantic`. It takes at most one repo, so org-wide questions ("who calls X") are lexical-only.
+- Finding which files mention something, without their content: use `-l` / `--files-with-matches`.
 - Finding code across an org, enterprise, or several repos: use `org:`/`user:`/`enterprise:`, or repeat `-R owner/name`. This is especially useful when you don't have local clones.
 - Searching another known GitHub repo: use `-R owner/name`.
 - Searching the current full checkout: omit `-R`; Blackbird infers `origin` and includes working-tree changes.
@@ -26,6 +27,9 @@ gh blackbird search 'TokenResolver path:src/auth' -n 10
 
 # Grep-style: explicit context + width clip, which drops the token cap
 gh blackbird search 'parseURL' -R a/b -R c/d -C 3 -M 200
+
+# Which files mention it, no content
+gh blackbird search -l 'TokenResolver' -R owner/name
 
 # Exhaustive over the current full checkout's code-search corpus
 gh blackbird search --exhaustive 'parseURL'
@@ -57,8 +61,27 @@ Outside a GitHub checkout, no scope means top-N results across everything you ca
 ## Output
 
 - Piped output defaults to JSONL. Piped lexical search also defaults to a 4000-token snippet budget; semantic results are already chunked.
-- Grep-style flags are supported (`-A`/`-B`/`-C`/`-M`/`--full-snippet`).
+- Grep-style flags are supported (`-A`/`-B`/`-C`/`-M`/`--full-snippet`). `--full-snippet` plus an explicit `-A`/`-B`/`-C`/`-M` exits 2; alone it's fine.
+- `--format pretty` and `--format oneline` are for humans. Never parse them — use JSONL and `jq`.
 - Workspace JSONL differs from remote-only JSONL. Use `--remote-only` when an existing consumer requires the established remote schema.
+
+**`line_start` bounds the snippet, not the match.** Matched lines are in `match_ranges[].line`. The budget mode picks high-density regions, so the two can be dozens of lines apart. Lexical ranges are one-based and inclusive — `line_start..=line_end` is the window to read. Semantic chunk ranges are end-exclusive.
+
+`-l` returns one `{"type":"file"}` record per file with a `lines` array — reach for it when you only need locations:
+
+```sh
+# Paths only
+gh blackbird search -l 'TokenResolver' -R owner/name | jq -r 'select(.type=="file") | .path'
+
+# Paths with match lines, ready to read
+gh blackbird search -l 'TokenResolver' -R owner/name | jq -r 'select(.type=="file") | "\(.path):\(.lines[])"'
+```
+
+`lines` is capped per file — where to start reading, not a full list. `meta` carries `records` so you can tell the two shapes apart from line one.
+
+Truncate JSONL with `head -n`, never `head -c` — a byte cut lands mid-object.
+
+**Take the cheapest thing that answers the question.** `-l` for locations, snippets to read code (`--full-snippet` for the whole excerpt, semantic returns chunks), the file itself only when those fall short. Read it from disk when the repo is checked out — in a workspace search it always is — and `gh api repos/OWNER/REPO/contents/PATH --jq '.content' | base64 -d` only for repos you don't have.
 
 Everything else is in `gh blackbird search --help`.
 
@@ -91,6 +114,18 @@ Code search is case-insensitive, so case variants are never worth a query: `octo
 ## Caller tracing
 
 Real callers usually go through a wrapper, not the raw type. Start at the callee definition, find the generated client or SDK helper around it, and search **that** symbol. For an RPC endpoint, fully-qualified names beat bare ones: `Example::V1::CountRequest` over `CountRequest`. Check paths before concluding — tests, fakes, fixtures, and generated code all look like callsites.
+
+**Generated code isn't indexed.** Search a generated client type and you get back only the languages whose bindings are hand-written — an empty result means invisible, not absent. Search the quoted import path instead; every consumer spells it, whatever it aliases it to. That's the only handle in Go, where the type is aliased locally and never appears fully qualified in source.
+
+```sh
+# Misleading: generated bindings aren't indexed, so whole languages vanish
+gh blackbird search 'QueryAPIClient org:some-org'
+
+# Reliable: every consumer spells the import
+gh blackbird search '"some-org/service/gen/go/query/v1" org:some-org'
+```
+
+A generic name is generic in every language, so `language:` won't rescue `CountRequest` or `Client`. Qualify with the package, path, or import string.
 
 ## Exit codes
 
