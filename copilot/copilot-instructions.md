@@ -188,4 +188,4 @@ Rule of thumb: if the agent composed the text, use the "Generated via" signature
 
 ## Responding to PR Review Comments
 
-When addressing PR review feedback, load `pr-review-reply` first — it covers fetching threads, triaging which comments are real, replying to each one, and the GitHub Posting Protocol. Don't blindly fix everything (review agents flag dumb stuff). If a comment is ambiguous, ask me with your take before acting. Always reply to the thread, even if leaving it as-is.
+When addressing PR review feedback, load `pr-review-reply` first — it covers complete comment enumeration, triaging which comments are real, replying to each one, and the GitHub Posting Protocol. Don't blindly fix everything (review agents flag dumb stuff). If a comment is ambiguous, ask me with your take before acting. Always reply to the thread, even if leaving it as-is.

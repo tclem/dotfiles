@@ -9,7 +9,7 @@ Treat review as technical input, not a command queue.
 
 ## Process
 
-1. Read every comment and the surrounding diff/code.
+1. Enumerate every comment using the sources below, then read the surrounding diff/code.
 2. Classify each item:
    - real issue to fix;
    - valid concern but different fix;
@@ -19,10 +19,54 @@ Treat review as technical input, not a command queue.
 4. Verify the affected behavior.
 5. Reply to each thread when working on GitHub review comments, including when leaving something unchanged.
 
+## Enumerating Copilot review comments
+
+Read all three sources before concluding there are no comments:
+
+- GraphQL `reviewThreads` for threads and `isResolved`.
+- REST `pulls/<n>/comments` for inline comments.
+- Every Copilot review `body` for `### Suppressed comments (N)`. Suppressed comments create no thread and appear in no inline list; the body is their sole source.
+
+Enumerate Copilot reviews and their suppressed counts:
+
+```shell
+gh api repos/<owner>/<repo>/pulls/<n>/reviews \
+  --jq '.[]|select(.user.login|test("copilot";"i"))|"\(.submitted_at) \(.state) @\(.commit_id[0:7]) suppressed=\(.body|capture("Suppressed comments \\((?<c>[0-9]+)\\)")?.c // "0")"'
+```
+
+Print any body with a nonzero count and read the suppressed section for its file, line, and prose. There is no thread to reply to, but its substance still requires triage.
+
+Pitfalls:
+
+- Review author `copilot-pull-request-reviewer` and inline-comment author `Copilot` are different identities. Filter case-insensitively; filtering inline comments by the review author's login returns a misleading zero.
+- `Comments generated: N` counts only new visible comments. It matches the inline count whether or not comments were suppressed; only the suppressed-comments section distinguishes the cases.
+- Threaded replies create empty `COMMENTED` reviews under your handle. Filter to the bot and compare `submitted_at` with the last re-request instead of counting reviews.
+
+A check whose failure is indistinguishable from a negative result cannot establish that there are no comments.
+
+## Re-requesting Copilot review
+
+- Checking review state must be read-only. A re-request dismisses Copilot's standing approval even on an unchanged head; re-request only after pushing a fix.
+- Use GraphQL `requestReviews` with `botIds`. REST requested-reviewer calls can return 200 without requesting Copilot; `gh pr edit --add-reviewer Copilot` can fail at exit code 0; `copilot-pull-request-reviewer` is the review-author identity, not a requestable collaborator; GraphQL `userIds` rejects the bot node; and `suggestedActors` may offer only `copilot-swe-agent`, the coding agent, which must not be assigned.
+- Discover the review bot's node ID from an existing review:
+
+```shell
+gh api graphql -f query='{repository(owner:"<owner>",name:"<repo>"){pullRequest(number:<n>){reviews(first:10){nodes{author{login ... on Bot{id}}}}}}}' \
+  --jq '.data.repository.pullRequest.reviews.nodes[].author|select(.login=="copilot-pull-request-reviewer")|.id'
+```
+
+- Verify the request on the append-only timeline, not from the mutation response:
+
+```shell
+gh api repos/<owner>/<repo>/issues/<n>/timeline --paginate \
+  --jq '.[]|select(.event=="review_requested")'
+```
+
+With `union:true`, an already-pending request is a no-op, so no new event does not by itself mean failure. Copilot approval is a quality verdict, not a branch-protection approval; its review body says it does not count toward merge requirements.
+
 ## Guidelines
 
 - Do not blindly implement questionable feedback.
 - Push back with evidence when the suggestion is wrong.
 - If feedback is ambiguous, state your interpretation and ask before making risky changes.
 - Follow the GitHub Posting Protocol before posting any GitHub reply.
-
