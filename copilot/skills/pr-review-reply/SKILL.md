@@ -44,29 +44,10 @@ Pitfalls:
 
 A check whose failure is indistinguishable from a negative result cannot establish that there are no comments.
 
-## Re-requesting Copilot review
-
-- Checking review state must be read-only. A re-request dismisses Copilot's standing approval even on an unchanged head; re-request only after pushing a fix.
-- Use GraphQL `requestReviews` with `botIds`. REST requested-reviewer calls can return 200 without requesting Copilot; `gh pr edit --add-reviewer Copilot` can fail at exit code 0; `copilot-pull-request-reviewer` is the review-author identity, not a requestable collaborator; GraphQL `userIds` rejects the bot node; and `suggestedActors` may offer only `copilot-swe-agent`, the coding agent, which must not be assigned.
-- Discover the review bot's node ID from an existing review:
-
-```shell
-gh api graphql -f query='{repository(owner:"<owner>",name:"<repo>"){pullRequest(number:<n>){reviews(first:10){nodes{author{login ... on Bot{id}}}}}}}' \
-  --jq '.data.repository.pullRequest.reviews.nodes[].author|select(.login=="copilot-pull-request-reviewer")|.id'
-```
-
-- Verify the request on the append-only timeline, not from the mutation response:
-
-```shell
-gh api repos/<owner>/<repo>/issues/<n>/timeline --paginate \
-  --jq '.[]|select(.event=="review_requested")'
-```
-
-With `union:true`, an already-pending request is a no-op, so no new event does not by itself mean failure. Copilot approval is a quality verdict, not a branch-protection approval; its review body says it does not count toward merge requirements.
-
 ## Guidelines
 
 - Do not blindly implement questionable feedback.
 - Push back with evidence when the suggestion is wrong.
 - If feedback is ambiguous, state your interpretation and ask before making risky changes.
+- Use app-native tools for replies, resolution, and re-requests when available.
 - Follow the GitHub Posting Protocol before posting any GitHub reply.
