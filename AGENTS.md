@@ -60,6 +60,10 @@ This repo owns Tim's **user-level** Copilot skills. Add or edit personal skills 
 
 Skills too personal to publish here live in another repo and are listed by path in `copilot/external-skills`. `install` links them the same way; only the path is public. `import` never copies them back — it skips anything whose real path resolves outside `~/.copilot`.
 
+A third kind isn't ours at all: a tool can embed its own skills and install them directly. `gh blackbird skills install` writes `blackbird` and `blackbird-fileset` into `~/.copilot/skills/` as real files, and `gh blackbird skills list` compares them against what the binary embeds. Fix those upstream in the extension and re-run `skills install`; don't add them back here.
+
+`import` does not know about that third kind. It skips only paths whose real path resolves *outside* `~/.copilot`, and these are real files *inside* it — so it copies them into the repo and replaces the installed originals with symlinks pointing back at the copy. That silently makes dotfiles the source again. If `import` reports `blackbird` or `blackbird-fileset`, drop the copies and re-run `gh blackbird skills install`.
+
 Keep repo-specific workflows in the repo where they apply. Do not promote one repo's labels, bots, branches, runbooks, dashboards, deployment scripts, app harnesses, or style rules into dotfiles unless they are genuinely useful across repos.
 
 ### Skill index
@@ -88,8 +92,6 @@ Keep repo-specific workflows in the repo where they apply. Do not promote one re
 | `deps-update` | User-level, fallback | Generic dependency update workflow when the repo has no equivalent skill. |
 | `code-rust` | User-level, fallback | Generic Rust style and discipline when the repo has no `rust-coding-skill` of its own. Template at `copilot/templates/rust-coding-skill/` for new repos. |
 | `code-go` | User-level, fallback | Generic Go style and discipline when the repo has no `go-coding-skill` of its own. Template at `copilot/templates/go-coding-skill/` for new repos. |
-| `blackbird` | User-level | When to use `gh blackbird` for lexical, symbol, or semantic code search across one or many GitHub repos. |
-| `blackbird-fileset` | User-level | Ingesting, refreshing, searching, and deleting external filesets — local corpora that aren't GitHub repos. |
 | `reading-source-code` | User-level | Source-first discipline for unfamiliar or possibly-stale dependency APIs. |
 | `deprecating-and-removing` | User-level, fallback | Deprecation and removal workflow for decoupled consumers; lockstep-deployed code skips the ceremony. Repo-local deprecation runbook wins. |
 | `thinking-about` | User-level | Capture thoughts into `tclem/notes` and run the daily rollup that re-themes `top-of-mind.md` and prunes resolved/stale entries. |
