@@ -20,7 +20,7 @@ Run `script/skills-status` to print the latest table, or `script/skills-status -
 | `copy-editor` | ✅ on | Use when copy editing user-written prose while preserving quirky voice, style, phrasing, and minor imperfec... |
 | `daily-handoff` | ✅ on | Use when authoring a daily Slack handoff for the Blackbird team - status-first narrative with indented PR b... |
 | `debug` | ✅ on | Use when investigating a bug, failing test, production issue, unexpected behavior, flaky behavior, regressi... |
-| `delegating-plan-work` | 🚫 off | Use when preparing a repo-tracked multi-agent plan phase or todo for handoff to another agent |
+| `delegating-plan-work` | ✅ on | Use when handing a repo-tracked multi-agent plan phase or todo to another session or agent |
 | `deprecating-and-removing` | 🚫 off | Use when removing old code, sunsetting a feature, consolidating duplicate implementations, or migrating con... |
 | `deps-update` | 🚫 off | Use when updating project dependencies, processing Dependabot PRs or alerts, grouping dependency updates, r... |
 | `design-before-coding` | ✅ on | Use when creating features, changing behavior, adding components, or making design-affecting implementation... |
@@ -34,6 +34,7 @@ Run `script/skills-status` to print the latest table, or `script/skills-status -
 | `pr-risk-check` | ✅ on | Use when assessing the risk profile of a PR — what could break, how blast-radius reaches users, and whether... |
 | `pr-update-base-branch` | 🚫 off | Use when merging an updated base branch into a PR branch to resolve drift, especially when the PR may be ch... |
 | `reading-source-code` | ✅ on | Use when about to call a library, crate, or framework API you haven't verified, when a dependency's behavio... |
+| `refresh-plan` | ✅ on | Use when asked to update or refresh a repo-tracked multi-agent plan, or after work merges, a PR changes sta... |
 | `skill-author` | ✅ on | Use when creating, editing, splitting, renaming, or reviewing Copilot skills in this dotfiles repo |
 | `test-before-coding` | 🚫 off | Use when implementing a feature or bugfix where behavior can be specified with tests or another executable ... |
 | `thinking-about` | ✅ on | Use when the user wants to capture a thought into their tclem/notes inbox, or when running the daily rollup... |

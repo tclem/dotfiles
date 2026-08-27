@@ -1,14 +1,13 @@
 ---
 name: delegating-plan-work
-disabled: true
-description: Use when preparing a repo-tracked multi-agent plan phase or todo for handoff to another agent.
+description: Use when handing a repo-tracked multi-agent plan phase or todo to another session or agent.
 ---
 
 # Delegating Plan Work
 
 Prepare a focused handoff from a durable multi-agent plan without losing context, breaking dependencies, or turning the prompt into a second plan.
 
-This skill covers readiness and scope judgment, not session orchestration. Use the app's native session/worktree tools for the actual handoff when available.
+`orchestrate` owns the mechanics — spawning sessions, base branches, coordination, plan approval. It does not know that plan docs live on a branch the child won't have. This skill supplies that missing half: readiness judgment and the plan-specific context a kickoff prompt needs.
 
 ## When to use
 
@@ -24,7 +23,7 @@ Do not use this for normal app plan mode, ad hoc implementation plans, simple de
 
 Read the plan docs first:
 
-1. `README.md` for status, dependencies, parallelism notes, and pre-made agent prompts.
+1. `README.md` for status, dependencies, parallelism notes, and the delegation preamble.
 2. `context.md` for shared architecture, decisions, validation commands, and agent guidelines.
 3. The target `phase-{NN}-{name}.md` for the specific phase/todos.
 
@@ -40,19 +39,18 @@ If dependencies are unclear, stop and ask before handoff.
 
 ## One session, one PR
 
-The app's session model is one worktree per session = one branch = one PR; the `create_pull_request` tool targets the current session branch. If a phase needs multiple independent PRs (different directories, no semantic dependency), spawn **multiple sessions** — sequential if they share validation flakiness or compete for review attention, parallel only when the parallelism rules in this skill allow. Never instruct one session to "land PR A then start PR B from main" in the same worktree.
+`orchestrate` covers this. The plan-specific corollary: if a phase needs multiple independent PRs, spawn a session per PR — never ask one session to land PR A then start PR B from the same worktree.
 
-## Handoff brief
+## The delegation preamble
 
-Start from the pre-made prompt in the plan README when one exists. Treat it as the source prompt, then make only the minimal additions needed for the current handoff. If there is no pre-made prompt, keep the brief short and point at the plan docs.
+Child sessions branch off their own repo's base, so `docs/copilot/<date>-<project>/` does **not** exist in their worktree — and when the phase lands in a different repo than the plan, `origin` isn't the plan repo either. The plan README carries one reusable preamble block covering that; start from it rather than rewriting the fetch instructions per handoff.
 
-Include:
+A kickoff prompt **starts with** that preamble and the todo identifier, then adds the per-handoff detail the preamble deliberately doesn't carry:
 
-- Plan location: the plan branch name and PR number, plus the directory path (e.g. `docs/copilot/<date>-<project>/`).
-- Explicit fetch instructions, because the child session is on a fresh branch off the base and the plan docs do **not** exist in its worktree. Tell it to read the docs directly from the plan branch via `git`, `gh`, or GitHub MCP tools — for example `gh api repos/<owner>/<repo>/contents/docs/copilot/<dir>/context.md?ref=<plan-branch> -q .content | base64 -d`, or `git fetch origin <plan-branch> && git show origin/<plan-branch>:docs/copilot/<dir>/context.md`. Do not have the child check out, merge, or rebase onto the plan branch.
-- Exact files to read (README, context.md, the target phase doc) and the exact phase/todo identifiers.
-- Repo and intended worktree/session target, and the base branch the child's PR should target (usually the repo default, **not** the plan branch).
-- Current status and dependency assumptions.
+- Plan repo slug, plan branch name, PR number, and directory path. The repo matters — a child working in a different repo can't reach the plan branch through `origin`.
+- Read-only fetch instructions — `gh api repos/<plan-owner>/<plan-repo>/contents/docs/copilot/<dir>/context.md?ref=<plan-branch> -q .content | base64 -d`, which works from any repo. `git fetch origin <plan-branch> && git show origin/<plan-branch>:<path>` is fine only when the child is in the plan repo itself. Never have the child check out, merge, or rebase onto the plan branch.
+- Exact files to read (context.md, the target phase doc) and the exact phase/todo identifiers.
+- The base branch the child's PR targets — that repo's **real integration branch**, which is not always GitHub's default branch (a repo may default to `main` but merge everything into `dev`). Take it from `context.md`, never guess, and never target the plan branch or a WIP branch. In `orchestrate` terms: set `base_branch` explicitly whenever the integration branch differs from the project default, because omitting it silently targets the default.
 - Expected output: code changes, tests, validation, PR, or report.
 - Constraints: what not to touch, that plan docs must not be edited from the child session, whether to commit/push.
 - Branch hygiene: once the PR is open, do **not** run `git pull`, `git merge main`, `git rebase main`, `git fetch && git merge origin/main`, or `git branch -u`. The coordinator handles main-syncs at merge time (squash-merge resolves drift). Refactor PRs especially must stay linear — merge-from-main commits balloon the diff and destroy reviewability. Use `gh pr view` / `gh pr checks` (read-only) to inspect the session's own PR; never `gh pr checkout` your own PR (when local has diverged, gh creates a phantom `pr/<num>/<branch>` local branch that confuses tooling).
@@ -66,26 +64,25 @@ If the phase doc is missing file paths, validation, or dependencies, update the 
 
 ## After the agent reports back
 
-Review the result before updating the plan:
+Review the result before believing it:
 
 - Did it execute the requested phase/todo and stay in scope?
 - Did validation run, and did it prove the intended behavior?
 - Did the agent run `/review` with a different frontier model, and address or report any high-confidence findings?
 - Are there blockers, discovered bugs, or decisions that belong in `context.md` or the phase doc?
-- Is there a PR link or branch that should be added to the plan README?
 
-Only mark work complete after verification and the independent model review. If work is partial, update status as `In progress` or leave it unchanged and record the blocker.
+Then load `refresh-plan` to record it. A session report is a lead, not evidence — that skill covers checking the PR actually merged and updating every plan surface together.
 
 ## Common mistakes
 
 - Handing off without the plan branch name and explicit fetch instructions, leaving the child to discover that `docs/copilot/...` doesn't exist on its branch and reverse-engineer how to read it.
 - Telling the child to check out, merge, or rebase onto the plan branch instead of fetching plan files read-only.
-- Handing off from the README prompt without reading `context.md` and the phase doc yourself.
-- Rewriting a pre-made README prompt from scratch instead of using it as the starting point.
+- Setting `base_branch` to the plan branch. Plan branches are documentation; they are never a base for code.
+- Rewriting the README's delegation preamble from scratch instead of using it as the starting point.
+- Handing off from the preamble without reading `context.md` and the phase doc yourself.
 - Copying the entire plan into the brief instead of referencing the source docs.
 - Starting parallel agents on todos that edit the same files.
 - Letting the implementing agent skip the different-model `/review` step before handing work back.
 - Letting agents silently update plan docs while implementing code.
 - Claiming a phase is complete based only on an agent summary without checking validation.
-- Asking one session to produce two PRs from one worktree, instead of spawning a second session for the second PR.
 - Omitting branch-hygiene guardrails (no `git pull` / `merge main` / `branch -u` / `gh pr checkout self`) from the handoff brief — long-running refactor sessions accumulate merge-from-main commits that destroy the PR's reviewability.

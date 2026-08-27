@@ -1,7 +1,7 @@
 ---
 name: planning-multi-agent-projects
 user-invocable: true
-description: "Use when creating a repo-tracked multi-agent planning PR for a large project, especially when phases, living docs, parallel agent prompts, or a long-running WIP/demo branch with extraction PRs are needed."
+description: "Use when creating a repo-tracked multi-agent planning PR for a large project, especially when phases, living docs, parallel workstreams, or a long-running WIP/demo branch with extraction PRs are needed."
 ---
 
 # Planning Multi-Agent Projects
@@ -18,7 +18,7 @@ A directory of markdown files on a dedicated branch:
 
 ```
 docs/copilot/<date>-<project-name>/
-  README.md              # Status dashboard, phase table, roadmap, agent prompts
+  README.md              # Status dashboard, phase table, roadmap, delegation preamble
   context.md             # Architecture, source locations, key decisions, agent guidelines
   phase-{NN}-{name}.md   # One per phase — zero-padded (01, 02, ...), self-contained
   blog-draft.md          # Written near project completion
@@ -59,6 +59,15 @@ This is the shared context that all phase documents reference. An agent starting
 - **Architecture** — current system overview, ASCII diagrams of request flows or component relationships
 - **Key source locations** — exact file paths, function names, line references for the code being changed
 - **Key technical decisions** — numbered list of decisions made during research, with rationale. Every decision should be concrete and resolved before implementation starts. For major decisions, link to the ADR by filename (e.g. "See `docs/adr/2026-05-16-search-tokenizer.md`"). For smaller decisions, a one-line rationale here is sufficient.
+- **Repos and base branches** — one row per repo the project touches, naming the branch PRs actually merge into. This is often *not* the GitHub default: a repo can default to `main` while integrating on `dev`. Handoffs read this to set the child's base, so record it explicitly rather than leaving it to be inferred.
+
+  ```markdown
+  | Repo | PRs target |
+  |---|---|
+  | `owner/service` | `dev` (default branch is `main`) |
+  | `owner/client`  | `main` |
+  ```
+
 - **Build & lint commands** — how to validate changes in this repo
 - **Agent guidelines** — "read this file first", naming conventions, patterns to follow, things to avoid
 
@@ -149,7 +158,7 @@ The README is the status dashboard. Include:
 - **Key decisions** — top-level summary of important technical choices (detail in context.md)
 - **Next up** — what to work on now, with enough context to start
 - **Parallelism notes** — which phases/todos can run concurrently and which must be serial (see below)
-- **Agent prompts** — copy-paste prompts at the bottom (see below)
+- **Delegation preamble** — one reusable block for briefing sessions (see below)
 
 Statuses: Not started, In progress, Complete, Deferred
 
@@ -173,58 +182,51 @@ Be explicit. Example:
 - Phase 8 is **independent** — can run alongside any other phase (different repo)
 ```
 
-#### Agent prompts
+#### Delegation preamble
 
-End the README with pre-made prompts — one per todo that's ready for an agent to pick up. These are copy-paste ready: minimal, self-contained, and reference the plan docs so the agent has full context.
+End the README with **one** reusable preamble block — not a prompt per todo. `orchestrate` owns spawning sessions; what it can't know is that your plan docs live on a branch the child won't have. The preamble supplies exactly that, and `## Next` names the work. It's the *opening* of a kickoff prompt — `delegating-plan-work` covers the per-handoff rest (validation commands, constraints, expected output, branch hygiene).
 
-**Critical:** Child agent sessions start on a fresh branch off the repo's base branch (usually `main`), so the plan docs in `docs/copilot/<date>-<project>/` do **not** exist in their worktree. Every prompt must tell the agent to read those docs directly from the plan branch via `git`, `gh`, or GitHub MCP — not by checking out, merging, or rebasing onto the plan branch. Include the plan branch name and PR number in the prompt.
+**Critical:** child sessions start on a fresh branch off their *own* repo's base branch, so `docs/copilot/<date>-<project>/` does **not** exist in their worktree. For a phase that lands in a different repo than the plan, `origin` isn't the plan repo at all — so the fetch must name the plan repo explicitly. `gh api` works from anywhere; `git fetch origin <plan-branch>` only works when the child happens to be in the plan repo.
 
-```markdown
-## Agent prompts
+````markdown
+## Delegating
 
-Ready-to-use prompts for spinning up agent sessions. Each prompt targets one todo.
-Copy-paste into a new session.
+Plan docs live only in `<plan-owner>/<plan-repo>`, on this branch. Sessions
+spawned for this work start in their target repo, so those docs are not in their
+worktree — and for phases in another repo, `origin` is not the plan repo. Every
+kickoff prompt for this plan starts with:
 
-Plan branch: `<user>/<project-name>` (PR #NNN). The plan docs live only on that
-branch — read them via `gh` or `git show`, do not check out or merge that branch.
-
-### Phase 1, todo 1.1
-
-> The plan for this work lives on branch `<user>/<project-name>` (PR #NNN), in
-> `docs/copilot/<date>-<project>/`. That branch is **not** checked out here —
-> fetch the docs read-only, e.g.:
+> The plan for this work lives in `<plan-owner>/<plan-repo>` on branch
+> `<plan-branch>` (PR #NNN), under `docs/copilot/<date>-<project>/`. Those docs
+> are **not** in your worktree. Read them read-only — do not check out, merge, or
+> rebase onto that branch:
 >
 > ```
-> git fetch origin <user>/<project-name>
-> git show origin/<user>/<project-name>:docs/copilot/<date>-<project>/context.md
-> git show origin/<user>/<project-name>:docs/copilot/<date>-<project>/phase-01-foo.md
+> gh api repos/<plan-owner>/<plan-repo>/contents/docs/copilot/<date>-<project>/context.md?ref=<plan-branch> -q .content | base64 -d
+> gh api repos/<plan-owner>/<plan-repo>/contents/docs/copilot/<date>-<project>/phase-<NN>-<name>.md?ref=<plan-branch> -q .content | base64 -d
 > ```
 >
-> (or use `gh api .../contents/...?ref=<user>/<project-name>`.) Read both, then
-> execute todo 1.1. Open your PR against `main`, not the plan branch. Do not
-> edit plan docs from this session.
+> Read both, then execute <phase/todo>. Open your PR against `<target-base>` —
+> never the plan branch. Do not edit plan docs from your session.
 
-### Phase 1, todo 1.2
+Take `<phase/todo>` from [Next](#next), and the target repo and `<target-base>`
+from the phase doc's **Repo:** line and the base-branch table in context.md.
+Don't substitute the repo's GitHub default — some repos integrate elsewhere.
+````
 
-> Same plan branch and fetch pattern as above. Read context.md and
-> phase-01-foo.md from `origin/<user>/<project-name>`, then execute todo 1.2.
-```
+**Rules:**
 
-**Rules for agent prompts:**
-
-- Always name the plan branch and PR number, and show the read-only fetch pattern.
-- Tell the agent which base branch its PR should target (almost always the repo default — never the plan branch, and never a WIP branch).
-- Keep them minimal otherwise — the phase doc and context.md have the detail, not the prompt.
-- Only list todos that are **currently unblocked** (dependencies met).
-- Group parallel-safe todos together with a note: "These can run simultaneously".
-- For serial todos, list them in order with a note: "Run in sequence — each depends on the previous".
-- Update the prompts section as work completes — remove done todos, unblock new ones.
+- One block, not one per todo. Per-todo prompts duplicate the plan and go stale as work lands.
+- Always name the plan repo, plan branch, PR number, and directory. The repo matters: cross-repo phases can't resolve the plan branch through `origin`.
+- Never hardcode one base branch, and never assume the repo default. A repo can default to `main` while integrating on `dev` — record each repo's real base in `context.md` and take it from there. The child's PR targets the repo it's working in; never the plan branch.
+- Keep it minimal: the phase doc and context.md carry the detail, not the prompt.
+- `## Next` is what changes as work completes. The preamble should not need touching.
 
 ### 6. Commit and open PR
 
 Commit all plan documents to the branch. Open a PR with:
 - Title: `[Agent plan] <project name>`
-- Body: Summary of the project, phase table with links, key decisions, and a roadmap if applicable
+- Body: **thin and stable** — a one-line summary of the project, a one-line phase status (`Phases 1-2 complete, 3 in progress, 4-8 not started`), and links to the README and any governing ADR. The README is the dashboard; the body points at it. Don't duplicate the phase table here — that's a second copy to drift, and `refresh-plan` keeps the status line current.
 
 This PR stays open for the life of the project. It's the tracking hub.
 
@@ -232,19 +234,12 @@ This PR stays open for the life of the project. It's the tracking hub.
 
 Execution is a separate step — the user (or agents) pick up phases from the plan and execute them as separate PRs. That phase-at-a-time sequence is the default; [two-lane execution](#two-lane-execution-wip-and-extraction) is an alternative worth *offering* for large, uncertain features with early demo value.
 
-The plan is a **living document** that this skill also maintains. When you're updating the plan during execution:
-
-- Update phase status in both the phase doc header and the README table
-- Add PR links as work merges
-- Add a "Supporting PRs" table to the README for related fixes and follow-ups
-- Add a "Bugs found" table if issues surface during execution
-- Update context.md if new decisions are made or architecture changes
-- Update the agent prompts section — remove completed todos, unblock new ones
+The plan is a **living document**. Keeping it true as work lands is its own operation — load `refresh-plan` when a PR merges, a session reports back, or the user asks to update the plan. It covers reconciling status against real PR state, updating every surface at once, and leaving the next step obvious.
 
 ### 8. Wrap up
 
 When all phases are complete (or deliberately deferred):
-- Update the README with final status and any deferred work
+- Run a full `refresh-plan` sweep, so every surface — phase headers, README tables, `## Next`, and the PR body — is true at the moment the plan is finalized. Updating the README alone leaves the rest stale in the permanent record.
 - Write a blog post (see below)
 - Merge the plan PR to preserve the documentation in the repo
 
