@@ -69,7 +69,9 @@ This is the shared context that all phase documents reference. An agent starting
   ```
 
 - **Build & lint commands** — how to validate changes in this repo
-- **Agent guidelines** — "read this file first", naming conventions, patterns to follow, things to avoid
+- **Agent guidelines** — "read this file first", naming conventions, patterns to follow, things to avoid. Always include the no-plan-references rule: every child reads context.md, so stating it here makes it survive a handoff that skipped the preamble. Something like:
+
+  > Nothing you deliver may reference this plan — not code comments, doc comments, test names, commit messages, or PR bodies. These docs live only on the plan branch, so a link to them is dead for reviewers. Justify each change against the code, an ADR, an issue, or a doc on the base branch.
 
 Keep it factual and reference-style. This isn't a narrative — it's a lookup document.
 
@@ -208,6 +210,15 @@ kickoff prompt for this plan starts with:
 >
 > Read both, then execute <phase/todo>. Open your PR against `<target-base>` —
 > never the plan branch. Do not edit plan docs from your session.
+>
+> The plan is your context, not the reader's. Nothing you write — code
+> comments, doc comments, test names, commit messages, PR body — may mention
+> the plan, its phases or todo numbers, this plan PR, or the fact that an
+> agent did the work. Those docs aren't on your branch or the base branch, so
+> a link to them is dead for every reader. Justify each change on its own
+> terms: cite the code, an ADR, an issue, or a permanent doc. If the only
+> reason you can give is "the plan says so," you don't yet understand the
+> change well enough to land it.
 
 Take `<phase/todo>` from [Next](#next), and the target repo and `<target-base>`
 from the phase doc's **Repo:** line and the base-branch table in context.md.
@@ -219,8 +230,27 @@ Don't substitute the repo's GitHub default — some repos integrate elsewhere.
 - One block, not one per todo. Per-todo prompts duplicate the plan and go stale as work lands.
 - Always name the plan repo, plan branch, PR number, and directory. The repo matters: cross-repo phases can't resolve the plan branch through `origin`.
 - Never hardcode one base branch, and never assume the repo default. A repo can default to `main` while integrating on `dev` — record each repo's real base in `context.md` and take it from there. The child's PR targets the repo it's working in; never the plan branch.
+- **Always carry the no-plan-references rule.** It's the most reliable failure mode in this workflow — see below.
 - Keep it minimal: the phase doc and context.md carry the detail, not the prompt.
 - `## Next` is what changes as work completes. The preamble should not need touching.
+
+#### Delivered work must stand alone
+
+The child reads the phase doc as its primary context, so it writes as though the reader read it too. The reader didn't, and can't: plan docs live only on the plan branch, and the code PR targets the base branch. **Every plan reference in delivered work is dangling by construction** — reviewers hit a path that isn't in the tree.
+
+It shows up as more than links. Watch for:
+
+- Links or paths to `docs/copilot/...`, or the plan PR number, in a code comment.
+- Phase and todo numbers used as identifiers — "Phase 3 requires...", "part of todo 4.2".
+- **Plan vocabulary and structure copied into module docs** — a `## Scope` / `Out of scope` block, or a restated requirements list, mirroring the phase doc's shape. This is the subtle one: it reads as thorough documentation while actually being plan residue, and reviewers experience it as oddly formal throat-clearing.
+- Root-cause analysis or known-limitation write-ups that belong in an issue.
+- Any mention that an agent, session, or plan produced the change.
+
+The repo's own comment standards already forbid most of this; the plan context is what overrides them. So state it as a constraint in the prompt rather than assuming the child's coding guidance will hold.
+
+The test: **would this sentence make sense to someone who will never see the plan?** If not, cut it or re-ground it in something permanent — the code itself, an ADR, an issue, or a doc that lives on the base branch. A phase doc's rationale usually *belongs* somewhere durable; the fix is to put it there, not to link across branches.
+
+State this in both the preamble and context.md's agent guidelines. That isn't redundancy — they reach the child by different paths. The preamble only helps if the coordinator uses it; context.md is read directly by every child, including one spawned from a hand-written prompt.
 
 ### 6. Commit and open PR
 

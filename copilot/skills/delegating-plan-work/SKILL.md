@@ -53,6 +53,7 @@ A kickoff prompt **starts with** that preamble and the todo identifier, then add
 - The base branch the child's PR targets — that repo's **real integration branch**, which is not always GitHub's default branch (a repo may default to `main` but merge everything into `dev`). Take it from `context.md`, never guess, and never target the plan branch or a WIP branch. In `orchestrate` terms: set `base_branch` explicitly whenever the integration branch differs from the project default, because omitting it silently targets the default.
 - Expected output: code changes, tests, validation, PR, or report.
 - Constraints: what not to touch, that plan docs must not be edited from the child session, whether to commit/push.
+- **No plan references in delivered work** — not in code comments, doc comments, test names, commit messages, or the PR body. Plan docs aren't on the child's branch or the base branch, so any link to them is dead for reviewers, and phase/todo numbers mean nothing outside the plan. The failure extends past links: copying the phase doc's vocabulary or section structure into module docs reads as thorough documentation while being plan residue. Require every change to justify itself against the code, an ADR, an issue, or a doc that lives on the base branch. The preamble in the plan README carries this; keep it there rather than restating it per handoff.
 - Branch hygiene: once the PR is open, do **not** run `git pull`, `git merge main`, `git rebase main`, `git fetch && git merge origin/main`, or `git branch -u`. The coordinator handles main-syncs at merge time (squash-merge resolves drift). Refactor PRs especially must stay linear — merge-from-main commits balloon the diff and destroy reviewability. Use `gh pr view` / `gh pr checks` (read-only) to inspect the session's own PR; never `gh pr checkout` your own PR (when local has diverged, gh creates a phantom `pr/<num>/<branch>` local branch that confuses tooling).
 - Validation commands from the phase doc.
 - A requirement to run `/review` with a different frontier model after implementation and before handing work back.
@@ -68,6 +69,7 @@ Review the result before believing it:
 
 - Did it execute the requested phase/todo and stay in scope?
 - Did validation run, and did it prove the intended behavior?
+- **Does the diff leak the plan?** Grep it for `docs/copilot`, the plan PR number, and `phase`/`todo`, then skim the added comments for the phase doc's vocabulary and structure. Cheaper to catch here than in review — a human reviewer hitting a link to a file that isn't in the tree loses trust in the whole diff.
 - Did the agent run `/review` with a different frontier model, and address or report any high-confidence findings?
 - Are there blockers, discovered bugs, or decisions that belong in `context.md` or the phase doc?
 
@@ -84,5 +86,6 @@ Then load `refresh-plan` to record it. A session report is a lead, not evidence 
 - Starting parallel agents on todos that edit the same files.
 - Letting the implementing agent skip the different-model `/review` step before handing work back.
 - Letting agents silently update plan docs while implementing code.
+- Letting plan references reach the diff — `docs/copilot/...` links, phase/todo numbers, the plan PR, or the phase doc's section structure restated as module docs. The reader has none of that context and no way to get it.
 - Claiming a phase is complete based only on an agent summary without checking validation.
 - Omitting branch-hygiene guardrails (no `git pull` / `merge main` / `branch -u` / `gh pr checkout self`) from the handoff brief — long-running refactor sessions accumulate merge-from-main commits that destroy the PR's reviewability.
