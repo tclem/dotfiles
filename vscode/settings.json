@@ -179,7 +179,6 @@
   "chat.mcp.gallery.enabled": true,
   "rust-analyzer.cargo.buildScripts.overrideCommand": null,
   "rust-analyzer.cargo.allTargets": false,
-  "chat.viewSessions.orientation": "stacked",
   "[typescriptreact]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
@@ -188,5 +187,6 @@
   "javascript.updateImportsOnFileMove.enabled": "always",
   "github.copilot.chat.advanced.workspace.codeSearchExternalIngest.enabled": "force",
   "@azure.argTenant": "",
-  "security.promptForLocalFileProtocolHandling": false
+  "security.promptForLocalFileProtocolHandling": false,
+  "chat.viewSessions.orientation": "stacked"
 }
