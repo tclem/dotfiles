@@ -16,8 +16,6 @@ Windows (PowerShell 7):
 .\install.ps1
 ```
 
-Windows uses `Q:\` as `$PROJECTS`.
-
 Put secrets and machine-specific overrides in `~/.localrc` (not versioned).
 
 ---
