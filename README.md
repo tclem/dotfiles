@@ -4,13 +4,21 @@ These are my dotfiles.
 
 ## Install
 
-Targets **macOS** (Homebrew) and **Linux** (Ubuntu/Debian, WIP).
+macOS/Linux:
 
-``` sh
+```sh
 ./install.sh
+script/configure-blackbird [on|remote-only|off|status]
 ```
 
-This detects your OS, installs packages, symlinks configs (`.zshrc`, `tmux.conf`), sets up git, and syncs Copilot config.
+Windows (PowerShell 7):
+
+```powershell
+.\install.ps1
+.\script\configure-blackbird.ps1 [on|remote-only|off|status]
+```
+
+Windows uses `Q:\` as `$PROJECTS`. Blackbird defaults to `remote-only`; omitting the mode restores that default.
 
 Put secrets and machine-specific overrides in `~/.localrc` (not versioned).
 

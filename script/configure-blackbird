@@ -1,0 +1,211 @@
+#!/bin/bash
+
+set -euo pipefail
+
+DOTFILES_ROOT="${DOTFILES_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}"
+COPILOT_HOME="${COPILOT_HOME:-$HOME/.copilot}"
+COMMAND="${1:-remote-only}"
+
+SOURCE_INSTRUCTIONS="$DOTFILES_ROOT/copilot/copilot-instructions.md"
+REMOTE_INSTRUCTIONS_SOURCE="$DOTFILES_ROOT/copilot/blackbird-remote-only.md"
+GENERATED_DIRECTORY="$COPILOT_HOME/.dotfiles"
+REMOTE_INSTRUCTIONS="$GENERATED_DIRECTORY/copilot-instructions.blackbird-remote-only.md"
+OFF_INSTRUCTIONS="$GENERATED_DIRECTORY/copilot-instructions.blackbird-off.md"
+LIVE_INSTRUCTIONS="$COPILOT_HOME/copilot-instructions.md"
+SKILLS_ROOT="$COPILOT_HOME/skills"
+BLACKBIRD_SKILL="$SKILLS_ROOT/blackbird"
+FILESET_SKILL="$SKILLS_ROOT/blackbird-fileset"
+
+usage() {
+  echo "Usage: script/configure-blackbird {on|remote-only|off|status}"
+  exit 1
+}
+
+managed_instructions_target() {
+  [[ -e "$LIVE_INSTRUCTIONS" || -L "$LIVE_INSTRUCTIONS" ]] || return 0
+  [[ -L "$LIVE_INSTRUCTIONS" ]] || {
+    echo "Refusing to replace real file: $LIVE_INSTRUCTIONS" >&2
+    return 1
+  }
+
+  local target
+  target="$(readlink "$LIVE_INSTRUCTIONS")"
+  case "$target" in
+    "$SOURCE_INSTRUCTIONS"|"$REMOTE_INSTRUCTIONS"|"$OFF_INSTRUCTIONS")
+      printf '%s\n' "$target"
+      ;;
+    *)
+      echo "Refusing to replace unexpected link: $LIVE_INSTRUCTIONS -> $target" >&2
+      return 1
+      ;;
+  esac
+}
+
+set_instructions_link() {
+  local target="$1" current
+  current="$(managed_instructions_target)"
+  [[ "$current" == "$target" ]] && return 0
+  [[ -z "$current" ]] || rm -- "$LIVE_INSTRUCTIONS"
+
+  mkdir -p "$COPILOT_HOME"
+  ln -s "$target" "$LIVE_INSTRUCTIONS"
+}
+
+write_generated_instructions() {
+  local mode="$1"
+  local destination="$2"
+  local temporary="$destination.$$.tmp"
+  if [[ "$mode" == "remote-only" && ! -f "$REMOTE_INSTRUCTIONS_SOURCE" ]]; then
+    echo "Remote-only instructions not found: $REMOTE_INSTRUCTIONS_SOURCE" >&2
+    return 1
+  fi
+  mkdir -p "$GENERATED_DIRECTORY"
+
+  if ! awk -v mode="$mode" -v replacement_file="$REMOTE_INSTRUCTIONS_SOURCE" '
+    {
+      sub(/\r$/, "")
+    }
+    /^## Code Discovery$/ {
+      sections++
+      skipping=1
+      if (mode == "remote-only") {
+        while ((getline replacement < replacement_file) > 0) {
+          sub(/\r$/, "", replacement)
+          print replacement
+        }
+        close(replacement_file)
+        print ""
+      }
+      next
+    }
+    skipping && /^## / {
+      skipping=0
+    }
+    !skipping {
+      print
+    }
+    END {
+      if (sections != 1) {
+        exit 42
+      }
+    }
+  ' "$SOURCE_INSTRUCTIONS" > "$temporary"; then
+    rm -f -- "$temporary"
+    echo "Expected exactly one Code Discovery section in $SOURCE_INSTRUCTIONS" >&2
+    return 1
+  fi
+
+  mv -f -- "$temporary" "$destination"
+}
+
+remove_skill() {
+  local path="$1"
+  [[ -e "$path" || -L "$path" ]] || return 0
+  rm -rf -- "$path"
+}
+
+install_blackbird_skills() {
+  command -v gh >/dev/null 2>&1 || {
+    echo "gh is required but was not found in PATH" >&2
+    return 1
+  }
+
+  gh blackbird skills install --dir "$SKILLS_ROOT"
+}
+
+remove_generated_instructions() {
+  local keep="${1:-}"
+  [[ "$REMOTE_INSTRUCTIONS" == "$keep" ]] || rm -f -- "$REMOTE_INSTRUCTIONS"
+  [[ "$OFF_INSTRUCTIONS" == "$keep" ]] || rm -f -- "$OFF_INSTRUCTIONS"
+  rmdir "$GENERATED_DIRECTORY" 2>/dev/null || true
+}
+
+instructions_mode() {
+  if [[ ! -e "$LIVE_INSTRUCTIONS" && ! -L "$LIVE_INSTRUCTIONS" ]]; then
+    echo "missing"
+    return
+  fi
+  if [[ ! -L "$LIVE_INSTRUCTIONS" ]]; then
+    echo "real-file"
+    return
+  fi
+
+  local target
+  target="$(readlink "$LIVE_INSTRUCTIONS")"
+  case "$target" in
+    "$SOURCE_INSTRUCTIONS")
+      echo "on"
+      ;;
+    "$REMOTE_INSTRUCTIONS")
+      [[ -f "$REMOTE_INSTRUCTIONS" ]] && echo "remote-only" || echo "broken-remote-only"
+      ;;
+    "$OFF_INSTRUCTIONS")
+      [[ -f "$OFF_INSTRUCTIONS" ]] && echo "off" || echo "broken-off"
+      ;;
+    *)
+      echo "other-link"
+      ;;
+  esac
+}
+
+show_status() {
+  local instructions blackbird=false fileset=false
+  instructions="$(instructions_mode)"
+  [[ -f "$BLACKBIRD_SKILL/SKILL.md" ]] && blackbird=true
+  [[ -f "$FILESET_SKILL/SKILL.md" ]] && fileset=true
+
+  if [[ "$instructions" == "on" && "$blackbird" == true && "$fileset" == true ]]; then
+    echo "Blackbird: on"
+    return
+  fi
+  if [[ "$instructions" == "remote-only" && "$blackbird" == true && "$fileset" == false ]]; then
+    echo "Blackbird: remote-only"
+    return
+  fi
+  if [[ "$instructions" == "off" && "$blackbird" == false && "$fileset" == false ]]; then
+    echo "Blackbird: off"
+    return
+  fi
+
+  echo "Blackbird: inconsistent (instructions=$instructions; blackbird=$blackbird; blackbird-fileset=$fileset)"
+  return 1
+}
+
+[[ -f "$SOURCE_INSTRUCTIONS" ]] || {
+  echo "Copilot instructions not found: $SOURCE_INSTRUCTIONS" >&2
+  exit 1
+}
+
+case "$COMMAND" in
+  on)
+    managed_instructions_target >/dev/null
+    install_blackbird_skills
+    set_instructions_link "$SOURCE_INSTRUCTIONS"
+    remove_generated_instructions
+    echo "Blackbird: on"
+    ;;
+  remote-only)
+    managed_instructions_target >/dev/null
+    write_generated_instructions "remote-only" "$REMOTE_INSTRUCTIONS"
+    install_blackbird_skills
+    remove_skill "$FILESET_SKILL"
+    set_instructions_link "$REMOTE_INSTRUCTIONS"
+    remove_generated_instructions "$REMOTE_INSTRUCTIONS"
+    echo "Blackbird: remote-only"
+    ;;
+  off)
+    managed_instructions_target >/dev/null
+    write_generated_instructions "off" "$OFF_INSTRUCTIONS"
+    remove_skill "$BLACKBIRD_SKILL"
+    remove_skill "$FILESET_SKILL"
+    set_instructions_link "$OFF_INSTRUCTIONS"
+    remove_generated_instructions "$OFF_INSTRUCTIONS"
+    echo "Blackbird: off"
+    ;;
+  status)
+    show_status
+    ;;
+  *)
+    usage
+    ;;
+esac

@@ -10,9 +10,8 @@
 #                   Defaults to repo root. Use `.` to be explicit.
 #   <install-name>  Optional. Name under ~/.copilot/extensions/. Defaults to the repo name.
 #
-# Cache lives at $XDG_DATA_HOME/copilot-external-extensions/<owner>/<repo>/
-# (default ~/.local/share/copilot-external-extensions/). `script/sync-copilot install`
-# clones-or-pulls each entry, then symlinks its contents into ~/.copilot/extensions/<install-name>/
-# using the same linking strategy as repo-local extensions.
+# The sync command clones-or-pulls each entry into its platform cache, then
+# links its contents into ~/.copilot/extensions/<install-name>/ using the same
+# strategy as repo-local extensions.
 
-tclem/gh-inbox-zero@tclem/gh-inbox-zero-canvas
+tclem/gh-inbox-zero

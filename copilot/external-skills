@@ -1,6 +1,7 @@
 # Skill roots outside this repo, linked into ~/.copilot/skills/.
 #
-# One path per line. `#` comments and blank lines are ignored. `~` expands.
+# One path per line. `#` comments and blank lines are ignored. `~` and
+# `$PROJECTS` expand.
 # Each path is a directory containing `<name>/SKILL.md`, the same layout as
 # copilot/skills/ here.
 #
@@ -11,4 +12,4 @@
 # on this machine warns and is skipped. `disabled: true` is honored the same
 # way as for repo-local skills, and an existing real file is never replaced.
 
-~/github/notes/copilot/skills
+$PROJECTS/notes/copilot/skills

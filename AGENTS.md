@@ -48,7 +48,8 @@ When in doubt, **stop and ask** before staging. This includes edits invited by a
 ## Key Scripts
 
 - **`bin/gh-log`** — Query GitHub Issues/PRs you're involved with since a given date.
-- **`script/sync-copilot`** — Sync copilot config (instructions, agents, skills) between this repo and `~/.copilot`. `install` symlinks, `import` copies new files back.
+- **`script/sync-copilot` / `script/sync-copilot.ps1`** — Sync copilot config (instructions, agents, skills) between this repo and `~/.copilot`. `install` symlinks, `import` copies new files back.
+- **`script/configure-blackbird` / `script/configure-blackbird.ps1`** — Select full, remote-only, or disabled Blackbird code discovery. Remote-only is the default.
 
 ## Copilot Setup
 
@@ -56,13 +57,13 @@ When in doubt, **stop and ask** before staging. This includes edits invited by a
 
 ### Skill source of truth
 
-This repo owns Tim's **user-level** Copilot skills. Add or edit personal skills under `copilot/skills/<name>/SKILL.md`, then run `script/sync-copilot install` to symlink them into `~/.copilot/skills/`.
+This repo owns Tim's **user-level** Copilot skills. Add or edit personal skills under `copilot/skills/<name>/SKILL.md`, then run the Copilot sync command to symlink them into `~/.copilot/skills/`.
 
 Skills too personal to publish here live in another repo and are listed by path in `copilot/external-skills`. `install` links them the same way; only the path is public. `import` never copies them back — it skips anything whose real path resolves outside `~/.copilot`.
 
-A third kind isn't ours at all: a tool can embed its own skills and install them directly. `gh blackbird skills install` writes `blackbird` and `blackbird-fileset` into `~/.copilot/skills/` as real files, and `gh blackbird skills list` compares them against what the binary embeds. Fix those upstream in the extension and re-run `skills install`; don't add them back here.
+A third kind isn't ours at all: a tool can embed its own skills and install them directly. `gh blackbird skills install` writes `blackbird` and `blackbird-fileset` into `~/.copilot/skills/` as real files, and `gh blackbird skills list` compares them against what the binary embeds. The configure scripts manage these files without making dotfiles their source.
 
-`import` does not know about that third kind. It skips only paths whose real path resolves *outside* `~/.copilot`, and these are real files *inside* it — so it copies them into the repo and replaces the installed originals with symlinks pointing back at the copy. That silently makes dotfiles the source again. If `import` reports `blackbird` or `blackbird-fileset`, drop the copies and re-run `gh blackbird skills install`.
+Both sync scripts skip these tool-owned skills during import so dotfiles never becomes their source.
 
 Keep repo-specific workflows in the repo where they apply. Do not promote one repo's labels, bots, branches, runbooks, dashboards, deployment scripts, app harnesses, or style rules into dotfiles unless they are genuinely useful across repos.
 
@@ -103,11 +104,11 @@ Keep project-specific operational, app-runtime, UI, and repo-style skills in the
 
 - **Adding a package**: Edit `Brewfile`, run `brew bundle`.
 - **Changing shell config**: Edit `.zshrc` or files in `zsh/`. Changes take effect in new shells.
-- **Changing agent instructions**: Edit `copilot/copilot-instructions.md`, run `script/sync-copilot install`.
-- **Adding a skill**: Create `copilot/skills/<name>/SKILL.md`, keep the description trigger-focused, avoid competing with repo-local skills, then run `script/sync-copilot install`.
-- **Disabling a skill**: Add `disabled: true` to its frontmatter. `script/sync-copilot install` skips it and prunes the existing symlink. Reversible by removing the line.
+- **Changing agent instructions**: Edit `copilot/copilot-instructions.md`, then run the Copilot sync command.
+- **Adding a skill**: Create `copilot/skills/<name>/SKILL.md`, keep the description trigger-focused, avoid competing with repo-local skills, then run the Copilot sync command.
+- **Disabling a skill**: Add `disabled: true` to its frontmatter. Copilot sync skips it and prunes the existing symlink. Reversible by removing the line.
 - **After any install-level changes**: Re-run `./install.sh` to re-symlink and reconfigure.
 
-**Any edit under `copilot/skills/`, `copilot/agents/`, or `copilot/copilot-instructions.md` is not done until `script/sync-copilot install` has run and reported success.**
+**Any edit under `copilot/skills/`, `copilot/agents/`, or `copilot/copilot-instructions.md` is not done until Copilot sync has run and reported success.**
 
 Secrets and personal overrides go in `~/.localrc` (not versioned).
