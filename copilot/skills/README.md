@@ -53,6 +53,13 @@ Some skill-authoring practices here are adapted from Jesse Vincent's Superpowers
 
 Adapted ideas include trigger-focused skill descriptions, keeping skills reusable rather than project-specific, and pressure-testing process skills against likely agent rationalizations. The skills in this repo are rewritten for my dotfiles, Copilot CLI, and the `copilot/skills/<name>/SKILL.md` layout.
 
+The behavioral promotion gate in `skill-author` references the `eval-skill` v1 contract from `tclem/agent-retro`:
+
+- Source: https://github.com/tclem/agent-retro/blob/149fc4430c5066b002442f704b2a124eb1f12a0c/docs/skill-eval-v1.md
+- License: not declared in repository metadata
+
+The evaluator workflow remains upstream; the local skill keeps only the promotion contract needed to decide whether an edit may land.
+
 The `pr-merge-readiness` skill adapts the merge-readiness framing from GitHub's `agent-merge` app skill:
 
 - Source: https://github.com/github/github-app/blob/main/src-tauri/app-skills/agent-merge/SKILL.md
