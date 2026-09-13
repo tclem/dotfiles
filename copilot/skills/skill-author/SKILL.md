@@ -29,30 +29,7 @@ Do not create a dotfiles skill for:
 
 ## Skill shape
 
-Use this layout unless the skill needs something simpler:
-
-```markdown
----
-name: short-hyphen-name
-description: Use when concrete triggering condition, symptom, or task applies.
----
-
-# Human Title
-
-One or two sentences with the core idea.
-
-## When to use
-
-Specific triggers and non-triggers.
-
-## Rules
-
-The behavior that must change.
-
-## Common mistakes
-
-Likely agent failure modes and how to avoid them.
-```
+Use short frontmatter and only necessary sections: a brief core idea, concrete triggers and non-triggers, rules, and common mistakes.
 
 ## Description field
 
@@ -98,20 +75,15 @@ If a new skill overlaps an existing skill, either:
 
 ## Fallback skills
 
-Some user-level skills exist as **explicit fallbacks** for tasks the user does across many repos but where individual repos may provide a specialized version (Rust coding, alert investigation, postmortems, dependency updates). When both layers exist, the repo-local skill always wins.
+Fallback skills cover cross-repo work that repositories may specialize. Repo-local equivalents always win. For each fallback:
 
-When creating or editing a user-level skill that could plausibly have a repo-level specialization:
-
-- Phrase the description as `"Use when ... and the repository has no equivalent skill of its own."` This signals fallback intent at discovery time. Current tooling can't enumerate other skills to enforce it, but the phrasing sets the expectation.
-- Add the skill to the **Fallback skills** table in `choosing-workflow/SKILL.md`.
-- Note in the skill body that a repo-local equivalent, if present, supersedes this one.
-- If a starter template would help repos bootstrap their own specialized version, put it under `copilot/templates/<name>/SKILL.md` (not `copilot/skills/`). The template is scaffolding; the user-level skill is the live fallback.
+- End the description with `"and the repository has no equivalent skill of its own"` and repeat that precedence in the body.
+- Add it to the **Fallback skills** table in `choosing-workflow/SKILL.md`.
+- Put optional bootstrap guidance under `copilot/templates/<name>/SKILL.md`; the user-level skill remains the live fallback.
 
 ## Skills that should never be mirrored into a repo
 
-Some user-level skills are pure cross-repo personal workflow with no repo-level specialization (e.g. `pr-author`, `thinking-about`, `daily-handoff`, `copy-editor`, `delegating-plan-work`, `planning-multi-agent-projects`, `skill-author`, `choosing-workflow`). They should not be copied into any project's `.copilot/skills/` or `.github/skills/`.
-
-When authoring one of these, note in the body that the skill is user-level only. The "Skills that should never be mirrored" list in `choosing-workflow/SKILL.md` is the canonical roster.
+Pure personal workflow skills should not be copied into a project's `.copilot/skills/` or `.github/skills/`. Mark them user-level only in the body; `choosing-workflow/SKILL.md` owns the canonical roster.
 
 ## Disabling a skill without deleting it
 
@@ -145,6 +117,14 @@ Before calling the skill done, ask:
 - Is the required behavior concrete enough to follow without guessing?
 
 If the skill can be skipped with "this case is different", "being pragmatic", "I'll do it later", or "the spirit still applies", tighten the rule.
+
+## Behavioral promotion gate
+
+Behavior-changing edits must pass [`tclem/agent-retro eval-skill`](https://github.com/tclem/agent-retro/blob/main/docs/skill-eval-v1.md); prose review cannot promote them. Freeze target and sentinel cases. Compare baseline and candidate with identical explicit model, effort, trials, and tools. If the candidate grows, add a smaller compressed/ablation candidate. Behavior mode is required; add discovery when description or frontmatter changes. Report failures honestly.
+
+Default: no net growth. Growth requires rationale and measurable target improvement without sentinel/discovery regression; an equivalent shorter variant wins. Remove obsolete/redundant text instead of appending exceptions. Typos, links, formatting, and behavior-neutral metadata require structural validation, not model trials.
+
+Record in the PR body or review artifact: baseline/candidate hashes and sizes; case IDs; model/settings/trials; target/sentinel/discovery results; promotion decision. Omit full/private transcripts.
 
 ## Attribution
 
