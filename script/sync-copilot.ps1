@@ -521,7 +521,13 @@ function Remove-ExternalLockCandidateIfStale(
         return
     }
     if ($entries.Count -eq 0) {
-        Remove-Item -LiteralPath $Candidate.FullName -ErrorAction SilentlyContinue
+        try {
+            [IO.Directory]::Delete($Candidate.FullName)
+        } catch [IO.DirectoryNotFoundException] {
+            return
+        } catch [IO.IOException] {
+            return
+        }
         if (-not (Test-Path -LiteralPath $Candidate.FullName)) {
             Write-Yellow "  removed stale external extension sync lock"
         }
@@ -532,8 +538,14 @@ function Remove-ExternalLockCandidateIfStale(
         return
     }
 
-    Remove-Item -LiteralPath $ownerFile -ErrorAction SilentlyContinue
-    Remove-Item -LiteralPath $Candidate.FullName -ErrorAction SilentlyContinue
+    [IO.File]::Delete($ownerFile)
+    try {
+        [IO.Directory]::Delete($Candidate.FullName)
+    } catch [IO.DirectoryNotFoundException] {
+        return
+    } catch [IO.IOException] {
+        return
+    }
     if (-not (Test-Path -LiteralPath $Candidate.FullName)) {
         Write-Yellow "  removed stale external extension sync lock"
     }
