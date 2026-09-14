@@ -29,8 +29,9 @@ EXTENSIONS_DIR_NAME="extensions"
 # Each entry in $EXTERNAL_EXTENSIONS_FILE is `owner/repo[@ref] [subpath] [install-name]`.
 # Clones live in $EXT_CACHE_ROOT and are linked into ~/.copilot/extensions/<install-name>/
 # the same way as repo-local extensions.
-EXTERNAL_EXTENSIONS_FILE="$COPILOT_REPO/external-extensions"
+EXTERNAL_EXTENSIONS_FILE="${EXTERNAL_EXTENSIONS_FILE:-$COPILOT_REPO/external-extensions}"
 EXT_CACHE_ROOT="${XDG_DATA_HOME:-$HOME/.local/share}/copilot-external-extensions"
+EXT_MATERIALIZED_ROOT="$EXT_CACHE_ROOT/.materialized"
 
 # Skills that live outside this repo — personal ones kept in a private repo
 # rather than published here. Each line of $EXTERNAL_SKILLS_FILE is a path to a
@@ -235,7 +236,10 @@ _link_tree_into_extensions_dir() {
       .git|.github|.gitignore|.gitattributes|node_modules) continue ;;
     esac
     seen_entries+=("$base")
-    ln -sfn "$entry" "$dst/$base"
+    if [[ -L "$dst/$base" ]] || readlink "$dst/$base" >/dev/null 2>&1; then
+      rm "$dst/$base"
+    fi
+    ln -s "$entry" "$dst/$base"
   done
 
   for entry in "$dst"/* "$dst"/.[!.]*; do
@@ -312,11 +316,109 @@ install_extensions() {
   _prune_managed_extension_dirs "$dst_root" "$COPILOT_REPO/" "$keep_list" "extensions"
 }
 
-# Clone (or fast-forward pull) each external extension listed in
-# $EXTERNAL_EXTENSIONS_FILE into $EXT_CACHE_ROOT, then symlink its contents
-# into ~/.copilot/extensions/<install-name>/ using the same strategy as
-# install_extensions. Cache dirs for entries no longer in the manifest are
-# removed.
+_resolve_external_commit() {
+  local clone_dir="$1" ref="$2"
+
+  if [[ -z "$ref" ]]; then
+    local default_branch
+    default_branch=$(git -C "$clone_dir" symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null | sed 's@^origin/@@')
+    [[ -z "$default_branch" ]] && default_branch=main
+    git -C "$clone_dir" rev-parse --verify "refs/remotes/origin/$default_branch^{commit}"
+    return
+  fi
+
+  if git -C "$clone_dir" show-ref --verify --quiet "refs/remotes/origin/$ref"; then
+    git -C "$clone_dir" rev-parse --verify "refs/remotes/origin/$ref^{commit}"
+  elif git -C "$clone_dir" rev-parse --verify "$ref^{commit}" >/dev/null 2>&1; then
+    git -C "$clone_dir" rev-parse --verify "$ref^{commit}"
+  else
+    git -C "$clone_dir" fetch --quiet origin "$ref" &&
+      git -C "$clone_dir" rev-parse --verify "FETCH_HEAD^{commit}"
+  fi
+}
+
+_ensure_cache_directory() {
+  local path="$1" root="$2"
+  if [[ -e "$path" || -L "$path" ]]; then
+    [[ -d "$path" ]] || return 1
+  else
+    mkdir "$path"
+  fi
+
+  local resolved_path resolved_root
+  resolved_path=$(cd "$path" && pwd -P) || return 1
+  resolved_root=$(cd "$root" && pwd -P) || return 1
+  case "$resolved_path/" in
+    "$resolved_root/"*) ;;
+    *) return 1 ;;
+  esac
+}
+
+_materialize_external_extension() {
+  local clone_dir="$1" commit="$2" subpath="$3" owner="$4" repo="$5" install_name="$6"
+  local owner_root="$EXT_MATERIALIZED_ROOT/$owner"
+  local repository_root="$owner_root/$repo"
+  local target="$repository_root/$install_name"
+
+  _ensure_cache_directory "$EXT_MATERIALIZED_ROOT" "$EXT_CACHE_ROOT" ||
+    { echo "external extension materialized root escapes its cache: $EXT_MATERIALIZED_ROOT" >&2; return 1; }
+  _ensure_cache_directory "$owner_root" "$EXT_MATERIALIZED_ROOT" ||
+    { echo "external extension owner tree escapes its cache: $owner_root" >&2; return 1; }
+  _ensure_cache_directory "$repository_root" "$owner_root" ||
+    { echo "external extension repository tree escapes its cache: $repository_root" >&2; return 1; }
+
+  local temporary archive backup archive_tree
+  temporary=$(mktemp -d "$repository_root/.${install_name}.tmp.XXXXXX")
+  archive=$(mktemp "$repository_root/.${install_name}.archive.tar.XXXXXX")
+  backup="$repository_root/.${install_name}.backup"
+  archive_tree="$commit"
+  [[ "$subpath" != "." ]] && archive_tree="$commit:$subpath"
+
+  if [[ ! -e "$target" && -e "$backup" ]]; then
+    mv "$backup" "$target"
+  elif [[ -e "$target" && -e "$backup" ]]; then
+    rm -rf "$backup"
+  fi
+
+  (
+    set -e
+    restore_previous_tree() {
+      local status=$?
+      rm -rf "$temporary"
+      rm -f "$archive"
+      if [[ ! -e "$target" && -e "$backup" ]]; then
+        mv "$backup" "$target"
+      fi
+      exit "$status"
+    }
+    trap restore_previous_tree EXIT HUP INT TERM
+
+    if ! git -c core.autocrlf=false -c core.eol=lf -C "$clone_dir" \
+      archive --format=tar --output="$archive" "$archive_tree" 2>/dev/null; then
+      exit 1
+    fi
+    if ! tar -xf "$archive" -C "$temporary"; then
+      exit 1
+    fi
+    if [[ ! -f "$temporary/extension.mjs" ]]; then
+      exit 1
+    fi
+
+    if [[ -e "$target" ]]; then
+      mv "$target" "$backup"
+    fi
+    mv "$temporary" "$target"
+    rm -rf "$backup"
+    rm -f "$archive"
+    trap - EXIT HUP INT TERM
+  ) || return 1
+
+  printf '%s\n' "$target"
+}
+
+# Clone or fetch each external repository, materialize the selected commit
+# through git archive, then link that immutable tree into Copilot. The clone's
+# mutable working tree is never an installation source.
 install_external_extensions() {
   [[ -f "$EXTERNAL_EXTENSIONS_FILE" ]] || return 0
   local dst_root="$COPILOT_HOME/$EXTENSIONS_DIR_NAME"
@@ -344,17 +446,34 @@ install_external_extensions() {
       ref="${spec##*@}"
       spec="${spec%@*}"
     fi
-    if [[ "$spec" != */* ]]; then
+    if [[ ! "$spec" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]]; then
       yellow "  skip external entry (expected owner/repo): $line"
       continue
     fi
     local owner="${spec%%/*}"
     local repo="${spec##*/}"
     [[ -z "$install_name" ]] && install_name="$repo"
+    if [[ ! "$install_name" =~ ^[A-Za-z0-9_.-]+$ || "$install_name" == "." || "$install_name" == ".." ]]; then
+      yellow "  skip external entry (invalid install name): $line"
+      continue
+    fi
+    if [[ "$subpath" == /* || "$subpath" == *\\* || "$subpath" == ".." || "$subpath" == ../* || "$subpath" == */../* || "$subpath" == */.. ]]; then
+      yellow "  skip external entry (invalid subpath): $line"
+      continue
+    fi
 
-    local clone_dir="$EXT_CACHE_ROOT/$owner/$repo"
+    kept_installs+=("$install_name")
+    kept_clones+=("$owner/$repo")
+
+    local owner_dir="$EXT_CACHE_ROOT/$owner"
+    local clone_dir="$owner_dir/$repo"
+    _ensure_cache_directory "$owner_dir" "$EXT_CACHE_ROOT" ||
+      { echo "external extension owner cache escapes its root: $owner_dir" >&2; return 1; }
+    if [[ -e "$clone_dir" || -L "$clone_dir" ]]; then
+      _ensure_cache_directory "$clone_dir" "$owner_dir" ||
+        { echo "external extension clone path escapes its cache: $clone_dir" >&2; return 1; }
+    fi
     if [[ ! -d "$clone_dir/.git" ]]; then
-      mkdir -p "$(dirname "$clone_dir")"
       if ! gh repo clone "$owner/$repo" "$clone_dir" -- --quiet; then
         yellow "  skip $owner/$repo (clone failed)"
         continue
@@ -363,30 +482,19 @@ install_external_extensions() {
       git -C "$clone_dir" fetch --quiet origin || yellow "  warn: $owner/$repo fetch failed"
     fi
 
-    if [[ -n "$ref" ]]; then
-      git -C "$clone_dir" checkout --quiet "$ref" || { yellow "  skip $owner/$repo@$ref (checkout failed)"; continue; }
-      # Fast-forward only if we're on a branch.
-      if git -C "$clone_dir" symbolic-ref -q HEAD >/dev/null; then
-        git -C "$clone_dir" merge --quiet --ff-only "origin/$ref" 2>/dev/null || true
-      fi
-    else
-      local default_branch
-      default_branch=$(git -C "$clone_dir" symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null | sed 's@^origin/@@')
-      [[ -z "$default_branch" ]] && default_branch=main
-      git -C "$clone_dir" checkout --quiet "$default_branch" 2>/dev/null || true
-      git -C "$clone_dir" merge --quiet --ff-only "origin/$default_branch" 2>/dev/null || true
+    local commit
+    if ! commit=$(_resolve_external_commit "$clone_dir" "$ref"); then
+      yellow "  skip $owner/$repo${ref:+@$ref} (commit not found)"
+      continue
     fi
 
-    local src="$clone_dir/$subpath"
-    src="${src%/}"
-    if [[ ! -f "$src/extension.mjs" ]]; then
+    local src
+    if ! src=$(_materialize_external_extension "$clone_dir" "$commit" "$subpath" "$owner" "$repo" "$install_name"); then
       yellow "  skip $owner/$repo (no extension.mjs at ${subpath})"
       continue
     fi
 
-    kept_installs+=("$install_name")
-    kept_clones+=("$owner/$repo")
-    _link_tree_into_extensions_dir "$src" "$dst_root/$install_name" "$clone_dir/" "extensions/$install_name (external: $owner/$repo)"
+    _link_tree_into_extensions_dir "$src" "$dst_root/$install_name" "$EXT_MATERIALIZED_ROOT/" "extensions/$install_name (external: $owner/$repo@$commit)"
   done < "$EXTERNAL_EXTENSIONS_FILE"
 
   # Prune installs whose links point into $EXT_CACHE_ROOT but are no longer listed.
@@ -402,11 +510,11 @@ install_external_extensions() {
     clone_keep_list=$(printf '%s\n' "${kept_clones[@]}")
   fi
   for owner_dir in "$EXT_CACHE_ROOT"/*; do
-    [[ -d "$owner_dir" ]] || continue
+    [[ -d "$owner_dir" && ! -L "$owner_dir" ]] || continue
     local owner
     owner=$(basename "$owner_dir")
     for repo_dir in "$owner_dir"/*; do
-      [[ -d "$repo_dir" ]] || continue
+      [[ -d "$repo_dir" && ! -L "$repo_dir" ]] || continue
       local repo
       repo=$(basename "$repo_dir")
       grep -qxF "$owner/$repo" <<< "$clone_keep_list" && continue

@@ -9,7 +9,8 @@ param(
     [string]$DotfilesRoot = (Split-Path -Parent $PSScriptRoot),
     [string]$CopilotHome = (Join-Path $HOME ".copilot"),
     [string]$ProjectsRoot = "Q:\",
-    [string]$ExternalCacheRoot
+    [string]$ExternalCacheRoot,
+    [string]$ExternalExtensionsFile
 )
 
 Set-StrictMode -Version Latest
@@ -17,11 +18,14 @@ $ErrorActionPreference = "Stop"
 
 $CopilotRepo = Join-Path $DotfilesRoot "copilot"
 $ExtensionsDirectoryName = "extensions"
-$ExternalExtensionsFile = Join-Path $CopilotRepo "external-extensions"
+if (-not $ExternalExtensionsFile) {
+    $ExternalExtensionsFile = Join-Path $CopilotRepo "external-extensions"
+}
 $ExternalSkillsFile = Join-Path $CopilotRepo "external-skills"
 if (-not $ExternalCacheRoot) {
     $ExternalCacheRoot = Join-Path $ProjectsRoot ".copilot-external-extensions"
 }
+$ExternalMaterializedRoot = Join-Path $ExternalCacheRoot ".materialized"
 
 function Write-Green([string]$Message) {
     Write-Host $Message -ForegroundColor Green
@@ -385,6 +389,152 @@ function Configure-Blackbird {
         -CopilotHome $CopilotHome
 }
 
+function Resolve-ExternalCommit([string]$CloneDirectory, [string]$Ref) {
+    if (-not $Ref) {
+        $defaultBranch = & git -C $CloneDirectory symbolic-ref --short refs/remotes/origin/HEAD 2>$null
+        if (-not $defaultBranch) {
+            $defaultBranch = "main"
+        } else {
+            $defaultBranch = $defaultBranch -replace '^origin/', ''
+        }
+        $commit = & git -C $CloneDirectory rev-parse --verify "refs/remotes/origin/$defaultBranch`^{commit}" 2>$null
+        if ($LASTEXITCODE -ne 0) {
+            return $null
+        }
+        return $commit.Trim()
+    }
+
+    & git -C $CloneDirectory show-ref --verify --quiet "refs/remotes/origin/$Ref"
+    if ($LASTEXITCODE -eq 0) {
+        $commit = & git -C $CloneDirectory rev-parse --verify "refs/remotes/origin/$Ref`^{commit}" 2>$null
+        if ($LASTEXITCODE -eq 0) {
+            return $commit.Trim()
+        }
+    }
+
+    $commit = & git -C $CloneDirectory rev-parse --verify "$Ref`^{commit}" 2>$null
+    if ($LASTEXITCODE -eq 0) {
+        return $commit.Trim()
+    }
+
+    & git -C $CloneDirectory fetch --quiet origin $Ref
+    if ($LASTEXITCODE -ne 0) {
+        return $null
+    }
+    $commit = & git -C $CloneDirectory rev-parse --verify "FETCH_HEAD`^{commit}" 2>$null
+    if ($LASTEXITCODE -ne 0) {
+        return $null
+    }
+    return $commit.Trim()
+}
+
+function Materialize-ExternalExtension(
+    [string]$CloneDirectory,
+    [string]$Commit,
+    [string]$Subpath,
+    [string]$Owner,
+    [string]$Repo,
+    [string]$InstallName
+) {
+    $resolvedCacheRoot = Resolve-LinkPath $ExternalCacheRoot
+    $materializedItem = Get-ExistingItem $ExternalMaterializedRoot
+    if ($null -eq $materializedItem) {
+        New-Item -ItemType Directory -Path $ExternalMaterializedRoot | Out-Null
+    } elseif (-not $materializedItem.PSIsContainer) {
+        throw "External extension materialized root is not a directory: $ExternalMaterializedRoot"
+    }
+    $resolvedMaterializedRoot = Resolve-LinkPath $ExternalMaterializedRoot
+    if (-not (Test-PathWithin $resolvedMaterializedRoot $resolvedCacheRoot)) {
+        throw "External extension materialized root escapes its cache: $ExternalMaterializedRoot"
+    }
+
+    $ownerRoot = Get-NormalizedPath (Join-Path $ExternalMaterializedRoot $Owner)
+    $ownerItem = Get-ExistingItem $ownerRoot
+    if ($null -eq $ownerItem) {
+        New-Item -ItemType Directory -Path $ownerRoot | Out-Null
+    } elseif (-not $ownerItem.PSIsContainer) {
+        throw "External extension owner tree is not a directory: $ownerRoot"
+    }
+    $resolvedOwnerRoot = Resolve-LinkPath $ownerRoot
+    if (-not (Test-PathWithin $resolvedOwnerRoot $resolvedMaterializedRoot)) {
+        throw "External extension owner tree escapes its cache: $ownerRoot"
+    }
+
+    $repositoryRoot = Get-NormalizedPath (Join-Path $ownerRoot $Repo)
+    $repositoryItem = Get-ExistingItem $repositoryRoot
+    if ($null -eq $repositoryItem) {
+        New-Item -ItemType Directory -Path $repositoryRoot | Out-Null
+    } elseif (-not $repositoryItem.PSIsContainer) {
+        throw "External extension repository tree is not a directory: $repositoryRoot"
+    }
+    $resolvedRepositoryRoot = Resolve-LinkPath $repositoryRoot
+    if (-not (Test-PathWithin $resolvedRepositoryRoot $resolvedOwnerRoot)) {
+        throw "External extension repository tree escapes its cache: $repositoryRoot"
+    }
+
+    $target = Get-NormalizedPath (Join-Path $repositoryRoot $InstallName)
+    $suffix = "$PID-$([Guid]::NewGuid().ToString('N'))"
+    $temporary = Join-Path $repositoryRoot ".$InstallName.tmp.$suffix"
+    $archive = Join-Path $repositoryRoot ".$InstallName.archive.$suffix.tar"
+    $backup = Join-Path $repositoryRoot ".$InstallName.backup"
+    $archiveTree = if ($Subpath -eq ".") { $Commit } else { "${Commit}:$Subpath" }
+    $replacedPrevious = $false
+
+    if ($null -eq (Get-ExistingItem $target) -and $null -ne (Get-ExistingItem $backup)) {
+        Move-Item -LiteralPath $backup -Destination $target
+    } elseif ($null -ne (Get-ExistingItem $target) -and $null -ne (Get-ExistingItem $backup)) {
+        Remove-Item -LiteralPath $backup -Recurse -Force
+    }
+
+    New-Item -ItemType Directory -Path $temporary | Out-Null
+    try {
+        & git -c core.autocrlf=false -c core.eol=lf -C $CloneDirectory `
+            archive --format=tar "--output=$archive" $archiveTree 2>$null
+        if ($LASTEXITCODE -ne 0) {
+            return $null
+        }
+        & tar -xf $archive -C $temporary
+        if ($LASTEXITCODE -ne 0 -or
+            -not (Test-Path -LiteralPath (Join-Path $temporary "extension.mjs") -PathType Leaf)) {
+            return $null
+        }
+
+        if ($null -ne (Get-ExistingItem $target)) {
+            Move-Item -LiteralPath $target -Destination $backup
+            $replacedPrevious = $true
+        }
+        try {
+            Move-Item -LiteralPath $temporary -Destination $target
+        } catch {
+            if ($replacedPrevious -and $null -eq (Get-ExistingItem $target)) {
+                Move-Item -LiteralPath $backup -Destination $target
+                $replacedPrevious = $false
+            }
+            throw
+        }
+        if ($replacedPrevious) {
+            Remove-Item -LiteralPath $backup -Recurse -Force
+            $replacedPrevious = $false
+        }
+        return $target
+    } finally {
+        if ($null -ne (Get-ExistingItem $temporary)) {
+            Remove-Item -LiteralPath $temporary -Recurse -Force
+        }
+        if ($null -ne (Get-ExistingItem $archive)) {
+            Remove-Item -LiteralPath $archive -Force
+        }
+        if ($replacedPrevious -and $null -eq (Get-ExistingItem $target) -and
+            $null -ne (Get-ExistingItem $backup)) {
+            Move-Item -LiteralPath $backup -Destination $target
+            $replacedPrevious = $false
+        }
+        if ($null -ne (Get-ExistingItem $backup)) {
+            Remove-Item -LiteralPath $backup -Recurse -Force
+        }
+    }
+}
+
 function Install-ExternalExtensions {
     if (-not (Test-Path -LiteralPath $ExternalExtensionsFile -PathType Leaf)) {
         return
@@ -398,6 +548,7 @@ function Install-ExternalExtensions {
     $destinationRoot = Join-Path $CopilotHome $ExtensionsDirectoryName
     New-Item -ItemType Directory -Path $destinationRoot -Force | Out-Null
     New-Item -ItemType Directory -Path $ExternalCacheRoot -Force | Out-Null
+    New-Item -ItemType Directory -Path $ExternalMaterializedRoot -Force | Out-Null
     $keptInstalls = [Collections.Generic.List[string]]::new()
 
     foreach ($rawLine in Get-Content -LiteralPath $ExternalExtensionsFile) {
@@ -416,7 +567,7 @@ function Install-ExternalExtensions {
             $ref = $spec.Substring($at + 1)
             $spec = $spec.Substring(0, $at)
         }
-        if ($spec -notmatch '^[^/\\]+/[^/\\]+$') {
+        if ($spec -notmatch '^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$') {
             Write-Yellow "  skip external entry (expected owner/repo): $line"
             continue
         }
@@ -425,10 +576,20 @@ function Install-ExternalExtensions {
         if (-not $installName) {
             $installName = $repo
         }
+        if ($installName -notmatch '^[A-Za-z0-9_.-]+$' -or $installName -in @(".", "..")) {
+            Write-Yellow "  skip external entry (invalid install name): $line"
+            continue
+        }
+        if ([IO.Path]::IsPathRooted($subpath) -or $subpath.Contains('\') -or
+            @($subpath -split '/').Contains("..")) {
+            Write-Yellow "  skip external entry (invalid subpath): $line"
+            continue
+        }
         $destination = Get-NormalizedPath (Join-Path $destinationRoot $installName)
         if (-not (Test-PathWithin $destination $destinationRoot)) {
             throw "External extension install path escapes its root: $line"
         }
+        $keptInstalls.Add($installName)
 
         $cloneDirectory = Join-Path (Join-Path $ExternalCacheRoot $owner) $repo
         if (-not (Test-PathWithin $cloneDirectory $ExternalCacheRoot) -or
@@ -449,54 +610,29 @@ function Install-ExternalExtensions {
             }
         }
 
-        if ($ref) {
-            & git -C $cloneDirectory checkout --quiet $ref
-            if ($LASTEXITCODE -ne 0) {
-                Write-Yellow "  skip $owner/$repo@$ref (checkout failed)"
-                continue
-            }
-            $branch = & git -C $cloneDirectory symbolic-ref -q HEAD 2>$null
-            if ($LASTEXITCODE -eq 0 -and $branch) {
-                & git -C $cloneDirectory merge --quiet --ff-only "origin/$ref" 2>$null
-                if ($LASTEXITCODE -ne 0) {
-                    Write-Yellow "  skip $owner/$repo@$ref (fast-forward failed)"
-                    continue
-                }
-            }
-        } else {
-            $defaultBranch = & git -C $cloneDirectory symbolic-ref --short refs/remotes/origin/HEAD 2>$null
-            if (-not $defaultBranch) {
-                $defaultBranch = "main"
-            } else {
-                $defaultBranch = $defaultBranch -replace '^origin/', ''
-            }
-            & git -C $cloneDirectory checkout --quiet $defaultBranch 2>$null
-            if ($LASTEXITCODE -ne 0) {
-                Write-Yellow "  skip $owner/$repo (checkout failed)"
-                continue
-            }
-            & git -C $cloneDirectory merge --quiet --ff-only "origin/$defaultBranch" 2>$null
-            if ($LASTEXITCODE -ne 0) {
-                Write-Yellow "  skip $owner/$repo (fast-forward failed)"
-                continue
-            }
+        $commit = Resolve-ExternalCommit $cloneDirectory $ref
+        if (-not $commit) {
+            Write-Yellow "  skip $owner/$repo$(if ($ref) { "@$ref" }) (commit not found)"
+            continue
         }
 
-        $source = Get-NormalizedPath (Join-Path $cloneDirectory $subpath)
-        if (-not (Test-PathWithin $source $cloneDirectory)) {
-            throw "External extension subpath escapes its clone: $line"
-        }
-        if (-not (Test-Path -LiteralPath (Join-Path $source "extension.mjs") -PathType Leaf)) {
+        $source = Materialize-ExternalExtension `
+            $cloneDirectory `
+            $commit `
+            $subpath `
+            $owner `
+            $repo `
+            $installName
+        if (-not $source) {
             Write-Yellow "  skip $owner/$repo (no extension.mjs at $subpath)"
             continue
         }
 
-        $keptInstalls.Add($installName)
         Link-TreeIntoExtensionsDirectory `
             $source `
             $destination `
-            $cloneDirectory `
-            "extensions/$installName (external: $owner/$repo)"
+            $ExternalMaterializedRoot `
+            "extensions/$installName (external: $owner/$repo@$commit)"
     }
 
     Remove-UnlistedManagedExtensionDirectories `

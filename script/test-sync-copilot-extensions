@@ -1,0 +1,94 @@
+#!/bin/bash
+
+set -euo pipefail
+
+DOTFILES_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+TEST_ROOT=$(mktemp -d "${TMPDIR:-/tmp}/sync-copilot-extensions.XXXXXX")
+trap 'rm -rf "$TEST_ROOT"' EXIT
+
+FIXTURE_REPOSITORY="$TEST_ROOT/repository"
+MANIFEST="$TEST_ROOT/external-extensions"
+FAKE_BIN="$TEST_ROOT/bin"
+HOME_ROOT="$TEST_ROOT/home"
+DATA_ROOT="$TEST_ROOT/data"
+PROJECTS_ROOT="$TEST_ROOT/projects"
+mkdir -p "$FIXTURE_REPOSITORY/extensions/sample/lib" "$FAKE_BIN" "$HOME_ROOT" "$DATA_ROOT" "$PROJECTS_ROOT"
+
+cat > "$FIXTURE_REPOSITORY/extensions/sample/extension.mjs" <<'EOF'
+export const fixture = "pinned";
+EOF
+printf 'nested fixture\n' > "$FIXTURE_REPOSITORY/extensions/sample/lib/value.txt"
+git -C "$FIXTURE_REPOSITORY" init --quiet --initial-branch=main
+git -C "$FIXTURE_REPOSITORY" config user.name "Fixture"
+git -C "$FIXTURE_REPOSITORY" config user.email "fixture@example.com"
+git -C "$FIXTURE_REPOSITORY" config core.autocrlf false
+git -C "$FIXTURE_REPOSITORY" add .
+LINK_BLOB=$(printf 'lib/value.txt' | git -C "$FIXTURE_REPOSITORY" hash-object -w --stdin)
+git -C "$FIXTURE_REPOSITORY" update-index \
+  --add --cacheinfo "120000,$LINK_BLOB,extensions/sample/link.txt"
+git -C "$FIXTURE_REPOSITORY" commit --quiet -m "Add fixture extension"
+COMMIT=$(git -C "$FIXTURE_REPOSITORY" rev-parse HEAD)
+
+cat > "$FAKE_BIN/gh" <<'EOF'
+#!/bin/bash
+if [[ "$1" == "repo" && "$2" == "clone" ]]; then
+  git clone --quiet "$FIXTURE_REPOSITORY" "$4"
+  exit
+fi
+exit 1
+EOF
+chmod +x "$FAKE_BIN/gh"
+
+printf 'fixture/repo@%s  extensions/sample  sample\n' "$COMMIT" > "$MANIFEST"
+run_sync() {
+  PATH="$FAKE_BIN:$PATH" \
+    FIXTURE_REPOSITORY="$FIXTURE_REPOSITORY" \
+    HOME="$HOME_ROOT" \
+    XDG_DATA_HOME="$DATA_ROOT" \
+    PROJECTS="$PROJECTS_ROOT" \
+    EXTERNAL_EXTENSIONS_FILE="$MANIFEST" \
+    MSYS=winsymlinks:nativestrict \
+    bash "$DOTFILES_ROOT/script/sync-copilot" install >/dev/null
+}
+
+assert_installed_tree() {
+  local expected="$1" installed="$2"
+  local expected_files installed_files
+  expected_files=$(cd "$expected" && find . -type f -print | sort)
+  installed_files=$(cd "$installed" && find -L . -type f -print | sort)
+  [[ "$expected_files" == "$installed_files" ]]
+  while IFS= read -r relative; do
+    [[ -z "$relative" ]] && continue
+    if ! cmp "$expected/$relative" "$installed/$relative"; then
+      od -An -tx1 "$expected/$relative"
+      od -An -tx1 "$installed/$relative"
+      return 1
+    fi
+  done <<< "$expected_files"
+}
+
+run_sync
+
+CLONE="$DATA_ROOT/copilot-external-extensions/fixture/repo"
+INSTALLED="$HOME_ROOT/.copilot/extensions/sample"
+printf 'dirty tracked checkout\n' > "$CLONE/extensions/sample/extension.mjs"
+printf 'dirty untracked checkout\n' > "$CLONE/extensions/sample/drift.txt"
+
+run_sync
+
+EXPECTED="$TEST_ROOT/expected"
+ARCHIVE="$TEST_ROOT/expected.tar"
+mkdir -p "$EXPECTED"
+git -C "$FIXTURE_REPOSITORY" archive --format=tar --output="$ARCHIVE" "$COMMIT:extensions/sample"
+tar -xf "$ARCHIVE" -C "$EXPECTED"
+assert_installed_tree "$EXPECTED" "$INSTALLED"
+[[ ! -e "$INSTALLED/drift.txt" ]]
+
+MATERIALIZED="$DATA_ROOT/copilot-external-extensions/.materialized/fixture/repo/sample"
+[[ -L "$MATERIALIZED/link.txt" ]]
+mv "$MATERIALIZED" "${MATERIALIZED%/sample}/.sample.backup"
+printf 'fixture/repo@%s  extensions/missing  sample\n' "$COMMIT" > "$MANIFEST"
+run_sync
+assert_installed_tree "$EXPECTED" "$INSTALLED"
+
+echo "Bash external extension cache tests passed"
