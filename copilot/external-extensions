@@ -10,8 +10,8 @@
 #                   Defaults to repo root. Use `.` to be explicit.
 #   <install-name>  Optional. Name under ~/.copilot/extensions/. Defaults to the repo name.
 #
-# The sync command clones-or-pulls each entry into its platform cache, then
-# links its contents into ~/.copilot/extensions/<install-name>/ using the same
-# strategy as repo-local extensions.
+# The sync command fetches each repository into its platform cache, materializes
+# the selected commit with `git archive`, then links those immutable bytes into
+# ~/.copilot/extensions/<install-name>/.
 
 tclem/gh-inbox-zero
