@@ -26,6 +26,7 @@ if (-not $ExternalCacheRoot) {
     $ExternalCacheRoot = Join-Path $ProjectsRoot ".copilot-external-extensions"
 }
 $ExternalMaterializedRoot = Join-Path $ExternalCacheRoot ".materialized"
+$ExternalLockRoot = Join-Path $ExternalCacheRoot ".sync-lock"
 
 function Write-Green([string]$Message) {
     Write-Host $Message -ForegroundColor Green
@@ -428,6 +429,278 @@ function Resolve-ExternalCommit([string]$CloneDirectory, [string]$Ref) {
     return $commit.Trim()
 }
 
+function Get-ExternalLockProcessIdentity {
+    if ($IsWindows) {
+        $process = Get-Process -Id $PID -ErrorAction Stop
+        return @{
+            Platform = "windows"
+            Pid = $PID
+            Started = $process.StartTime.ToUniversalTime().Ticks.ToString()
+        }
+    }
+
+    $started = (& env "LC_ALL=C" ps -p $PID -o "lstart=" 2>$null) -replace '[^A-Za-z0-9]', ''
+    if ($LASTEXITCODE -ne 0 -or -not $started) {
+        throw "Could not determine external extension sync process identity"
+    }
+    return @{
+        Platform = "unix"
+        Pid = $PID
+        Started = $started
+    }
+}
+
+function Get-ExternalLockOwnerStatus(
+    [string]$Platform,
+    [int]$OwnerPid,
+    [string]$Started
+) {
+    if ($env:COPILOT_EXTERNAL_EXTENSIONS_TEST_OWNER_STATUS -eq "unknown") {
+        return "unknown"
+    }
+    if ($Platform -eq "windows") {
+        if (-not $IsWindows) {
+            return "unknown"
+        }
+        $process = Get-Process -Id $OwnerPid -ErrorAction SilentlyContinue
+        if ($null -eq $process) {
+            return "dead"
+        }
+        try {
+            $current = $process.StartTime.ToUniversalTime().Ticks.ToString()
+        } catch {
+            return "unknown"
+        }
+        return $(if ($current -eq $Started) { "live" } else { "dead" })
+    }
+    if ($Platform -ne "unix" -or $IsWindows) {
+        return "unknown"
+    }
+
+    $current = (& env "LC_ALL=C" ps -p $OwnerPid -o "lstart=" 2>$null) -replace '[^A-Za-z0-9]', ''
+    if ($LASTEXITCODE -eq 0 -and $current) {
+        return $(if ($current -eq $Started) { "live" } else { "dead" })
+    }
+    & env "LC_ALL=C" ps -p $OwnerPid *> $null
+    if ($LASTEXITCODE -eq 1) {
+        return "dead"
+    }
+    return "unknown"
+}
+
+function Get-ExternalLockCandidateIdentity([string]$Name) {
+    if ($Name -match '^choosing--(windows|unix)--([0-9]+)--([A-Za-z0-9]+)--([0-9a-f]+)$' -or
+        $Name -match '^ticket-[0-9]{10}--(windows|unix)--([0-9]+)--([A-Za-z0-9]+)--([0-9a-f]+)$') {
+        return @{
+            Platform = $Matches[1]
+            Pid = [int]$Matches[2]
+            Started = $Matches[3]
+            Token = $Matches[4]
+        }
+    }
+    return $null
+}
+
+function Remove-ExternalLockCandidateIfStale(
+    [IO.DirectoryInfo]$Candidate,
+    [string]$OwnedToken
+) {
+    $identity = Get-ExternalLockCandidateIdentity $Candidate.Name
+    if ($null -eq $identity -or $identity.Token -eq $OwnedToken) {
+        return
+    }
+    if ((Get-ExternalLockOwnerStatus $identity.Platform $identity.Pid $identity.Started) -ne "dead") {
+        return
+    }
+
+    $ownerFile = Join-Path $Candidate.FullName "owner"
+    $entries = @(
+        Get-ChildItem -LiteralPath $Candidate.FullName -Force -ErrorAction SilentlyContinue
+    )
+    if (-not (Test-Path -LiteralPath $Candidate.FullName -PathType Container)) {
+        return
+    }
+    if ($entries.Count -eq 0) {
+        Remove-Item -LiteralPath $Candidate.FullName -ErrorAction SilentlyContinue
+        if (-not (Test-Path -LiteralPath $Candidate.FullName)) {
+            Write-Yellow "  removed stale external extension sync lock"
+        }
+        return
+    }
+    if ($entries.Count -ne 1 -or
+        -not (Test-Path -LiteralPath $ownerFile -PathType Leaf)) {
+        return
+    }
+
+    Remove-Item -LiteralPath $ownerFile -ErrorAction SilentlyContinue
+    Remove-Item -LiteralPath $Candidate.FullName -ErrorAction SilentlyContinue
+    if (-not (Test-Path -LiteralPath $Candidate.FullName)) {
+        Write-Yellow "  removed stale external extension sync lock"
+    }
+}
+
+function Write-ExternalLockOwner(
+    [string]$Directory,
+    [hashtable]$Identity,
+    [string]$Token
+) {
+    $content = @(
+        "version=1"
+        "platform=$($Identity.Platform)"
+        "pid=$($Identity.Pid)"
+        "process_started=$($Identity.Started)"
+        "token=$Token"
+    ) -join "`n"
+    [IO.File]::WriteAllText(
+        (Join-Path $Directory "owner"),
+        "$content`n",
+        [Text.UTF8Encoding]::new($false)
+    )
+}
+
+function Acquire-ExternalExtensionsLock {
+    $timeoutValue = $env:COPILOT_EXTERNAL_EXTENSIONS_LOCK_TIMEOUT_SECONDS
+    $timeoutSeconds = if ($timeoutValue) { 0 } else { 30 }
+    if ($timeoutValue -and
+        (-not [int]::TryParse($timeoutValue, [ref]$timeoutSeconds) -or
+            $timeoutSeconds -lt 1 -or $timeoutSeconds -gt 300)) {
+        throw "COPILOT_EXTERNAL_EXTENSIONS_LOCK_TIMEOUT_SECONDS must be between 1 and 300"
+    }
+
+    if ($env:COPILOT_EXTERNAL_EXTENSIONS_TEST_LOCK_ROOT_BARRIER) {
+        $barrier = $env:COPILOT_EXTERNAL_EXTENSIONS_TEST_LOCK_ROOT_BARRIER
+        $marker = "$barrier.powershell.$PID.$([Guid]::NewGuid().ToString('N'))"
+        [IO.File]::WriteAllText($marker, "ready")
+        $barrierWait = [Diagnostics.Stopwatch]::StartNew()
+        try {
+            while (-not (Test-Path -LiteralPath "$barrier.release")) {
+                if ($barrierWait.Elapsed.TotalSeconds -ge 10) {
+                    throw "External extension test lock barrier timed out"
+                }
+                Start-Sleep -Milliseconds 50
+            }
+        } finally {
+            Remove-Item -LiteralPath $marker -Force -ErrorAction SilentlyContinue
+        }
+    }
+
+    $lockItem = Get-ExistingItem $ExternalLockRoot
+    if ($null -eq $lockItem) {
+        New-Item -ItemType Directory -Path $ExternalLockRoot -Force | Out-Null
+        $lockItem = Get-ExistingItem $ExternalLockRoot
+    } elseif (-not $lockItem.PSIsContainer) {
+        throw "External extension lock root is not a directory: $ExternalLockRoot"
+    }
+    if ($null -eq $lockItem -or -not $lockItem.PSIsContainer) {
+        throw "External extension lock root is not a directory: $ExternalLockRoot"
+    }
+    if (-not (Test-PathWithin (Resolve-LinkPath $ExternalLockRoot) (Resolve-LinkPath $ExternalCacheRoot))) {
+        throw "External extension lock root escapes its cache: $ExternalLockRoot"
+    }
+
+    $identity = Get-ExternalLockProcessIdentity
+    $token = [Guid]::NewGuid().ToString("N")
+    $suffix = "$($identity.Platform)--$($identity.Pid)--$($identity.Started)--$token"
+    $choosing = Join-Path $ExternalLockRoot "choosing--$suffix"
+    $ticket = $null
+    try {
+        New-Item -ItemType Directory -Path $choosing -ErrorAction Stop | Out-Null
+        Write-ExternalLockOwner $choosing $identity $token
+        if ($env:COPILOT_EXTERNAL_EXTENSIONS_TEST_FAIL_LOCK_STAGE -eq "after-choosing-owner") {
+            throw "Injected external extension lock failure after choosing owner"
+        }
+
+        $maxTicket = 0
+        foreach ($candidate in Get-ChildItem -LiteralPath $ExternalLockRoot -Directory -Filter "ticket-*") {
+            if ($candidate.Name -match '^ticket-([0-9]{10})--') {
+                $maxTicket = [Math]::Max($maxTicket, [int]$Matches[1])
+            }
+        }
+        $ticketName = "ticket-{0:D10}--{1}" -f ($maxTicket + 1), $suffix
+        $ticket = Join-Path $ExternalLockRoot $ticketName
+        New-Item -ItemType Directory -Path $ticket -ErrorAction Stop | Out-Null
+        if ($env:COPILOT_EXTERNAL_EXTENSIONS_TEST_FAIL_LOCK_STAGE -eq "after-ticket-directory") {
+            throw "Injected external extension lock failure after ticket directory"
+        }
+        Write-ExternalLockOwner $ticket $identity $token
+        if ($env:COPILOT_EXTERNAL_EXTENSIONS_TEST_FAIL_LOCK_STAGE -eq "after-ticket-owner") {
+            throw "Injected external extension lock failure after ticket owner"
+        }
+        Remove-Item -LiteralPath (Join-Path $choosing "owner")
+        Remove-Item -LiteralPath $choosing
+
+        $stopwatch = [Diagnostics.Stopwatch]::StartNew()
+        while ($true) {
+            foreach ($candidate in Get-ChildItem -LiteralPath $ExternalLockRoot -Directory) {
+                Remove-ExternalLockCandidateIfStale $candidate $token
+            }
+
+            $choosingExists = @(
+                Get-ChildItem -LiteralPath $ExternalLockRoot -Directory -Filter "choosing--*"
+            ).Count -gt 0
+            if (-not $choosingExists) {
+                $winner = $null
+                foreach ($candidate in Get-ChildItem -LiteralPath $ExternalLockRoot -Directory -Filter "ticket-*") {
+                    if ($null -eq $winner -or
+                        [StringComparer]::Ordinal.Compare($candidate.Name, $winner.Name) -lt 0) {
+                        $winner = $candidate
+                    }
+                }
+                if ($null -ne $winner -and
+                    $winner.FullName.Equals($ticket, [StringComparison]::OrdinalIgnoreCase)) {
+                    return @{
+                        Ticket = $ticket
+                        Token = $token
+                    }
+                }
+            }
+
+            if ($stopwatch.Elapsed.TotalSeconds -ge $timeoutSeconds) {
+                throw "External extension sync lock timed out after ${timeoutSeconds}s"
+            }
+            Start-Sleep -Milliseconds 50
+        }
+    } catch {
+        if ($null -ne $ticket) {
+            Release-ExternalExtensionsLock @{ Ticket = $ticket; Token = $token }
+        }
+        $choosingOwner = Join-Path $choosing "owner"
+        if ((Test-Path -LiteralPath $choosingOwner -PathType Leaf) -and
+            (Select-String -LiteralPath $choosingOwner -SimpleMatch -Quiet "token=$token")) {
+            Remove-Item -LiteralPath $choosingOwner
+            Remove-Item -LiteralPath $choosing
+        } elseif ((Test-Path -LiteralPath $choosing -PathType Container) -and
+            @(Get-ChildItem -LiteralPath $choosing -Force).Count -eq 0 -and
+            (Split-Path -Leaf $choosing).EndsWith("--$token", [StringComparison]::Ordinal)) {
+            Remove-Item -LiteralPath $choosing
+        }
+        throw
+    }
+}
+
+function Release-ExternalExtensionsLock([hashtable]$Lock) {
+    if ($null -eq $Lock -or -not (Test-Path -LiteralPath $Lock.Ticket -PathType Container)) {
+        return
+    }
+    $ownerFile = Join-Path $Lock.Ticket "owner"
+    if (-not (Split-Path -Leaf $Lock.Ticket).EndsWith(
+        "--$($Lock.Token)",
+        [StringComparison]::Ordinal
+    )) {
+        return
+    }
+    if (Test-Path -LiteralPath $ownerFile -PathType Leaf) {
+        if (@(Get-ChildItem -LiteralPath $Lock.Ticket -Force).Count -ne 1) {
+            return
+        }
+        Remove-Item -LiteralPath $ownerFile
+    } elseif (@(Get-ChildItem -LiteralPath $Lock.Ticket -Force).Count -ne 0 -or
+        -not (Split-Path -Leaf $Lock.Ticket).EndsWith("--$($Lock.Token)", [StringComparison]::Ordinal)) {
+        return
+    }
+    Remove-Item -LiteralPath $Lock.Ticket
+}
+
 function Materialize-ExternalExtension(
     [string]$CloneDirectory,
     [string]$Commit,
@@ -479,6 +752,8 @@ function Materialize-ExternalExtension(
     $backup = Join-Path $repositoryRoot ".$InstallName.backup"
     $archiveTree = if ($Subpath -eq ".") { $Commit } else { "${Commit}:$Subpath" }
     $replacedPrevious = $false
+    $installedNewTarget = $false
+    $committed = $false
 
     if ($null -eq (Get-ExistingItem $target) -and $null -ne (Get-ExistingItem $backup)) {
         Move-Item -LiteralPath $backup -Destination $target
@@ -488,14 +763,27 @@ function Materialize-ExternalExtension(
 
     New-Item -ItemType Directory -Path $temporary | Out-Null
     try {
+        if ($Subpath -eq ".") {
+            & git -C $CloneDirectory cat-file -e "$Commit`^{commit}" 2>$null
+            if ($LASTEXITCODE -ne 0) {
+                return $null
+            }
+        } else {
+            $archiveType = & git -C $CloneDirectory cat-file -t $archiveTree 2>$null
+            if ($LASTEXITCODE -ne 0 -or $archiveType -ne "tree") {
+                return $null
+            }
+        }
         & git -c core.autocrlf=false -c core.eol=lf -C $CloneDirectory `
             archive --format=tar "--output=$archive" $archiveTree 2>$null
         if ($LASTEXITCODE -ne 0) {
-            return $null
+            throw "Could not archive external extension commit"
         }
         & tar -xf $archive -C $temporary
-        if ($LASTEXITCODE -ne 0 -or
-            -not (Test-Path -LiteralPath (Join-Path $temporary "extension.mjs") -PathType Leaf)) {
+        if ($LASTEXITCODE -ne 0) {
+            throw "Could not extract external extension archive"
+        }
+        if (-not (Test-Path -LiteralPath (Join-Path $temporary "extension.mjs") -PathType Leaf)) {
             return $null
         }
 
@@ -503,14 +791,18 @@ function Materialize-ExternalExtension(
             Move-Item -LiteralPath $target -Destination $backup
             $replacedPrevious = $true
         }
-        try {
-            Move-Item -LiteralPath $temporary -Destination $target
-        } catch {
-            if ($replacedPrevious -and $null -eq (Get-ExistingItem $target)) {
-                Move-Item -LiteralPath $backup -Destination $target
-                $replacedPrevious = $false
-            }
-            throw
+        Move-Item -LiteralPath $temporary -Destination $target
+        $installedNewTarget = $true
+        if ($env:COPILOT_EXTERNAL_EXTENSIONS_TEST_FAIL_AFTER_SWAP -eq "1") {
+            throw "Injected external extension swap failure"
+        }
+        if (-not (Test-Path -LiteralPath (Join-Path $target "extension.mjs") -PathType Leaf) -or
+            $null -ne (Get-ExistingItem (Join-Path $target (Split-Path -Leaf $temporary)))) {
+            throw "External extension target validation failed"
+        }
+        $committed = $true
+        if ($env:COPILOT_EXTERNAL_EXTENSIONS_TEST_FAIL_BACKUP_CLEANUP -eq "1") {
+            throw "Injected external extension backup cleanup failure"
         }
         if ($replacedPrevious) {
             Remove-Item -LiteralPath $backup -Recurse -Force
@@ -518,19 +810,21 @@ function Materialize-ExternalExtension(
         }
         return $target
     } finally {
+        if (-not $committed) {
+            if ($installedNewTarget -and $null -ne (Get-ExistingItem $target)) {
+                Remove-Item -LiteralPath $target -Recurse -Force
+            }
+            if ($replacedPrevious -and $null -eq (Get-ExistingItem $target) -and
+                $null -ne (Get-ExistingItem $backup)) {
+                Move-Item -LiteralPath $backup -Destination $target
+                $replacedPrevious = $false
+            }
+        }
         if ($null -ne (Get-ExistingItem $temporary)) {
             Remove-Item -LiteralPath $temporary -Recurse -Force
         }
         if ($null -ne (Get-ExistingItem $archive)) {
             Remove-Item -LiteralPath $archive -Force
-        }
-        if ($replacedPrevious -and $null -eq (Get-ExistingItem $target) -and
-            $null -ne (Get-ExistingItem $backup)) {
-            Move-Item -LiteralPath $backup -Destination $target
-            $replacedPrevious = $false
-        }
-        if ($null -ne (Get-ExistingItem $backup)) {
-            Remove-Item -LiteralPath $backup -Recurse -Force
         }
     }
 }
@@ -545,101 +839,109 @@ function Install-ExternalExtensions {
         return
     }
 
-    $destinationRoot = Join-Path $CopilotHome $ExtensionsDirectoryName
-    New-Item -ItemType Directory -Path $destinationRoot -Force | Out-Null
     New-Item -ItemType Directory -Path $ExternalCacheRoot -Force | Out-Null
-    New-Item -ItemType Directory -Path $ExternalMaterializedRoot -Force | Out-Null
-    $keptInstalls = [Collections.Generic.List[string]]::new()
+    $lock = Acquire-ExternalExtensionsLock
+    try {
+        if ($env:COPILOT_EXTERNAL_EXTENSIONS_TEST_HOLD_LOCK_SECONDS) {
+            Start-Sleep -Seconds ([double]$env:COPILOT_EXTERNAL_EXTENSIONS_TEST_HOLD_LOCK_SECONDS)
+        }
+        $destinationRoot = Join-Path $CopilotHome $ExtensionsDirectoryName
+        New-Item -ItemType Directory -Path $destinationRoot -Force | Out-Null
+        New-Item -ItemType Directory -Path $ExternalMaterializedRoot -Force | Out-Null
+        $keptInstalls = [Collections.Generic.List[string]]::new()
 
-    foreach ($rawLine in Get-Content -LiteralPath $ExternalExtensionsFile) {
-        $line = ($rawLine -replace '#.*$', '').Trim()
-        if (-not $line) {
-            continue
-        }
-
-        $tokens = @($line -split '\s+')
-        $spec = $tokens[0]
-        $subpath = if ($tokens.Count -gt 1) { $tokens[1] } else { "." }
-        $installName = if ($tokens.Count -gt 2) { $tokens[2] } else { "" }
-        $ref = ""
-        $at = $spec.LastIndexOf("@", [StringComparison]::Ordinal)
-        if ($at -ge 0) {
-            $ref = $spec.Substring($at + 1)
-            $spec = $spec.Substring(0, $at)
-        }
-        if ($spec -notmatch '^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$') {
-            Write-Yellow "  skip external entry (expected owner/repo): $line"
-            continue
-        }
-
-        $owner, $repo = $spec -split '/', 2
-        if (-not $installName) {
-            $installName = $repo
-        }
-        if ($installName -notmatch '^[A-Za-z0-9_.-]+$' -or $installName -in @(".", "..")) {
-            Write-Yellow "  skip external entry (invalid install name): $line"
-            continue
-        }
-        if ([IO.Path]::IsPathRooted($subpath) -or $subpath.Contains('\') -or
-            @($subpath -split '/').Contains("..")) {
-            Write-Yellow "  skip external entry (invalid subpath): $line"
-            continue
-        }
-        $destination = Get-NormalizedPath (Join-Path $destinationRoot $installName)
-        if (-not (Test-PathWithin $destination $destinationRoot)) {
-            throw "External extension install path escapes its root: $line"
-        }
-        $keptInstalls.Add($installName)
-
-        $cloneDirectory = Join-Path (Join-Path $ExternalCacheRoot $owner) $repo
-        if (-not (Test-PathWithin $cloneDirectory $ExternalCacheRoot) -or
-            -not (Test-PathWithin (Resolve-LinkPath $cloneDirectory) $ExternalCacheRoot)) {
-            throw "External extension cache path escapes its root: $line"
-        }
-        if (-not (Test-Path -LiteralPath (Join-Path $cloneDirectory ".git") -PathType Container)) {
-            New-Item -ItemType Directory -Path (Split-Path -Parent $cloneDirectory) -Force | Out-Null
-            & gh repo clone "$owner/$repo" $cloneDirectory -- --quiet
-            if ($LASTEXITCODE -ne 0) {
-                Write-Yellow "  skip $owner/$repo (clone failed)"
+        foreach ($rawLine in Get-Content -LiteralPath $ExternalExtensionsFile) {
+            $line = ($rawLine -replace '#.*$', '').Trim()
+            if (-not $line) {
                 continue
             }
-        } else {
-            & git -C $cloneDirectory fetch --quiet origin
-            if ($LASTEXITCODE -ne 0) {
-                Write-Yellow "  warn: $owner/$repo fetch failed"
+
+            $tokens = @($line -split '\s+')
+            $spec = $tokens[0]
+            $subpath = if ($tokens.Count -gt 1) { $tokens[1] } else { "." }
+            $installName = if ($tokens.Count -gt 2) { $tokens[2] } else { "" }
+            $ref = ""
+            $at = $spec.LastIndexOf("@", [StringComparison]::Ordinal)
+            if ($at -ge 0) {
+                $ref = $spec.Substring($at + 1)
+                $spec = $spec.Substring(0, $at)
             }
+            if ($spec -notmatch '^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$') {
+                Write-Yellow "  skip external entry (expected owner/repo): $line"
+                continue
+            }
+
+            $owner, $repo = $spec -split '/', 2
+            if (-not $installName) {
+                $installName = $repo
+            }
+            if ($installName -notmatch '^[A-Za-z0-9_.-]+$' -or $installName -in @(".", "..")) {
+                Write-Yellow "  skip external entry (invalid install name): $line"
+                continue
+            }
+            if ([IO.Path]::IsPathRooted($subpath) -or $subpath.Contains('\') -or
+                @($subpath -split '/').Contains("..")) {
+                Write-Yellow "  skip external entry (invalid subpath): $line"
+                continue
+            }
+            $destination = Get-NormalizedPath (Join-Path $destinationRoot $installName)
+            if (-not (Test-PathWithin $destination $destinationRoot)) {
+                throw "External extension install path escapes its root: $line"
+            }
+            $keptInstalls.Add($installName)
+
+            $cloneDirectory = Join-Path (Join-Path $ExternalCacheRoot $owner) $repo
+            if (-not (Test-PathWithin $cloneDirectory $ExternalCacheRoot) -or
+                -not (Test-PathWithin (Resolve-LinkPath $cloneDirectory) $ExternalCacheRoot)) {
+                throw "External extension cache path escapes its root: $line"
+            }
+            if (-not (Test-Path -LiteralPath (Join-Path $cloneDirectory ".git") -PathType Container)) {
+                New-Item -ItemType Directory -Path (Split-Path -Parent $cloneDirectory) -Force | Out-Null
+                & gh repo clone "$owner/$repo" $cloneDirectory -- --quiet
+                if ($LASTEXITCODE -ne 0) {
+                    Write-Yellow "  skip $owner/$repo (clone failed)"
+                    continue
+                }
+            } else {
+                & git -C $cloneDirectory fetch --quiet origin
+                if ($LASTEXITCODE -ne 0) {
+                    Write-Yellow "  warn: $owner/$repo fetch failed"
+                }
+            }
+
+            $commit = Resolve-ExternalCommit $cloneDirectory $ref
+            if (-not $commit) {
+                Write-Yellow "  skip $owner/$repo$(if ($ref) { "@$ref" }) (commit not found)"
+                continue
+            }
+
+            $source = Materialize-ExternalExtension `
+                $cloneDirectory `
+                $commit `
+                $subpath `
+                $owner `
+                $repo `
+                $installName
+            if (-not $source) {
+                Write-Yellow "  skip $owner/$repo (no extension.mjs at $subpath)"
+                continue
+            }
+
+            Link-TreeIntoExtensionsDirectory `
+                $source `
+                $destination `
+                $ExternalMaterializedRoot `
+                "extensions/$installName (external: $owner/$repo@$commit)"
         }
 
-        $commit = Resolve-ExternalCommit $cloneDirectory $ref
-        if (-not $commit) {
-            Write-Yellow "  skip $owner/$repo$(if ($ref) { "@$ref" }) (commit not found)"
-            continue
-        }
-
-        $source = Materialize-ExternalExtension `
-            $cloneDirectory `
-            $commit `
-            $subpath `
-            $owner `
-            $repo `
-            $installName
-        if (-not $source) {
-            Write-Yellow "  skip $owner/$repo (no extension.mjs at $subpath)"
-            continue
-        }
-
-        Link-TreeIntoExtensionsDirectory `
-            $source `
-            $destination `
-            $ExternalMaterializedRoot `
-            "extensions/$installName (external: $owner/$repo@$commit)"
+        Remove-UnlistedManagedExtensionDirectories `
+            $destinationRoot `
+            $ExternalCacheRoot `
+            @($keptInstalls) `
+            "extensions (external)"
+    } finally {
+        Release-ExternalExtensionsLock $lock
     }
-
-    Remove-UnlistedManagedExtensionDirectories `
-        $destinationRoot `
-        $ExternalCacheRoot `
-        @($keptInstalls) `
-        "extensions (external)"
 }
 
 function Install-CopilotConfig {

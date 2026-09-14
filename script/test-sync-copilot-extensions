@@ -32,6 +32,7 @@ COMMIT=$(git -C "$FIXTURE_REPOSITORY" rev-parse HEAD)
 cat > "$FAKE_BIN/gh" <<'EOF'
 #!/bin/bash
 if [[ "$1" == "repo" && "$2" == "clone" ]]; then
+  sleep "${SYNC_TEST_CLONE_DELAY_SECONDS:-0}"
   git clone --quiet "$FIXTURE_REPOSITORY" "$4"
   exit
 fi
@@ -40,15 +41,27 @@ EOF
 chmod +x "$FAKE_BIN/gh"
 
 printf 'fixture/repo@%s  extensions/sample  sample\n' "$COMMIT" > "$MANIFEST"
-run_sync() {
+run_sync_for() {
+  local home_root="$1" data_root="$2" projects_root="$3"
   PATH="$FAKE_BIN:$PATH" \
     FIXTURE_REPOSITORY="$FIXTURE_REPOSITORY" \
-    HOME="$HOME_ROOT" \
-    XDG_DATA_HOME="$DATA_ROOT" \
-    PROJECTS="$PROJECTS_ROOT" \
+    HOME="$home_root" \
+    XDG_DATA_HOME="$data_root" \
+    PROJECTS="$projects_root" \
     EXTERNAL_EXTENSIONS_FILE="$MANIFEST" \
+    COPILOT_EXTERNAL_EXTENSIONS_LOCK_TIMEOUT_SECONDS="${COPILOT_EXTERNAL_EXTENSIONS_LOCK_TIMEOUT_SECONDS:-}" \
+    COPILOT_EXTERNAL_EXTENSIONS_TEST_FAIL_BACKUP_CLEANUP="${COPILOT_EXTERNAL_EXTENSIONS_TEST_FAIL_BACKUP_CLEANUP:-}" \
+    COPILOT_EXTERNAL_EXTENSIONS_TEST_FAIL_LOCK_STAGE="${COPILOT_EXTERNAL_EXTENSIONS_TEST_FAIL_LOCK_STAGE:-}" \
+    COPILOT_EXTERNAL_EXTENSIONS_TEST_OWNER_STATUS="${COPILOT_EXTERNAL_EXTENSIONS_TEST_OWNER_STATUS:-}" \
+    COPILOT_EXTERNAL_EXTENSIONS_TEST_FAIL_AFTER_SWAP="${COPILOT_EXTERNAL_EXTENSIONS_TEST_FAIL_AFTER_SWAP:-}" \
+    COPILOT_EXTERNAL_EXTENSIONS_TEST_HOLD_LOCK_SECONDS="${COPILOT_EXTERNAL_EXTENSIONS_TEST_HOLD_LOCK_SECONDS:-}" \
+    COPILOT_EXTERNAL_EXTENSIONS_TEST_LOCK_ROOT_BARRIER="${COPILOT_EXTERNAL_EXTENSIONS_TEST_LOCK_ROOT_BARRIER:-}" \
+    SYNC_TEST_CLONE_DELAY_SECONDS="${SYNC_TEST_CLONE_DELAY_SECONDS:-}" \
     MSYS=winsymlinks:nativestrict \
-    bash "$DOTFILES_ROOT/script/sync-copilot" install >/dev/null
+    bash "$DOTFILES_ROOT/script/sync-copilot" install
+}
+run_sync() {
+  run_sync_for "$HOME_ROOT" "$DATA_ROOT" "$PROJECTS_ROOT"
 }
 
 assert_installed_tree() {
@@ -90,5 +103,158 @@ mv "$MATERIALIZED" "${MATERIALIZED%/sample}/.sample.backup"
 printf 'fixture/repo@%s  extensions/missing  sample\n' "$COMMIT" > "$MANIFEST"
 run_sync
 assert_installed_tree "$EXPECTED" "$INSTALLED"
+
+printf 'fixture/repo@%s  extensions/sample  sample\n' "$COMMIT" > "$MANIFEST"
+if COPILOT_EXTERNAL_EXTENSIONS_TEST_FAIL_AFTER_SWAP=1 run_sync; then
+  echo "injected swap failure unexpectedly succeeded" >&2
+  exit 1
+fi
+assert_installed_tree "$EXPECTED" "$INSTALLED"
+run_sync >/dev/null
+assert_installed_tree "$EXPECTED" "$INSTALLED"
+
+printf 'dirty materialized tree\n' > "$MATERIALIZED/extension.mjs"
+if COPILOT_EXTERNAL_EXTENSIONS_TEST_FAIL_BACKUP_CLEANUP=1 run_sync >/dev/null 2>&1; then
+  echo "injected backup cleanup failure unexpectedly succeeded" >&2
+  exit 1
+fi
+assert_installed_tree "$EXPECTED" "$INSTALLED"
+[[ -d "${MATERIALIZED%/sample}/.sample.backup" ]]
+run_sync >/dev/null
+[[ ! -e "${MATERIALIZED%/sample}/.sample.backup" ]]
+
+LOCK_ROOT="$DATA_ROOT/copilot-external-extensions/.sync-lock"
+for stage in after-choosing-owner after-ticket-directory after-ticket-owner; do
+  if COPILOT_EXTERNAL_EXTENSIONS_TEST_FAIL_LOCK_STAGE="$stage" run_sync >/dev/null 2>&1; then
+    echo "injected lock acquisition failure unexpectedly succeeded: $stage" >&2
+    exit 1
+  fi
+  if compgen -G "$LOCK_ROOT/choosing--*" >/dev/null ||
+    compgen -G "$LOCK_ROOT/ticket-*" >/dev/null; then
+    echo "lock acquisition failure left a candidate: $stage" >&2
+    exit 1
+  fi
+done
+run_sync >/dev/null
+
+CONCURRENT_HOME="$TEST_ROOT/concurrent-home"
+CONCURRENT_DATA="$TEST_ROOT/concurrent-data"
+CONCURRENT_PROJECTS="$TEST_ROOT/concurrent-projects"
+mkdir -p "$CONCURRENT_HOME" "$CONCURRENT_DATA" "$CONCURRENT_PROJECTS"
+FRESH_BARRIER="$TEST_ROOT/bash-fresh-lock"
+COPILOT_EXTERNAL_EXTENSIONS_TEST_LOCK_ROOT_BARRIER="$FRESH_BARRIER" \
+  SYNC_TEST_CLONE_DELAY_SECONDS=1 run_sync_for \
+  "$CONCURRENT_HOME" "$CONCURRENT_DATA" "$CONCURRENT_PROJECTS" > "$TEST_ROOT/bash-1.log" 2>&1 &
+BASH_ONE=$!
+COPILOT_EXTERNAL_EXTENSIONS_TEST_LOCK_ROOT_BARRIER="$FRESH_BARRIER" \
+  SYNC_TEST_CLONE_DELAY_SECONDS=1 run_sync_for \
+  "$CONCURRENT_HOME" "$CONCURRENT_DATA" "$CONCURRENT_PROJECTS" > "$TEST_ROOT/bash-2.log" 2>&1 &
+BASH_TWO=$!
+for _ in {1..200}; do
+  READY_COUNT=$(find "$TEST_ROOT" -maxdepth 1 -type f -name 'bash-fresh-lock.*' ! -name '*.release' | wc -l | tr -d '[:space:]')
+  [[ "$READY_COUNT" == 2 ]] && break
+  sleep 0.05
+done
+[[ "$READY_COUNT" == 2 ]]
+: > "$FRESH_BARRIER.release"
+wait "$BASH_ONE"
+wait "$BASH_TWO"
+CONCURRENT_INSTALLED="$CONCURRENT_HOME/.copilot/extensions/sample"
+assert_installed_tree "$EXPECTED" "$CONCURRENT_INSTALLED"
+
+CONCURRENT_CLONE="$CONCURRENT_DATA/copilot-external-extensions/fixture/repo"
+printf 'dirty tracked checkout\n' > "$CONCURRENT_CLONE/extensions/sample/extension.mjs"
+printf 'dirty untracked checkout\n' > "$CONCURRENT_CLONE/extensions/sample/drift.txt"
+COPILOT_EXTERNAL_EXTENSIONS_TEST_HOLD_LOCK_SECONDS=0.5 run_sync_for \
+  "$CONCURRENT_HOME" "$CONCURRENT_DATA" "$CONCURRENT_PROJECTS" > "$TEST_ROOT/bash-dirty-1.log" 2>&1 &
+BASH_ONE=$!
+run_sync_for \
+  "$CONCURRENT_HOME" "$CONCURRENT_DATA" "$CONCURRENT_PROJECTS" > "$TEST_ROOT/bash-dirty-2.log" 2>&1 &
+BASH_TWO=$!
+wait "$BASH_ONE"
+wait "$BASH_TWO"
+assert_installed_tree "$EXPECTED" "$CONCURRENT_INSTALLED"
+[[ ! -e "$CONCURRENT_INSTALLED/drift.txt" ]]
+
+LOCK_ROOT="$CONCURRENT_DATA/copilot-external-extensions/.sync-lock"
+case "$(uname -s)" in
+  MINGW*|MSYS*|CYGWIN*) STALE_PLATFORM=windows ;;
+  *) STALE_PLATFORM=unix ;;
+esac
+STALE_TOKEN=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+STALE="$LOCK_ROOT/ticket-0000000001--$STALE_PLATFORM--2147483000--1--$STALE_TOKEN"
+mkdir -p "$STALE"
+printf 'version=1\nplatform=%s\npid=2147483000\nprocess_started=1\ntoken=%s\n' \
+  "$STALE_PLATFORM" "$STALE_TOKEN" > "$STALE/owner"
+STALE_BARRIER="$TEST_ROOT/bash-stale-lock"
+COPILOT_EXTERNAL_EXTENSIONS_TEST_LOCK_ROOT_BARRIER="$STALE_BARRIER" \
+  run_sync_for "$CONCURRENT_HOME" "$CONCURRENT_DATA" "$CONCURRENT_PROJECTS" > "$TEST_ROOT/bash-stale-1.log" 2>&1 &
+BASH_ONE=$!
+COPILOT_EXTERNAL_EXTENSIONS_TEST_LOCK_ROOT_BARRIER="$STALE_BARRIER" \
+  run_sync_for "$CONCURRENT_HOME" "$CONCURRENT_DATA" "$CONCURRENT_PROJECTS" > "$TEST_ROOT/bash-stale-2.log" 2>&1 &
+BASH_TWO=$!
+for _ in {1..200}; do
+  READY_COUNT=$(find "$TEST_ROOT" -maxdepth 1 -type f -name 'bash-stale-lock.*' ! -name '*.release' | wc -l | tr -d '[:space:]')
+  [[ "$READY_COUNT" == 2 ]] && break
+  sleep 0.05
+done
+[[ "$READY_COUNT" == 2 ]]
+: > "$STALE_BARRIER.release"
+wait "$BASH_ONE"
+wait "$BASH_TWO"
+[[ ! -e "$STALE" ]]
+
+PARTIAL_TOKEN=dddddddddddddddddddddddddddddddddddddddd
+PARTIAL="$LOCK_ROOT/choosing--$STALE_PLATFORM--2147483000--1--$PARTIAL_TOKEN"
+mkdir "$PARTIAL"
+printf 'version=1\n' > "$PARTIAL/owner"
+run_sync_for "$CONCURRENT_HOME" "$CONCURRENT_DATA" "$CONCURRENT_PROJECTS" >/dev/null
+[[ ! -e "$PARTIAL" ]]
+
+UNKNOWN_TOKEN=cccccccccccccccccccccccccccccccccccccccc
+UNKNOWN="$LOCK_ROOT/ticket-0000000001--$STALE_PLATFORM--2147483000--1--$UNKNOWN_TOKEN"
+mkdir "$UNKNOWN"
+printf 'version=1\nplatform=%s\npid=2147483000\nprocess_started=1\ntoken=%s\n' \
+  "$STALE_PLATFORM" "$UNKNOWN_TOKEN" > "$UNKNOWN/owner"
+if COPILOT_EXTERNAL_EXTENSIONS_TEST_OWNER_STATUS=unknown \
+  COPILOT_EXTERNAL_EXTENSIONS_LOCK_TIMEOUT_SECONDS=1 \
+  run_sync_for "$CONCURRENT_HOME" "$CONCURRENT_DATA" "$CONCURRENT_PROJECTS" \
+    > "$TEST_ROOT/bash-unknown.log" 2>&1; then
+  echo "unknown lock owner was incorrectly reclaimed" >&2
+  exit 1
+fi
+[[ -d "$UNKNOWN" ]]
+rm "$UNKNOWN/owner"
+rmdir "$UNKNOWN"
+
+COPILOT_EXTERNAL_EXTENSIONS_TEST_HOLD_LOCK_SECONDS=10 run_sync_for \
+  "$CONCURRENT_HOME" "$CONCURRENT_DATA" "$CONCURRENT_PROJECTS" > "$TEST_ROOT/bash-holder.log" 2>&1 &
+BASH_HOLDER=$!
+for _ in {1..100}; do
+  compgen -G "$LOCK_ROOT/ticket-*" >/dev/null && break
+  sleep 0.05
+done
+compgen -G "$LOCK_ROOT/ticket-*" >/dev/null
+if COPILOT_EXTERNAL_EXTENSIONS_LOCK_TIMEOUT_SECONDS=1 run_sync_for \
+  "$CONCURRENT_HOME" "$CONCURRENT_DATA" "$CONCURRENT_PROJECTS" > "$TEST_ROOT/bash-timeout.log" 2>&1; then
+  cat "$TEST_ROOT/bash-holder.log" >&2
+  cat "$TEST_ROOT/bash-timeout.log" >&2
+  echo "live lock contender unexpectedly succeeded" >&2
+  exit 1
+fi
+grep -q "external extension sync lock timed out" "$TEST_ROOT/bash-timeout.log"
+kill -0 "$BASH_HOLDER"
+wait "$BASH_HOLDER"
+assert_installed_tree "$EXPECTED" "$CONCURRENT_INSTALLED"
+if compgen -G "$LOCK_ROOT/choosing--*" >/dev/null ||
+  compgen -G "$LOCK_ROOT/ticket-*" >/dev/null; then
+  echo "external extension lock candidates remain" >&2
+  exit 1
+fi
+if find "$CONCURRENT_DATA/copilot-external-extensions/.materialized" \
+  \( -name '*.tmp.*' -o -name '*.backup' \) -print -quit | grep -q .; then
+  echo "external extension staging remnants remain" >&2
+  exit 1
+fi
 
 echo "Bash external extension cache tests passed"

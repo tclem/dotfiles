@@ -41,6 +41,137 @@ function Assert-InstalledTree([string]$Expected, [string]$Installed) {
     }
 }
 
+function ConvertTo-BashPath([string]$Path) {
+    if (-not $IsWindows) {
+        return $Path
+    }
+    $escaped = $Path.Replace("'", "'\''")
+    $converted = & bash -c "cygpath -u '$escaped'"
+    if ($LASTEXITCODE -ne 0) {
+        throw "Could not convert path for Bash: $Path"
+    }
+    return $converted.Trim()
+}
+
+function Start-SyncProcess(
+    [ValidateSet("bash", "powershell")]
+    [string]$Kind,
+    [string]$Name,
+    [string]$SharedCopilotHome,
+    [string]$SharedCacheRoot,
+    [string]$SharedProjectsRoot,
+    [double]$HoldSeconds = 0,
+    [int]$TimeoutSeconds = 30,
+    [double]$CloneDelaySeconds = 0,
+    [string]$LockRootBarrier = ""
+) {
+    $stdout = Join-Path $TestRoot "$Name.stdout"
+    $stderr = Join-Path $TestRoot "$Name.stderr"
+    if ($Kind -eq "powershell") {
+        $info = [Diagnostics.ProcessStartInfo]::new((Get-Process -Id $PID).Path)
+        foreach ($argument in @(
+            "-NoLogo", "-NoProfile", "-File",
+            (Join-Path $DotfilesRoot "script\sync-copilot.ps1"),
+            "install",
+            "-DotfilesRoot", $DotfilesRoot,
+            "-CopilotHome", $SharedCopilotHome,
+            "-ProjectsRoot", $SharedProjectsRoot,
+            "-ExternalCacheRoot", $SharedCacheRoot,
+            "-ExternalExtensionsFile", $Manifest
+        )) {
+            [void]$info.ArgumentList.Add($argument)
+        }
+        $info.Environment["PATH"] = "$FakeBin$([IO.Path]::PathSeparator)$previousPath"
+        $info.Environment["FIXTURE_REPOSITORY"] = $FixtureRepository
+    } else {
+        $info = [Diagnostics.ProcessStartInfo]::new((Get-Command bash).Source)
+        $bashRoot = ConvertTo-BashPath $DotfilesRoot
+        $bashHome = ConvertTo-BashPath $SharedCopilotHome
+        $bashData = ConvertTo-BashPath (Split-Path -Parent $SharedCacheRoot)
+        $bashProjects = ConvertTo-BashPath $SharedProjectsRoot
+        $bashManifest = ConvertTo-BashPath $Manifest
+        $bashFakeBin = ConvertTo-BashPath $FakeBin
+        $bashFixture = ConvertTo-BashPath $FixtureRepository
+        [void]$info.ArgumentList.Add("-c")
+        [void]$info.ArgumentList.Add(
+            "cd '$bashRoot' && PATH='$bashFakeBin':`"`$PATH`" " +
+            "HOME='$bashHome' XDG_DATA_HOME='$bashData' PROJECTS='$bashProjects' " +
+            "EXTERNAL_EXTENSIONS_FILE='$bashManifest' FIXTURE_REPOSITORY='$bashFixture' " +
+            "MSYS=winsymlinks:nativestrict bash script/sync-copilot install"
+        )
+    }
+
+    $info.UseShellExecute = $false
+    $info.RedirectStandardOutput = $true
+    $info.RedirectStandardError = $true
+    $info.Environment["COPILOT_EXTERNAL_EXTENSIONS_LOCK_TIMEOUT_SECONDS"] = $TimeoutSeconds.ToString()
+    $info.Environment["COPILOT_EXTERNAL_EXTENSIONS_TEST_HOLD_LOCK_SECONDS"] = $HoldSeconds.ToString(
+        [Globalization.CultureInfo]::InvariantCulture
+    )
+    $info.Environment["SYNC_TEST_CLONE_DELAY_SECONDS"] = $CloneDelaySeconds.ToString(
+        [Globalization.CultureInfo]::InvariantCulture
+    )
+    if ($LockRootBarrier) {
+        $info.Environment["COPILOT_EXTERNAL_EXTENSIONS_TEST_LOCK_ROOT_BARRIER"] = if ($Kind -eq "bash") {
+            ConvertTo-BashPath $LockRootBarrier
+        } else {
+            $LockRootBarrier
+        }
+    }
+    $process = [Diagnostics.Process]::new()
+    $process.StartInfo = $info
+    [void]$process.Start()
+    $stdoutTask = $process.StandardOutput.ReadToEndAsync()
+    $stderrTask = $process.StandardError.ReadToEndAsync()
+    return @{
+        Process = $process
+        Stdout = $stdoutTask
+        Stderr = $stderrTask
+    }
+}
+
+function Wait-SyncProcess([hashtable]$Started, [int]$TimeoutSeconds = 30) {
+    $process = $Started.Process
+    if (-not $process.WaitForExit($TimeoutSeconds * 1000)) {
+        Stop-Process -Id $process.Id
+        throw "Sync process timed out"
+    }
+    return @{
+        ExitCode = $process.ExitCode
+        Output = $Started.Stdout.GetAwaiter().GetResult()
+        Error = $Started.Stderr.GetAwaiter().GetResult()
+    }
+}
+
+function Release-LockBarrier([string]$Barrier, [int]$ExpectedProcesses) {
+    $parent = Split-Path -Parent $Barrier
+    $prefix = "$(Split-Path -Leaf $Barrier)."
+    for ($attempt = 0; $attempt -lt 200; $attempt++) {
+        $ready = @(
+            Get-ChildItem -LiteralPath $parent -File -Force |
+                Where-Object { $_.Name.StartsWith($prefix) -and $_.Name -ne "$($prefix)release" }
+        )
+        if ($ready.Count -eq $ExpectedProcesses) {
+            [IO.File]::WriteAllText("$Barrier.release", "release")
+            return
+        }
+        Start-Sleep -Milliseconds 50
+    }
+    throw "External extension lock barrier did not collect $ExpectedProcesses processes"
+}
+
+function Wait-ForLockTicket([string]$LockRoot) {
+    for ($attempt = 0; $attempt -lt 200; $attempt++) {
+        $ticket = Get-ChildItem -LiteralPath $LockRoot -Directory -Filter "ticket-*" -ErrorAction SilentlyContinue |
+            Select-Object -First 1
+        if ($null -ne $ticket) {
+            return $ticket
+        }
+        Start-Sleep -Milliseconds 50
+    }
+    throw "External extension lock ticket did not appear"
+}
+
 New-Item -ItemType Directory -Path (
     Join-Path $FixtureRepository "extensions\sample\lib"
 ), $FakeBin, $CopilotHome, $CacheRoot, $ProjectsRoot -Force | Out-Null
@@ -74,11 +205,26 @@ try {
     @'
 @echo off
 if "%1"=="repo" if "%2"=="clone" (
+  if not "%SYNC_TEST_CLONE_DELAY_SECONDS%"=="" pwsh -NoLogo -NoProfile -Command "Start-Sleep -Seconds $env:SYNC_TEST_CLONE_DELAY_SECONDS"
   git clone --quiet "%FIXTURE_REPOSITORY%" "%4"
   exit /b %ERRORLEVEL%
 )
 exit /b 1
 '@ | Set-Content -LiteralPath (Join-Path $FakeBin "gh.cmd") -Encoding ascii
+    @'
+#!/bin/bash
+if [[ "$1" == "repo" && "$2" == "clone" ]]; then
+  sleep "${SYNC_TEST_CLONE_DELAY_SECONDS:-0}"
+  git clone --quiet "$FIXTURE_REPOSITORY" "$4"
+  exit
+fi
+exit 1
+'@ | Set-Content -LiteralPath (Join-Path $FakeBin "gh") -Encoding utf8
+    if (-not $IsWindows) {
+        & chmod +x (Join-Path $FakeBin "gh")
+    } else {
+        & bash -c "chmod +x '$(ConvertTo-BashPath (Join-Path $FakeBin "gh"))'"
+    }
 
     Set-Content -LiteralPath $Manifest `
         -Value "fixture/repo@$commit  extensions/sample  sample" `
@@ -145,6 +291,320 @@ exit /b 1
             -ExternalCacheRoot $CacheRoot `
             -ExternalExtensionsFile $Manifest *> $null
         Assert-InstalledTree $expected $installed
+
+        Set-Content -LiteralPath $Manifest `
+            -Value "fixture/repo@$commit  extensions/sample  sample" `
+            -Encoding utf8
+        $env:COPILOT_EXTERNAL_EXTENSIONS_TEST_FAIL_AFTER_SWAP = "1"
+        try {
+            $failed = $false
+            try {
+                & (Join-Path $DotfilesRoot "script\sync-copilot.ps1") install `
+                    -DotfilesRoot $DotfilesRoot `
+                    -CopilotHome $CopilotHome `
+                    -ProjectsRoot $ProjectsRoot `
+                    -ExternalCacheRoot $CacheRoot `
+                    -ExternalExtensionsFile $Manifest *> $null
+            } catch {
+                $failed = $true
+            }
+            if (-not $failed) {
+                throw "Injected PowerShell swap failure unexpectedly succeeded"
+            }
+        } finally {
+            Remove-Item Env:\COPILOT_EXTERNAL_EXTENSIONS_TEST_FAIL_AFTER_SWAP -ErrorAction SilentlyContinue
+        }
+        Assert-InstalledTree $expected $installed
+        & (Join-Path $DotfilesRoot "script\sync-copilot.ps1") install `
+            -DotfilesRoot $DotfilesRoot `
+            -CopilotHome $CopilotHome `
+            -ProjectsRoot $ProjectsRoot `
+            -ExternalCacheRoot $CacheRoot `
+            -ExternalExtensionsFile $Manifest *> $null
+        Assert-InstalledTree $expected $installed
+
+        Set-Content -LiteralPath (
+            Join-Path $materialized "extension.mjs"
+        ) -Value "dirty materialized tree" -Encoding utf8
+        $env:COPILOT_EXTERNAL_EXTENSIONS_TEST_FAIL_BACKUP_CLEANUP = "1"
+        try {
+            $failed = $false
+            try {
+                & (Join-Path $DotfilesRoot "script\sync-copilot.ps1") install `
+                    -DotfilesRoot $DotfilesRoot `
+                    -CopilotHome $CopilotHome `
+                    -ProjectsRoot $ProjectsRoot `
+                    -ExternalCacheRoot $CacheRoot `
+                    -ExternalExtensionsFile $Manifest *> $null
+            } catch {
+                $failed = $true
+            }
+            if (-not $failed) {
+                throw "Injected PowerShell backup cleanup failure unexpectedly succeeded"
+            }
+        } finally {
+            Remove-Item Env:\COPILOT_EXTERNAL_EXTENSIONS_TEST_FAIL_BACKUP_CLEANUP -ErrorAction SilentlyContinue
+        }
+        Assert-InstalledTree $expected $installed
+        $backup = Join-Path (Split-Path -Parent $materialized) ".sample.backup"
+        if (-not (Test-Path -LiteralPath $backup -PathType Container)) {
+            throw "Committed replacement did not retain the cleanup backup"
+        }
+        & (Join-Path $DotfilesRoot "script\sync-copilot.ps1") install `
+            -DotfilesRoot $DotfilesRoot `
+            -CopilotHome $CopilotHome `
+            -ProjectsRoot $ProjectsRoot `
+            -ExternalCacheRoot $CacheRoot `
+            -ExternalExtensionsFile $Manifest *> $null
+        if (Test-Path -LiteralPath $backup) {
+            throw "Backup cleanup remnant survived the next sync"
+        }
+
+        $lockRoot = Join-Path $CacheRoot ".sync-lock"
+        foreach ($stage in @("after-choosing-owner", "after-ticket-directory", "after-ticket-owner")) {
+            $env:COPILOT_EXTERNAL_EXTENSIONS_TEST_FAIL_LOCK_STAGE = $stage
+            try {
+                $failed = $false
+                try {
+                    & (Join-Path $DotfilesRoot "script\sync-copilot.ps1") install `
+                        -DotfilesRoot $DotfilesRoot `
+                        -CopilotHome $CopilotHome `
+                        -ProjectsRoot $ProjectsRoot `
+                        -ExternalCacheRoot $CacheRoot `
+                        -ExternalExtensionsFile $Manifest *> $null
+                } catch {
+                    $failed = $true
+                }
+                if (-not $failed) {
+                    throw "Injected PowerShell lock acquisition failure unexpectedly succeeded: $stage"
+                }
+            } finally {
+                Remove-Item Env:\COPILOT_EXTERNAL_EXTENSIONS_TEST_FAIL_LOCK_STAGE -ErrorAction SilentlyContinue
+            }
+            if (@(Get-ChildItem -LiteralPath $lockRoot -Directory -Force).Count -ne 0) {
+                throw "PowerShell lock acquisition failure left a candidate: $stage"
+            }
+        }
+
+        $concurrentHome = Join-Path $TestRoot "concurrent-copilot"
+        $concurrentData = Join-Path $TestRoot "concurrent-data"
+        $concurrentCache = Join-Path $concurrentData "copilot-external-extensions"
+        $concurrentProjects = Join-Path $TestRoot "concurrent-projects"
+        $preseedCache = Join-Path $TestRoot "preseed-cache"
+        New-Item -ItemType Directory -Path (
+            $concurrentHome, $concurrentData, $concurrentProjects, $preseedCache
+        ) -Force | Out-Null
+        Set-Content -LiteralPath $Manifest -Value "" -Encoding utf8
+        & (Join-Path $DotfilesRoot "script\sync-copilot.ps1") install `
+            -DotfilesRoot $DotfilesRoot `
+            -CopilotHome $concurrentHome `
+            -ProjectsRoot $concurrentProjects `
+            -ExternalCacheRoot $preseedCache `
+            -ExternalExtensionsFile $Manifest *> $null
+        Set-Content -LiteralPath $Manifest `
+            -Value "fixture/repo@$commit  extensions/sample  sample" `
+            -Encoding utf8
+
+        $freshBarrier = Join-Path $TestRoot "powershell-fresh-lock"
+        $one = Start-SyncProcess powershell "powershell-fresh-1" `
+            $concurrentHome $concurrentCache $concurrentProjects 0 30 1 $freshBarrier
+        $two = Start-SyncProcess powershell "powershell-fresh-2" `
+            $concurrentHome $concurrentCache $concurrentProjects 0 30 1 $freshBarrier
+        Release-LockBarrier $freshBarrier 2
+        foreach ($result in @((Wait-SyncProcess $one), (Wait-SyncProcess $two))) {
+            if ($result.ExitCode -ne 0) {
+                throw "Concurrent PowerShell sync failed: $($result.Error)"
+            }
+        }
+        $concurrentInstalled = Join-Path $concurrentHome "extensions\sample"
+        Assert-InstalledTree $expected $concurrentInstalled
+
+        $concurrentClone = Join-Path $concurrentCache "fixture\repo"
+        Set-Content -LiteralPath (
+            Join-Path $concurrentClone "extensions\sample\extension.mjs"
+        ) -Value "dirty tracked checkout" -Encoding utf8
+        Set-Content -LiteralPath (
+            Join-Path $concurrentClone "extensions\sample\drift.txt"
+        ) -Value "dirty untracked checkout" -Encoding utf8
+        $one = Start-SyncProcess powershell "powershell-dirty-1" `
+            $concurrentHome $concurrentCache $concurrentProjects 2
+        [void](Wait-ForLockTicket (Join-Path $concurrentCache ".sync-lock"))
+        $two = Start-SyncProcess powershell "powershell-dirty-2" `
+            $concurrentHome $concurrentCache $concurrentProjects
+        foreach ($result in @((Wait-SyncProcess $one), (Wait-SyncProcess $two))) {
+            if ($result.ExitCode -ne 0) {
+                throw "Dirty concurrent PowerShell sync failed: $($result.Error)"
+            }
+        }
+        Assert-InstalledTree $expected $concurrentInstalled
+
+        Set-Content -LiteralPath (
+            Join-Path $concurrentClone "extensions\sample\extension.mjs"
+        ) -Value "dirty tracked checkout" -Encoding utf8
+        Set-Content -LiteralPath (
+            Join-Path $concurrentClone "extensions\sample\drift.txt"
+        ) -Value "dirty untracked checkout" -Encoding utf8
+        $bash = Start-SyncProcess bash "mixed-bash" `
+            $concurrentHome $concurrentCache $concurrentProjects 5
+        [void](Wait-ForLockTicket (Join-Path $concurrentCache ".sync-lock"))
+        $powershell = Start-SyncProcess powershell "mixed-powershell" `
+            $concurrentHome $concurrentCache $concurrentProjects
+        foreach ($result in @((Wait-SyncProcess $bash), (Wait-SyncProcess $powershell))) {
+            if ($result.ExitCode -ne 0) {
+                throw "Mixed concurrent sync failed: $($result.Error)"
+            }
+        }
+        Assert-InstalledTree $expected $concurrentInstalled
+        if (Test-Path -LiteralPath (Join-Path $concurrentInstalled "drift.txt")) {
+            throw "Mixed concurrent install contains checkout drift"
+        }
+
+        $mixedHome = Join-Path $TestRoot "mixed-fresh-copilot"
+        $mixedData = Join-Path $TestRoot "mixed-fresh-data"
+        $mixedCache = Join-Path $mixedData "copilot-external-extensions"
+        $mixedProjects = Join-Path $TestRoot "mixed-fresh-projects"
+        $mixedPreseedCache = Join-Path $TestRoot "mixed-preseed-cache"
+        New-Item -ItemType Directory -Path (
+            $mixedHome, $mixedData, $mixedProjects, $mixedPreseedCache
+        ) -Force | Out-Null
+        Set-Content -LiteralPath $Manifest -Value "" -Encoding utf8
+        & (Join-Path $DotfilesRoot "script\sync-copilot.ps1") install `
+            -DotfilesRoot $DotfilesRoot `
+            -CopilotHome $mixedHome `
+            -ProjectsRoot $mixedProjects `
+            -ExternalCacheRoot $mixedPreseedCache `
+            -ExternalExtensionsFile $Manifest *> $null
+        Set-Content -LiteralPath $Manifest `
+            -Value "fixture/repo@$commit  extensions/sample  sample" `
+            -Encoding utf8
+        $mixedFreshBarrier = Join-Path $TestRoot "mixed-fresh-lock"
+        $bash = Start-SyncProcess bash "mixed-fresh-bash" `
+            $mixedHome $mixedCache $mixedProjects 0 30 1 $mixedFreshBarrier
+        $powershell = Start-SyncProcess powershell "mixed-fresh-powershell" `
+            $mixedHome $mixedCache $mixedProjects 0 30 1 $mixedFreshBarrier
+        Release-LockBarrier $mixedFreshBarrier 2
+        foreach ($result in @((Wait-SyncProcess $bash), (Wait-SyncProcess $powershell))) {
+            if ($result.ExitCode -ne 0) {
+                throw "Fresh mixed concurrent sync failed: $($result.Error)"
+            }
+        }
+        Assert-InstalledTree $expected (Join-Path $mixedHome "extensions\sample")
+
+        $lockRoot = Join-Path $concurrentCache ".sync-lock"
+        $stalePlatform = if ($IsWindows) { "windows" } else { "unix" }
+        $staleToken = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        $stale = Join-Path $lockRoot (
+            "ticket-0000000001--$stalePlatform--2147483000--1--$staleToken"
+        )
+        New-Item -ItemType Directory -Path $stale | Out-Null
+        [IO.File]::WriteAllText(
+            (Join-Path $stale "owner"),
+            "version=1`nplatform=$stalePlatform`npid=2147483000`nprocess_started=1`ntoken=$staleToken`n",
+            [Text.UTF8Encoding]::new($false)
+        )
+        $staleBarrier = Join-Path $TestRoot "powershell-stale-lock"
+        $one = Start-SyncProcess powershell "powershell-stale-1" `
+            $concurrentHome $concurrentCache $concurrentProjects 0 30 0 $staleBarrier
+        $two = Start-SyncProcess powershell "powershell-stale-2" `
+            $concurrentHome $concurrentCache $concurrentProjects 0 30 0 $staleBarrier
+        Release-LockBarrier $staleBarrier 2
+        foreach ($result in @((Wait-SyncProcess $one), (Wait-SyncProcess $two))) {
+            if ($result.ExitCode -ne 0) {
+                throw "Concurrent stale-lock recovery failed: $($result.Error)"
+            }
+        }
+        if (Test-Path -LiteralPath $stale) {
+            throw "PowerShell did not remove a stale external extension lock"
+        }
+
+        $partialToken = "dddddddddddddddddddddddddddddddd"
+        $partial = Join-Path $lockRoot (
+            "choosing--$stalePlatform--2147483000--1--$partialToken"
+        )
+        New-Item -ItemType Directory -Path $partial | Out-Null
+        [IO.File]::WriteAllText(
+            (Join-Path $partial "owner"),
+            "version=1`n",
+            [Text.UTF8Encoding]::new($false)
+        )
+        & (Join-Path $DotfilesRoot "script\sync-copilot.ps1") install `
+            -DotfilesRoot $DotfilesRoot `
+            -CopilotHome $concurrentHome `
+            -ProjectsRoot $concurrentProjects `
+            -ExternalCacheRoot $concurrentCache `
+            -ExternalExtensionsFile $Manifest *> $null
+        if (Test-Path -LiteralPath $partial) {
+            throw "PowerShell did not remove a dead partial lock owner"
+        }
+
+        $unknownToken = "cccccccccccccccccccccccccccccccc"
+        $unknown = Join-Path $lockRoot (
+            "ticket-0000000001--$stalePlatform--2147483000--1--$unknownToken"
+        )
+        New-Item -ItemType Directory -Path $unknown | Out-Null
+        [IO.File]::WriteAllText(
+            (Join-Path $unknown "owner"),
+            "version=1`nplatform=$stalePlatform`npid=2147483000`nprocess_started=1`ntoken=$unknownToken`n",
+            [Text.UTF8Encoding]::new($false)
+        )
+        $previousOwnerStatus = $env:COPILOT_EXTERNAL_EXTENSIONS_TEST_OWNER_STATUS
+        $previousLockTimeout = $env:COPILOT_EXTERNAL_EXTENSIONS_LOCK_TIMEOUT_SECONDS
+        $env:COPILOT_EXTERNAL_EXTENSIONS_TEST_OWNER_STATUS = "unknown"
+        $env:COPILOT_EXTERNAL_EXTENSIONS_LOCK_TIMEOUT_SECONDS = "1"
+        try {
+            $timedOut = $false
+            try {
+                & (Join-Path $DotfilesRoot "script\sync-copilot.ps1") install `
+                    -DotfilesRoot $DotfilesRoot `
+                    -CopilotHome $concurrentHome `
+                    -ProjectsRoot $concurrentProjects `
+                    -ExternalCacheRoot $concurrentCache `
+                    -ExternalExtensionsFile $Manifest *> $null
+            } catch {
+                $timedOut = $_.Exception.Message -match "sync lock timed out"
+            }
+            if (-not $timedOut -or -not (Test-Path -LiteralPath $unknown)) {
+                throw "PowerShell reclaimed an owner whose liveness probe was unknown"
+            }
+        } finally {
+            $env:COPILOT_EXTERNAL_EXTENSIONS_TEST_OWNER_STATUS = $previousOwnerStatus
+            $env:COPILOT_EXTERNAL_EXTENSIONS_LOCK_TIMEOUT_SECONDS = $previousLockTimeout
+        }
+        Remove-Item -LiteralPath (Join-Path $unknown "owner")
+        Remove-Item -LiteralPath $unknown
+
+        $holder = Start-SyncProcess powershell "powershell-holder" `
+            $concurrentHome $concurrentCache $concurrentProjects 10
+        [void](Wait-ForLockTicket $lockRoot)
+        $contender = Start-SyncProcess bash "bash-timeout" `
+            $concurrentHome $concurrentCache $concurrentProjects 0 1
+        $contenderResult = Wait-SyncProcess $contender
+        if ($contenderResult.ExitCode -eq 0 -or
+            $contenderResult.Output + $contenderResult.Error -notmatch
+                'external extension sync lock timed out') {
+            throw "Bash contender did not time out on a live PowerShell lock"
+        }
+        if ($holder.Process.HasExited) {
+            throw "PowerShell lock holder exited before the contender timed out"
+        }
+        $holderResult = Wait-SyncProcess $holder
+        if ($holderResult.ExitCode -ne 0) {
+            throw "PowerShell lock holder failed: $($holderResult.Error)"
+        }
+        Assert-InstalledTree $expected $concurrentInstalled
+
+        $remainingLocks = @(Get-ChildItem -LiteralPath $lockRoot -Directory -Force)
+        if ($remainingLocks.Count -ne 0) {
+            throw "External extension lock candidates remain"
+        }
+        $materializedRoot = Join-Path $concurrentCache ".materialized"
+        $remnants = @(
+            Get-ChildItem -LiteralPath $materializedRoot -Recurse -Force |
+                Where-Object { $_.Name -like "*.tmp.*" -or $_.Name -like "*.backup" }
+        )
+        if ($remnants.Count -ne 0) {
+            throw "External extension staging remnants remain"
+        }
     } finally {
         $env:PATH = $previousPath
         $env:FIXTURE_REPOSITORY = $previousFixtureRepository
