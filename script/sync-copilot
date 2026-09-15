@@ -38,6 +38,7 @@ EXT_LOCK_TIMEOUT_SECONDS="${COPILOT_EXTERNAL_EXTENSIONS_LOCK_TIMEOUT_SECONDS:-30
 EXT_LOCK_TICKET=""
 EXT_LOCK_CHOOSING=""
 EXT_LOCK_TOKEN=""
+MAX_LINK_EXPANSIONS=40
 
 # Skills that live outside this repo — personal ones kept in a private repo
 # rather than published here. Each line of $EXTERNAL_SKILLS_FILE is a path to a
@@ -599,7 +600,7 @@ release_external_extensions_lock() {
 
 _resolve_materialized_path() {
   local root="$1" path="$2"
-  local resolved_root relative component candidate target state seen
+  local resolved_root relative component candidate target state seen expansions=0
   local -a pending=() resolved=() visited=() target_parts=()
 
   resolved_root=$(cd "$root" && pwd -P) || return 1
@@ -630,6 +631,8 @@ _resolve_materialized_path() {
     candidate+="/$component"
 
     if [[ -L "$candidate" ]]; then
+      (( expansions < MAX_LINK_EXPANSIONS )) || return 1
+      (( expansions += 1 ))
       state=$(printf '%q|' "$candidate" "${pending[@]}")
       for seen in "${visited[@]}"; do
         [[ "$seen" != "$state" ]] || return 1

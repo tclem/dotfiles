@@ -14,6 +14,7 @@ $FakeBin = Join-Path $TestRoot "bin"
 $CopilotHome = Join-Path $TestRoot "copilot"
 $CacheRoot = Join-Path $TestRoot "cache"
 $ProjectsRoot = Join-Path $TestRoot "projects"
+$MaxLinkExpansions = 40
 $PathComparison = if ($IsWindows) {
     [StringComparison]::OrdinalIgnoreCase
 } else {
@@ -260,6 +261,71 @@ function Assert-ResolverRevisit(
     }
 }
 
+function New-RelativeLink([string]$Path, [string]$Target) {
+    New-Item -ItemType SymbolicLink -Path $Path -Target $Target | Out-Null
+}
+
+function Assert-ResolverDepth {
+    $selfRoot = Join-Path $TestRoot "resolver-self-expanding"
+    New-Item -ItemType Directory -Path $selfRoot | Out-Null
+    New-RelativeLink (Join-Path $selfRoot "a") (Join-Path "a" "x")
+    try {
+        [void](Resolve-LinkPath (Join-Path $selfRoot "a"))
+        throw "Self-expanding link unexpectedly resolved"
+    } catch {
+        if ($_.Exception.Message -eq "Self-expanding link unexpectedly resolved") {
+            throw
+        }
+    }
+
+    $mutualRoot = Join-Path $TestRoot "resolver-mutual-expanding"
+    New-Item -ItemType Directory -Path $mutualRoot | Out-Null
+    New-RelativeLink (Join-Path $mutualRoot "a") (Join-Path "b" "x")
+    New-RelativeLink (Join-Path $mutualRoot "b") (Join-Path "a" "y")
+    try {
+        [void](Resolve-LinkPath (Join-Path $mutualRoot "a"))
+        throw "Mutual-expanding links unexpectedly resolved"
+    } catch {
+        if ($_.Exception.Message -eq "Mutual-expanding links unexpectedly resolved") {
+            throw
+        }
+    }
+
+    $belowRoot = Join-Path $TestRoot "resolver-below-limit"
+    New-Item -ItemType Directory -Path $belowRoot | Out-Null
+    for ($link = 0; $link -lt $MaxLinkExpansions - 1; $link++) {
+        New-RelativeLink `
+            (Join-Path $belowRoot "link-$link") `
+            "link-$($link + 1)"
+    }
+    $belowTarget = Join-Path $belowRoot "link-$($MaxLinkExpansions - 1)"
+    [IO.File]::WriteAllText($belowTarget, "below")
+    $resolved = Resolve-LinkPath (Join-Path $belowRoot "link-0")
+    if (-not $resolved.Equals((Get-NormalizedPath $belowTarget), $PathComparison)) {
+        throw "Below-limit link chain did not resolve"
+    }
+
+    $aboveRoot = Join-Path $TestRoot "resolver-above-limit"
+    New-Item -ItemType Directory -Path $aboveRoot | Out-Null
+    for ($link = 0; $link -le $MaxLinkExpansions; $link++) {
+        New-RelativeLink `
+            (Join-Path $aboveRoot "link-$link") `
+            "link-$($link + 1)"
+    }
+    [IO.File]::WriteAllText(
+        (Join-Path $aboveRoot "link-$($MaxLinkExpansions + 1)"),
+        "above"
+    )
+    try {
+        [void](Resolve-LinkPath (Join-Path $aboveRoot "link-0"))
+        throw "Above-limit link chain unexpectedly resolved"
+    } catch {
+        if ($_.Exception.Message -eq "Above-limit link chain unexpectedly resolved") {
+            throw
+        }
+    }
+}
+
 function New-ArchiveSafetyFixtureCommit([Collections.IDictionary]$Links) {
     Invoke-Git -C $FixtureRepository read-tree $commit
     foreach ($name in @(
@@ -321,6 +387,7 @@ New-Item -ItemType Directory -Path (
 ), $FakeBin, $CopilotHome, $CacheRoot, $ProjectsRoot -Force | Out-Null
 
 try {
+    Assert-ResolverDepth
     if ($IsWindows) {
         Assert-ResolverRevisit exact "..\a\y"
         Assert-ResolverRevisit multihop "..\hop" -MultiHop

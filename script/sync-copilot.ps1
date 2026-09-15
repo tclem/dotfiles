@@ -27,6 +27,7 @@ if (-not $ExternalCacheRoot) {
 }
 $ExternalMaterializedRoot = Join-Path $ExternalCacheRoot ".materialized"
 $ExternalLockRoot = Join-Path (Join-Path $CopilotHome ".locks") "external-extensions"
+$MaxLinkExpansions = 40
 $PathComparison = if ($IsWindows) {
     [StringComparison]::OrdinalIgnoreCase
 } else {
@@ -84,7 +85,7 @@ function Resolve-LinkPath([string]$Path) {
     $resolved = Get-NormalizedPath $Path
     $visitedStates = [Collections.Generic.HashSet[string]]::new($PathComparer)
 
-    for ($pass = 0; $pass -lt 40; $pass++) {
+    for ($pass = 0; $pass -lt $MaxLinkExpansions; $pass++) {
         if (-not $visitedStates.Add($resolved)) {
             throw "Link cycle detected while resolving: $Path"
         }
@@ -115,7 +116,7 @@ function Resolve-LinkPath([string]$Path) {
         $resolved = $next
     }
 
-    throw "Could not resolve link path after 40 passes: $Path"
+    throw "Could not resolve link path after $MaxLinkExpansions expansions: $Path"
 }
 
 function Remove-EmptyParents([string]$Path, [string]$StopAt) {
@@ -555,7 +556,17 @@ function Remove-ExternalLockCandidateIfStale(
         return
     }
 
-    [IO.File]::Delete($ownerFile)
+    try {
+        [IO.File]::Delete($ownerFile)
+    } catch [IO.FileNotFoundException] {
+        return
+    } catch [IO.DirectoryNotFoundException] {
+        return
+    } catch [IO.IOException] {
+        return
+    } catch [UnauthorizedAccessException] {
+        return
+    }
     try {
         [IO.Directory]::Delete($Candidate.FullName)
     } catch [IO.DirectoryNotFoundException] {
