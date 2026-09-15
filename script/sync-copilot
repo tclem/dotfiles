@@ -29,8 +29,16 @@ EXTENSIONS_DIR_NAME="extensions"
 # Each entry in $EXTERNAL_EXTENSIONS_FILE is `owner/repo[@ref] [subpath] [install-name]`.
 # Clones live in $EXT_CACHE_ROOT and are linked into ~/.copilot/extensions/<install-name>/
 # the same way as repo-local extensions.
-EXTERNAL_EXTENSIONS_FILE="$COPILOT_REPO/external-extensions"
+EXTERNAL_EXTENSIONS_FILE="${EXTERNAL_EXTENSIONS_FILE:-$COPILOT_REPO/external-extensions}"
 EXT_CACHE_ROOT="${XDG_DATA_HOME:-$HOME/.local/share}/copilot-external-extensions"
+EXT_MATERIALIZED_ROOT="$EXT_CACHE_ROOT/.materialized"
+EXT_LOCK_PARENT="$COPILOT_HOME/.locks"
+EXT_LOCK_ROOT="$EXT_LOCK_PARENT/external-extensions"
+EXT_LOCK_TIMEOUT_SECONDS="${COPILOT_EXTERNAL_EXTENSIONS_LOCK_TIMEOUT_SECONDS:-30}"
+EXT_LOCK_TICKET=""
+EXT_LOCK_CHOOSING=""
+EXT_LOCK_TOKEN=""
+MAX_LINK_EXPANSIONS=40
 
 # Skills that live outside this repo — personal ones kept in a private repo
 # rather than published here. Each line of $EXTERNAL_SKILLS_FILE is a path to a
@@ -235,7 +243,10 @@ _link_tree_into_extensions_dir() {
       .git|.github|.gitignore|.gitattributes|node_modules) continue ;;
     esac
     seen_entries+=("$base")
-    ln -sfn "$entry" "$dst/$base"
+    if [[ -L "$dst/$base" ]] || readlink "$dst/$base" >/dev/null 2>&1; then
+      rm "$dst/$base"
+    fi
+    ln -s "$entry" "$dst/$base"
   done
 
   for entry in "$dst"/* "$dst"/.[!.]*; do
@@ -312,15 +323,472 @@ install_extensions() {
   _prune_managed_extension_dirs "$dst_root" "$COPILOT_REPO/" "$keep_list" "extensions"
 }
 
-# Clone (or fast-forward pull) each external extension listed in
-# $EXTERNAL_EXTENSIONS_FILE into $EXT_CACHE_ROOT, then symlink its contents
-# into ~/.copilot/extensions/<install-name>/ using the same strategy as
-# install_extensions. Cache dirs for entries no longer in the manifest are
-# removed.
-install_external_extensions() {
+_resolve_external_commit() {
+  local clone_dir="$1" ref="$2"
+
+  if [[ -z "$ref" ]]; then
+    local default_branch
+    default_branch=$(git -C "$clone_dir" symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null | sed 's@^origin/@@')
+    [[ -z "$default_branch" ]] && default_branch=main
+    git -C "$clone_dir" rev-parse --verify "refs/remotes/origin/$default_branch^{commit}"
+    return
+  fi
+
+  if git -C "$clone_dir" show-ref --verify --quiet "refs/remotes/origin/$ref"; then
+    git -C "$clone_dir" rev-parse --verify "refs/remotes/origin/$ref^{commit}"
+  elif git -C "$clone_dir" rev-parse --verify "$ref^{commit}" >/dev/null 2>&1; then
+    git -C "$clone_dir" rev-parse --verify "$ref^{commit}"
+  else
+    git -C "$clone_dir" fetch --quiet origin "$ref" &&
+      git -C "$clone_dir" rev-parse --verify "FETCH_HEAD^{commit}"
+  fi
+}
+
+_ensure_cache_directory() {
+  local path="$1" root="$2"
+  if [[ -e "$path" || -L "$path" ]]; then
+    [[ -d "$path" ]] || return 1
+  else
+    mkdir "$path" 2>/dev/null || [[ -d "$path" ]] || return 1
+  fi
+
+  local resolved_path resolved_root
+  resolved_path=$(cd "$path" && pwd -P) || return 1
+  resolved_root=$(cd "$root" && pwd -P) || return 1
+  case "$resolved_path/" in
+    "$resolved_root/"*) ;;
+    *) return 1 ;;
+  esac
+}
+
+_external_lock_process_identity() {
+  local platform pid started
+  case "$(uname -s)" in
+    MINGW*|MSYS*|CYGWIN*)
+      platform=windows
+      pid=$(cat "/proc/$$/winpid" 2>/dev/null) || return 1
+      local pwsh
+      pwsh=$(command -v pwsh.exe 2>/dev/null || command -v powershell.exe 2>/dev/null) || return 1
+      started=$(
+        "$pwsh" -NoLogo -NoProfile -Command \
+          "\$p = Get-Process -Id $pid -ErrorAction SilentlyContinue; if (\$null -eq \$p) { exit 1 }; [Console]::Write(\$p.StartTime.ToUniversalTime().Ticks)"
+      ) || return 1
+      ;;
+    *)
+      platform=unix
+      pid=$$
+      started=$(LC_ALL=C ps -p "$pid" -o lstart= 2>/dev/null | tr -cd '[:alnum:]') || return 1
+      ;;
+  esac
+  [[ "$pid" =~ ^[0-9]+$ && -n "$started" ]] || return 1
+  printf '%s\n%s\n%s\n' "$platform" "$pid" "$started"
+}
+
+_external_lock_owner_is_live() {
+  local platform="$1" pid="$2" started="$3"
+  [[ "${COPILOT_EXTERNAL_EXTENSIONS_TEST_OWNER_STATUS:-}" != unknown ]] || return 2
+  if [[ "$platform" == windows ]]; then
+    local pwsh current
+    pwsh=$(command -v pwsh.exe 2>/dev/null || command -v powershell.exe 2>/dev/null) || return 2
+    current=$(
+      "$pwsh" -NoLogo -NoProfile -Command \
+        "\$p = Get-Process -Id $pid -ErrorAction SilentlyContinue; if (\$null -eq \$p) { exit 3 }; try { [Console]::Write(\$p.StartTime.ToUniversalTime().Ticks) } catch { exit 4 }"
+    )
+    local status=$?
+    if (( status == 0 )); then
+      [[ "$current" == "$started" ]]
+      return
+    fi
+    (( status == 3 )) && return 1
+    return 2
+  fi
+
+  [[ "$platform" == unix ]] || return 2
+  local current status
+  current=$(LC_ALL=C ps -p "$pid" -o lstart= 2>/dev/null | tr -cd '[:alnum:]')
+  status=$?
+  if (( status == 0 )) && [[ -n "$current" ]]; then
+    [[ "$current" == "$started" ]]
+    return
+  fi
+  if LC_ALL=C ps -p "$pid" >/dev/null 2>&1; then
+    return 2
+  else
+    status=$?
+  fi
+  (( status == 1 )) && return 1
+  return 2
+}
+
+_external_lock_candidate_identity() {
+  local name="$1"
+  if [[ "$name" =~ ^choosing--(windows|unix)--([0-9]+)--([A-Za-z0-9]+)--([0-9a-f]+)$ ]]; then
+    printf '%s\n%s\n%s\n%s\n' "${BASH_REMATCH[1]}" "${BASH_REMATCH[2]}" "${BASH_REMATCH[3]}" "${BASH_REMATCH[4]}"
+    return
+  fi
+  if [[ "$name" =~ ^ticket-[0-9]{10}--(windows|unix)--([0-9]+)--([A-Za-z0-9]+)--([0-9a-f]+)$ ]]; then
+    printf '%s\n%s\n%s\n%s\n' "${BASH_REMATCH[1]}" "${BASH_REMATCH[2]}" "${BASH_REMATCH[3]}" "${BASH_REMATCH[4]}"
+    return
+  fi
+  return 1
+}
+
+_remove_external_lock_candidate_if_stale() {
+  local candidate="$1"
+  local name identity=()
+  name=$(basename "$candidate")
+  while IFS= read -r value; do identity+=("$value"); done < <(_external_lock_candidate_identity "$name") || return 0
+  (( ${#identity[@]} == 4 )) || return 0
+  [[ "${identity[3]}" != "$EXT_LOCK_TOKEN" ]] || return 0
+  if _external_lock_owner_is_live "${identity[0]}" "${identity[1]}" "${identity[2]}"; then
+    return 0
+  else
+    local owner_status=$?
+    (( owner_status == 1 )) || return 0
+  fi
+
+  local owner_file="$candidate/owner"
+  if [[ -f "$owner_file" ]]; then
+    local entries
+    entries=$(find "$candidate" -mindepth 1 -maxdepth 1 -print | wc -l | tr -d '[:space:]')
+    [[ "$entries" == 1 ]] || return 0
+    rm "$owner_file" 2>/dev/null || return 0
+  else
+    rmdir "$candidate" 2>/dev/null && yellow "  removed stale external extension sync lock"
+    return 0
+  fi
+  rmdir "$candidate" 2>/dev/null && yellow "  removed stale external extension sync lock"
+}
+
+_write_external_lock_owner() {
+  local directory="$1" platform="$2" pid="$3" started="$4" token="$5"
+  printf 'version=1\nplatform=%s\npid=%s\nprocess_started=%s\ntoken=%s\n' \
+    "$platform" "$pid" "$started" "$token" > "$directory/owner"
+}
+
+acquire_external_extensions_lock() {
+  local LC_ALL=C
+  [[ "$EXT_LOCK_TIMEOUT_SECONDS" =~ ^[0-9]+$ ]] &&
+    (( EXT_LOCK_TIMEOUT_SECONDS >= 1 && EXT_LOCK_TIMEOUT_SECONDS <= 300 )) ||
+    { echo "COPILOT_EXTERNAL_EXTENSIONS_LOCK_TIMEOUT_SECONDS must be between 1 and 300" >&2; return 1; }
+
+  if [[ -n "${COPILOT_EXTERNAL_EXTENSIONS_TEST_LOCK_ROOT_BARRIER:-}" ]]; then
+    local barrier="${COPILOT_EXTERNAL_EXTENSIONS_TEST_LOCK_ROOT_BARRIER}"
+    local marker="$barrier.bash.$$.$RANDOM"
+    : > "$marker"
+    local barrier_deadline=$((SECONDS + 10))
+    while [[ ! -e "$barrier.release" ]]; do
+      if (( SECONDS >= barrier_deadline )); then
+        rm -f "$marker"
+        echo "external extension test lock barrier timed out" >&2
+        return 1
+      fi
+      sleep 0.05
+    done
+    rm -f "$marker"
+  fi
+
+  _ensure_cache_directory "$EXT_LOCK_PARENT" "$COPILOT_HOME" ||
+    { echo "external extension lock parent escapes Copilot home: $EXT_LOCK_PARENT" >&2; return 1; }
+  _ensure_cache_directory "$EXT_LOCK_ROOT" "$EXT_LOCK_PARENT" ||
+    { echo "external extension lock root escapes its parent: $EXT_LOCK_ROOT" >&2; return 1; }
+
+  local identity=()
+  while IFS= read -r value; do identity+=("$value"); done < <(_external_lock_process_identity) || return 1
+  (( ${#identity[@]} == 3 )) || return 1
+  local platform="${identity[0]}" pid="${identity[1]}" started="${identity[2]}"
+  EXT_LOCK_TOKEN=$(
+    printf '%s' "$platform:$pid:$started:$RANDOM:$RANDOM:$(date +%s)" |
+      git hash-object --stdin
+  )
+  local suffix="$platform--$pid--$started--$EXT_LOCK_TOKEN"
+  local choosing="$EXT_LOCK_ROOT/choosing--$suffix"
+  mkdir "$choosing" ||
+    { echo "could not create external extension sync lock candidate" >&2; return 1; }
+  EXT_LOCK_CHOOSING="$choosing"
+  if ! _write_external_lock_owner "$choosing" "$platform" "$pid" "$started" "$EXT_LOCK_TOKEN"; then
+    release_external_extensions_lock
+    return 1
+  fi
+  if [[ "${COPILOT_EXTERNAL_EXTENSIONS_TEST_FAIL_LOCK_STAGE:-}" == after-choosing-owner ]]; then
+    return 1
+  fi
+
+  local max_ticket=0 candidate name number
+  for candidate in "$EXT_LOCK_ROOT"/ticket-*; do
+    [[ -d "$candidate" ]] || continue
+    name=$(basename "$candidate")
+    if [[ "$name" =~ ^ticket-([0-9]{10})-- ]]; then
+      number=$((10#${BASH_REMATCH[1]}))
+      (( number > max_ticket )) && max_ticket=$number
+    fi
+  done
+  number=$((max_ticket + 1))
+  printf -v name 'ticket-%010d--%s' "$number" "$suffix"
+  EXT_LOCK_TICKET="$EXT_LOCK_ROOT/$name"
+  if ! mkdir "$EXT_LOCK_TICKET"; then
+    release_external_extensions_lock
+    echo "could not create external extension sync lock ticket" >&2
+    return 1
+  fi
+  if [[ "${COPILOT_EXTERNAL_EXTENSIONS_TEST_FAIL_LOCK_STAGE:-}" == after-ticket-directory ]]; then
+    return 1
+  fi
+  if ! _write_external_lock_owner "$EXT_LOCK_TICKET" "$platform" "$pid" "$started" "$EXT_LOCK_TOKEN"; then
+    release_external_extensions_lock
+    return 1
+  fi
+  if [[ "${COPILOT_EXTERNAL_EXTENSIONS_TEST_FAIL_LOCK_STAGE:-}" == after-ticket-owner ]]; then
+    return 1
+  fi
+  rm "$choosing/owner"
+  rmdir "$choosing"
+  EXT_LOCK_CHOOSING=""
+
+  local deadline=$((SECONDS + EXT_LOCK_TIMEOUT_SECONDS))
+  while true; do
+    for candidate in "$EXT_LOCK_ROOT"/choosing--* "$EXT_LOCK_ROOT"/ticket-*; do
+      [[ -d "$candidate" ]] || continue
+      _remove_external_lock_candidate_if_stale "$candidate"
+    done
+
+    local choosing_exists=0
+    for candidate in "$EXT_LOCK_ROOT"/choosing--*; do
+      [[ -d "$candidate" ]] || continue
+      choosing_exists=1
+      break
+    done
+    if (( !choosing_exists )); then
+      local winner=""
+      for candidate in "$EXT_LOCK_ROOT"/ticket-*; do
+        [[ -d "$candidate" ]] || continue
+        winner="$candidate"
+        break
+      done
+      if [[ "$winner" == "$EXT_LOCK_TICKET" ]]; then
+        return 0
+      fi
+    fi
+
+    if (( SECONDS >= deadline )); then
+      release_external_extensions_lock
+      yellow "  external extension sync lock timed out after ${EXT_LOCK_TIMEOUT_SECONDS}s"
+      return 1
+    fi
+    sleep 0.05
+  done
+}
+
+release_external_extensions_lock() {
+  local candidate owner_file
+  for candidate in "$EXT_LOCK_TICKET" "$EXT_LOCK_CHOOSING"; do
+    [[ -n "$candidate" && -d "$candidate" ]] || continue
+    [[ "$(basename "$candidate")" == *"--$EXT_LOCK_TOKEN" ]] || continue
+    owner_file="$candidate/owner"
+    if [[ -f "$owner_file" ]]; then
+      [[ "$(find "$candidate" -mindepth 1 -maxdepth 1 -print | wc -l | tr -d '[:space:]')" == 1 ]] || continue
+      rm "$owner_file"
+    else
+      [[ -z "$(find "$candidate" -mindepth 1 -maxdepth 1 -print -quit)" ]] || continue
+    fi
+    rmdir "$candidate"
+  done
+  EXT_LOCK_TICKET=""
+  EXT_LOCK_CHOOSING=""
+  EXT_LOCK_TOKEN=""
+}
+
+_resolve_materialized_path() {
+  local root="$1" path="$2"
+  local resolved_root relative component candidate target state seen expansions=0
+  local -a pending=() resolved=() visited=() target_parts=()
+
+  resolved_root=$(cd "$root" && pwd -P) || return 1
+  case "$path" in
+    "$resolved_root") relative="" ;;
+    "$resolved_root"/*) relative="${path#"$resolved_root"/}" ;;
+    *) return 1 ;;
+  esac
+  IFS='/' read -r -a pending <<< "$relative"
+
+  while (( ${#pending[@]} > 0 )); do
+    component="${pending[0]}"
+    pending=("${pending[@]:1}")
+    case "$component" in
+      ""|.) continue ;;
+      ..)
+        (( ${#resolved[@]} > 0 )) || return 1
+        unset 'resolved[${#resolved[@]}-1]'
+        resolved=("${resolved[@]}")
+        continue
+        ;;
+    esac
+
+    candidate="$resolved_root"
+    if (( ${#resolved[@]} > 0 )); then
+      candidate+="/$(IFS=/; printf '%s' "${resolved[*]}")"
+    fi
+    candidate+="/$component"
+
+    if [[ -L "$candidate" ]]; then
+      (( expansions < MAX_LINK_EXPANSIONS )) || return 1
+      (( expansions += 1 ))
+      state=$(printf '%q|' "$candidate" "${pending[@]}")
+      for seen in "${visited[@]}"; do
+        [[ "$seen" != "$state" ]] || return 1
+      done
+      visited+=("$state")
+      target=$(readlink "$candidate") || return 1
+      [[ "$target" != /* && "$target" != \\* && ! "$target" =~ ^[A-Za-z]: ]] ||
+        return 1
+      target="${target//\\//}"
+      IFS='/' read -r -a target_parts <<< "$target"
+      pending=("${target_parts[@]}" "${pending[@]}")
+      continue
+    fi
+
+    [[ -e "$candidate" ]] || return 1
+    if (( ${#pending[@]} > 0 )); then
+      [[ -d "$candidate" ]] || return 1
+    fi
+    resolved+=("$component")
+  done
+
+  if (( ${#resolved[@]} == 0 )); then
+    printf '%s\n' "$resolved_root"
+  else
+    printf '%s/%s\n' "$resolved_root" "$(IFS=/; printf '%s' "${resolved[*]}")"
+  fi
+}
+
+_validate_materialized_extension() {
+  local root="$1" resolved_root link target resolved
+  resolved_root=$(cd "$root" && pwd -P) || return 1
+
+  while IFS= read -r -d '' link; do
+    target=$(readlink "$link") || return 1
+    [[ "$target" != /* && "$target" != \\* && ! "$target" =~ ^[A-Za-z]: ]] ||
+      return 1
+    resolved=$(_resolve_materialized_path "$resolved_root" "$link") || return 1
+    case "$resolved/" in
+      "$resolved_root/"*) ;;
+      *) return 1 ;;
+    esac
+    [[ -e "$resolved" ]] || return 1
+  done < <(find "$resolved_root" -type l -print0)
+
+  resolved=$(_resolve_materialized_path "$resolved_root" "$resolved_root/extension.mjs") || return 1
+  case "$resolved/" in
+    "$resolved_root/"*) ;;
+    *) return 1 ;;
+  esac
+  [[ -f "$resolved" ]]
+}
+
+_materialize_external_extension() {
+  local clone_dir="$1" commit="$2" subpath="$3" owner="$4" repo="$5" install_name="$6"
+  local owner_root="$EXT_MATERIALIZED_ROOT/$owner"
+  local repository_root="$owner_root/$repo"
+  local target="$repository_root/$install_name"
+
+  _ensure_cache_directory "$EXT_MATERIALIZED_ROOT" "$EXT_CACHE_ROOT" ||
+    { echo "external extension materialized root escapes its cache: $EXT_MATERIALIZED_ROOT" >&2; return 1; }
+  _ensure_cache_directory "$owner_root" "$EXT_MATERIALIZED_ROOT" ||
+    { echo "external extension owner tree escapes its cache: $owner_root" >&2; return 1; }
+  _ensure_cache_directory "$repository_root" "$owner_root" ||
+    { echo "external extension repository tree escapes its cache: $repository_root" >&2; return 1; }
+
+  local temporary archive backup archive_tree
+  backup="$repository_root/.${install_name}.backup"
+  archive_tree="$commit"
+  [[ "$subpath" != "." ]] && archive_tree="$commit:$subpath"
+
+  if [[ ! -e "$target" && -e "$backup" ]]; then
+    mv "$backup" "$target" || return 2
+  elif [[ -e "$target" && -e "$backup" ]]; then
+    rm -rf "$backup" || return 2
+  fi
+
+  if [[ "$subpath" == "." ]]; then
+    git -C "$clone_dir" cat-file -e "$commit^{commit}" 2>/dev/null || return 1
+  elif [[ "$(git -C "$clone_dir" cat-file -t "$archive_tree" 2>/dev/null)" != tree ]]; then
+    return 1
+  fi
+  temporary=$(mktemp -d "$repository_root/.${install_name}.tmp.XXXXXX") || return 2
+  archive=$(mktemp "$repository_root/.${install_name}.archive.tar.XXXXXX") ||
+    { rm -rf "$temporary"; return 2; }
+
+  local materialize_status
+  (
+    set -e
+    installed_new_target=0
+    transaction_committed=0
+    restore_previous_tree() {
+      local status=$?
+      rm -rf "$temporary"
+      rm -f "$archive"
+      if (( !transaction_committed )); then
+        if (( installed_new_target )) && [[ -e "$target" ]]; then
+          rm -rf "$target"
+        fi
+        if [[ -e "$backup" ]]; then
+          mv "$backup" "$target"
+        fi
+      fi
+      trap - EXIT
+      exit "$status"
+    }
+    trap restore_previous_tree EXIT
+    trap 'exit 130' HUP INT TERM
+
+    if ! git -c core.autocrlf=false -c core.eol=lf -C "$clone_dir" \
+      archive --format=tar --output="$archive" "$archive_tree" 2>/dev/null; then
+      exit 2
+    fi
+    if ! tar -xf "$archive" -C "$temporary"; then
+      exit 2
+    fi
+    if ! _validate_materialized_extension "$temporary"; then
+      exit 1
+    fi
+
+    if [[ -e "$target" ]]; then
+      mv "$target" "$backup" || exit 2
+    fi
+    mv "$temporary" "$target" || exit 2
+    installed_new_target=1
+    if [[ "${COPILOT_EXTERNAL_EXTENSIONS_TEST_FAIL_AFTER_SWAP:-}" == 1 ]]; then
+      exit 2
+    fi
+    [[ -f "$target/extension.mjs" ]] || exit 2
+    [[ ! -e "$target/$(basename "$temporary")" ]] || exit 2
+    transaction_committed=1
+    if [[ "${COPILOT_EXTERNAL_EXTENSIONS_TEST_FAIL_BACKUP_CLEANUP:-}" == 1 ]]; then
+      exit 2
+    fi
+    rm -rf "$backup" || exit 2
+    rm -f "$archive" || exit 2
+    trap - EXIT HUP INT TERM
+  ) || { materialize_status=$?; return "$materialize_status"; }
+
+  printf '%s\n' "$target"
+}
+
+# Clone or fetch each external repository, materialize the selected commit
+# through git archive, then link that immutable tree into Copilot. The clone's
+# mutable working tree is never an installation source.
+install_external_extensions() (
   [[ -f "$EXTERNAL_EXTENSIONS_FILE" ]] || return 0
+  mkdir -p "$EXT_CACHE_ROOT"
+  trap release_external_extensions_lock EXIT
+  trap 'exit 130' HUP INT TERM
+  acquire_external_extensions_lock || return 1
+  if [[ -n "${COPILOT_EXTERNAL_EXTENSIONS_TEST_HOLD_LOCK_SECONDS:-}" ]]; then
+    sleep "$COPILOT_EXTERNAL_EXTENSIONS_TEST_HOLD_LOCK_SECONDS"
+  fi
+
   local dst_root="$COPILOT_HOME/$EXTENSIONS_DIR_NAME"
-  mkdir -p "$dst_root" "$EXT_CACHE_ROOT"
+  mkdir -p "$dst_root"
 
   local kept_installs=()
   local kept_clones=()
@@ -344,17 +812,34 @@ install_external_extensions() {
       ref="${spec##*@}"
       spec="${spec%@*}"
     fi
-    if [[ "$spec" != */* ]]; then
+    if [[ ! "$spec" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]]; then
       yellow "  skip external entry (expected owner/repo): $line"
       continue
     fi
     local owner="${spec%%/*}"
     local repo="${spec##*/}"
     [[ -z "$install_name" ]] && install_name="$repo"
+    if [[ ! "$install_name" =~ ^[A-Za-z0-9_.-]+$ || "$install_name" == "." || "$install_name" == ".." ]]; then
+      yellow "  skip external entry (invalid install name): $line"
+      continue
+    fi
+    if [[ "$subpath" == /* || "$subpath" == *\\* || "$subpath" == ".." || "$subpath" == ../* || "$subpath" == */../* || "$subpath" == */.. ]]; then
+      yellow "  skip external entry (invalid subpath): $line"
+      continue
+    fi
 
-    local clone_dir="$EXT_CACHE_ROOT/$owner/$repo"
+    kept_installs+=("$install_name")
+    kept_clones+=("$owner/$repo")
+
+    local owner_dir="$EXT_CACHE_ROOT/$owner"
+    local clone_dir="$owner_dir/$repo"
+    _ensure_cache_directory "$owner_dir" "$EXT_CACHE_ROOT" ||
+      { echo "external extension owner cache escapes its root: $owner_dir" >&2; return 1; }
+    if [[ -e "$clone_dir" || -L "$clone_dir" ]]; then
+      _ensure_cache_directory "$clone_dir" "$owner_dir" ||
+        { echo "external extension clone path escapes its cache: $clone_dir" >&2; return 1; }
+    fi
     if [[ ! -d "$clone_dir/.git" ]]; then
-      mkdir -p "$(dirname "$clone_dir")"
       if ! gh repo clone "$owner/$repo" "$clone_dir" -- --quiet; then
         yellow "  skip $owner/$repo (clone failed)"
         continue
@@ -363,30 +848,25 @@ install_external_extensions() {
       git -C "$clone_dir" fetch --quiet origin || yellow "  warn: $owner/$repo fetch failed"
     fi
 
-    if [[ -n "$ref" ]]; then
-      git -C "$clone_dir" checkout --quiet "$ref" || { yellow "  skip $owner/$repo@$ref (checkout failed)"; continue; }
-      # Fast-forward only if we're on a branch.
-      if git -C "$clone_dir" symbolic-ref -q HEAD >/dev/null; then
-        git -C "$clone_dir" merge --quiet --ff-only "origin/$ref" 2>/dev/null || true
-      fi
-    else
-      local default_branch
-      default_branch=$(git -C "$clone_dir" symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null | sed 's@^origin/@@')
-      [[ -z "$default_branch" ]] && default_branch=main
-      git -C "$clone_dir" checkout --quiet "$default_branch" 2>/dev/null || true
-      git -C "$clone_dir" merge --quiet --ff-only "origin/$default_branch" 2>/dev/null || true
-    fi
-
-    local src="$clone_dir/$subpath"
-    src="${src%/}"
-    if [[ ! -f "$src/extension.mjs" ]]; then
-      yellow "  skip $owner/$repo (no extension.mjs at ${subpath})"
+    local commit
+    if ! commit=$(_resolve_external_commit "$clone_dir" "$ref"); then
+      yellow "  skip $owner/$repo${ref:+@$ref} (commit not found)"
       continue
     fi
 
-    kept_installs+=("$install_name")
-    kept_clones+=("$owner/$repo")
-    _link_tree_into_extensions_dir "$src" "$dst_root/$install_name" "$clone_dir/" "extensions/$install_name (external: $owner/$repo)"
+    local src materialize_status
+    if src=$(_materialize_external_extension "$clone_dir" "$commit" "$subpath" "$owner" "$repo" "$install_name"); then
+      :
+    else
+      materialize_status=$?
+      if (( materialize_status == 1 )); then
+        yellow "  skip $owner/$repo (invalid extension at ${subpath})"
+        continue
+      fi
+      return "$materialize_status"
+    fi
+
+    _link_tree_into_extensions_dir "$src" "$dst_root/$install_name" "$EXT_MATERIALIZED_ROOT/" "extensions/$install_name (external: $owner/$repo@$commit)"
   done < "$EXTERNAL_EXTENSIONS_FILE"
 
   # Prune installs whose links point into $EXT_CACHE_ROOT but are no longer listed.
@@ -402,11 +882,11 @@ install_external_extensions() {
     clone_keep_list=$(printf '%s\n' "${kept_clones[@]}")
   fi
   for owner_dir in "$EXT_CACHE_ROOT"/*; do
-    [[ -d "$owner_dir" ]] || continue
+    [[ -d "$owner_dir" && ! -L "$owner_dir" ]] || continue
     local owner
     owner=$(basename "$owner_dir")
     for repo_dir in "$owner_dir"/*; do
-      [[ -d "$repo_dir" ]] || continue
+      [[ -d "$repo_dir" && ! -L "$repo_dir" ]] || continue
       local repo
       repo=$(basename "$repo_dir")
       grep -qxF "$owner/$repo" <<< "$clone_keep_list" && continue
@@ -415,7 +895,7 @@ install_external_extensions() {
     done
     rmdir "$owner_dir" 2>/dev/null || true
   done
-}
+)
 
 cmd_import() {
   echo "Importing copilot config: $COPILOT_HOME → $COPILOT_REPO"
