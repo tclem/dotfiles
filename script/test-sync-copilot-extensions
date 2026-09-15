@@ -32,7 +32,7 @@ COMMIT=$(git -C "$FIXTURE_REPOSITORY" rev-parse HEAD)
 create_archive_safety_commit() {
   git -C "$FIXTURE_REPOSITORY" read-tree "$COMMIT"
   local name path target blob
-  for name in absolute dotdot multihop dangling cycle directory; do
+  for name in absolute dotdot multihop dangling cycle self-nested self-directory directory; do
     blob=$(printf 'export const fixture = "%s";\n' "$name" |
       git -C "$FIXTURE_REPOSITORY" hash-object -w --stdin)
     git -C "$FIXTURE_REPOSITORY" update-index \
@@ -69,6 +69,9 @@ ARCHIVE_SAFETY_COMMIT=$(create_archive_safety_commit \
   extensions/dangling/dangling.txt missing.txt \
   extensions/cycle/cycle-a cycle-b \
   extensions/cycle/cycle-b cycle-a \
+  extensions/self-entrypoint/extension.mjs extension.mjs \
+  extensions/self-nested/nested.mjs nested.mjs \
+  extensions/self-directory/assets assets \
   extensions/entrypoint/extension.mjs ../outside.mjs \
   extensions/directory/assets ../outside-dir \
   extensions/valid/module.mjs lib/module.mjs)
@@ -146,7 +149,7 @@ MATERIALIZED="$DATA_ROOT/copilot-external-extensions/.materialized/fixture/repo/
 {
   printf 'fixture/repo@%s  extensions/sample  sample\n' "$COMMIT"
   printf 'fixture/repo@%s  extensions/valid  valid-links\n' "$ARCHIVE_SAFETY_COMMIT"
-  for name in absolute dotdot multihop dangling cycle entrypoint directory; do
+  for name in absolute dotdot multihop dangling cycle self-entrypoint self-nested self-directory entrypoint directory; do
     printf 'fixture/repo@%s  extensions/%s  rejected-%s\n' \
       "$ARCHIVE_SAFETY_COMMIT" "$name" "$name"
   done
@@ -161,7 +164,7 @@ git -C "$FIXTURE_REPOSITORY" archive --format=tar --output="$VALID_ARCHIVE" \
   "$ARCHIVE_SAFETY_COMMIT:extensions/valid"
 tar -xf "$VALID_ARCHIVE" -C "$VALID_EXPECTED"
 assert_installed_tree "$VALID_EXPECTED" "$HOME_ROOT/.copilot/extensions/valid-links"
-for name in absolute dotdot multihop dangling cycle entrypoint directory; do
+for name in absolute dotdot multihop dangling cycle self-entrypoint self-nested self-directory entrypoint directory; do
   [[ ! -e "$HOME_ROOT/.copilot/extensions/rejected-$name" ]]
   grep -q "extensions/$name" "$TEST_ROOT/rejected-links.log"
 done

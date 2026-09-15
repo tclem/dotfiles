@@ -210,7 +210,16 @@ function Wait-ForLockTicket([string]$LockRoot) {
 
 function New-ArchiveSafetyFixtureCommit([Collections.IDictionary]$Links) {
     Invoke-Git -C $FixtureRepository read-tree $commit
-    foreach ($name in @("absolute", "dotdot", "multihop", "dangling", "cycle", "directory")) {
+    foreach ($name in @(
+        "absolute",
+        "dotdot",
+        "multihop",
+        "dangling",
+        "cycle",
+        "self-nested",
+        "self-directory",
+        "directory"
+    )) {
         $contentFile = Join-Path $TestRoot "extension-$name.mjs"
         [IO.File]::WriteAllText($contentFile, "export const fixture = `"$name`";`n")
         $blob = (& git -C $FixtureRepository hash-object -w $contentFile).Trim()
@@ -292,6 +301,9 @@ try {
         "extensions/dangling/dangling.txt" = "missing.txt"
         "extensions/cycle/cycle-a" = "cycle-b"
         "extensions/cycle/cycle-b" = "cycle-a"
+        "extensions/self-entrypoint/extension.mjs" = "extension.mjs"
+        "extensions/self-nested/nested.mjs" = "nested.mjs"
+        "extensions/self-directory/assets" = "assets"
         "extensions/entrypoint/extension.mjs" = "../outside.mjs"
         "extensions/directory/assets" = "../outside-dir"
         "extensions/valid/module.mjs" = "lib/module.mjs"
@@ -326,7 +338,7 @@ exit 1
         -Encoding utf8
     $previousPath = $env:PATH
     $previousFixtureRepository = $env:FIXTURE_REPOSITORY
-    $env:PATH = "$FakeBin;$previousPath"
+    $env:PATH = "$FakeBin$([IO.Path]::PathSeparator)$previousPath"
     $env:FIXTURE_REPOSITORY = $FixtureRepository
     try {
         & (Join-Path $DotfilesRoot "script\sync-copilot.ps1") install `
@@ -373,7 +385,18 @@ exit 1
         if ($materializedLink.LinkType -ne "SymbolicLink") {
             throw "Materialized extension did not preserve the archived symlink"
         }
-        $rejectedEntries = @("absolute", "dotdot", "multihop", "dangling", "cycle", "entrypoint", "directory")
+        $rejectedEntries = @(
+            "absolute",
+            "dotdot",
+            "multihop",
+            "dangling",
+            "cycle",
+            "self-entrypoint",
+            "self-nested",
+            "self-directory",
+            "entrypoint",
+            "directory"
+        )
         $manifestLines = [Collections.Generic.List[string]]::new()
         $manifestLines.Add("fixture/repo@$commit  extensions/sample  sample")
         $manifestLines.Add("fixture/repo@$archiveSafetyCommit  extensions/valid  valid-links")
