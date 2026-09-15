@@ -599,7 +599,7 @@ release_external_extensions_lock() {
 
 _resolve_materialized_path() {
   local root="$1" path="$2"
-  local resolved_root relative component candidate target seen
+  local resolved_root relative component candidate target state seen
   local -a pending=() resolved=() visited=() target_parts=()
 
   resolved_root=$(cd "$root" && pwd -P) || return 1
@@ -630,10 +630,11 @@ _resolve_materialized_path() {
     candidate+="/$component"
 
     if [[ -L "$candidate" ]]; then
+      state=$(printf '%q|' "$candidate" "${pending[@]}")
       for seen in "${visited[@]}"; do
-        [[ "$seen" != "$candidate" ]] || return 1
+        [[ "$seen" != "$state" ]] || return 1
       done
-      visited+=("$candidate")
+      visited+=("$state")
       target=$(readlink "$candidate") || return 1
       [[ "$target" != /* && "$target" != \\* && ! "$target" =~ ^[A-Za-z]: ]] ||
         return 1

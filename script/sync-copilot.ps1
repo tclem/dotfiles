@@ -82,9 +82,12 @@ function Get-LinkTarget([string]$Path) {
 
 function Resolve-LinkPath([string]$Path) {
     $resolved = Get-NormalizedPath $Path
-    $visitedLinks = [Collections.Generic.HashSet[string]]::new($PathComparer)
+    $visitedStates = [Collections.Generic.HashSet[string]]::new($PathComparer)
 
     for ($pass = 0; $pass -lt 40; $pass++) {
+        if (-not $visitedStates.Add($resolved)) {
+            throw "Link cycle detected while resolving: $Path"
+        }
         $root = [IO.Path]::GetPathRoot($resolved)
         $current = $root
         $changed = $false
@@ -95,10 +98,6 @@ function Resolve-LinkPath([string]$Path) {
             $candidate = Join-Path $current $part
             $target = Get-LinkTarget $candidate
             if ($null -ne $target) {
-                $linkPath = Get-NormalizedPath $candidate
-                if (-not $visitedLinks.Add($linkPath)) {
-                    throw "Link cycle detected while resolving: $Path"
-                }
                 $current = $target
                 $changed = $true
             } else {
@@ -110,7 +109,7 @@ function Resolve-LinkPath([string]$Path) {
         if (-not $changed) {
             return $next
         }
-        if ($next.Equals($resolved, $PathComparison)) {
+        if ($visitedStates.Contains($next)) {
             throw "Link cycle detected while resolving: $Path"
         }
         $resolved = $next

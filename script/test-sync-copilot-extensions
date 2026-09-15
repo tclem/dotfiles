@@ -14,6 +14,29 @@ DATA_ROOT="$TEST_ROOT/data"
 PROJECTS_ROOT="$TEST_ROOT/projects"
 mkdir -p "$FIXTURE_REPOSITORY/extensions/sample/lib" "$FAKE_BIN" "$HOME_ROOT" "$DATA_ROOT" "$PROJECTS_ROOT"
 
+case "$(uname -s)" in
+  MINGW*|MSYS*|CYGWIN*) ;;
+  *)
+    source <(sed -n '/^_resolve_materialized_path()/,/^}$/p' \
+      "$DOTFILES_ROOT/script/sync-copilot")
+
+    RESOLVER_ROOT="$TEST_ROOT/resolver"
+    mkdir -p "$RESOLVER_ROOT/exact/b" "$RESOLVER_ROOT/multihop/b"
+    printf 'exact\n' > "$RESOLVER_ROOT/exact/b/y"
+    ln -s b "$RESOLVER_ROOT/exact/a"
+    ln -s ../a/y "$RESOLVER_ROOT/exact/b/x"
+    [[ "$(_resolve_materialized_path "$RESOLVER_ROOT/exact" "$RESOLVER_ROOT/exact/a/x")" == \
+      "$(cd "$RESOLVER_ROOT/exact" && pwd -P)/b/y" ]]
+
+    printf 'multihop\n' > "$RESOLVER_ROOT/multihop/b/y"
+    ln -s b "$RESOLVER_ROOT/multihop/a"
+    ln -s a/y "$RESOLVER_ROOT/multihop/hop"
+    ln -s ../hop "$RESOLVER_ROOT/multihop/b/x"
+    [[ "$(_resolve_materialized_path "$RESOLVER_ROOT/multihop" "$RESOLVER_ROOT/multihop/a/x")" == \
+      "$(cd "$RESOLVER_ROOT/multihop" && pwd -P)/b/y" ]]
+    ;;
+esac
+
 cat > "$FIXTURE_REPOSITORY/extensions/sample/extension.mjs" <<'EOF'
 export const fixture = "pinned";
 EOF

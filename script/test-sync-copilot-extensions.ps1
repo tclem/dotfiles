@@ -14,6 +14,24 @@ $FakeBin = Join-Path $TestRoot "bin"
 $CopilotHome = Join-Path $TestRoot "copilot"
 $CacheRoot = Join-Path $TestRoot "cache"
 $ProjectsRoot = Join-Path $TestRoot "projects"
+$PathComparison = if ($IsWindows) {
+    [StringComparison]::OrdinalIgnoreCase
+} else {
+    [StringComparison]::Ordinal
+}
+$PathComparer = if ($IsWindows) {
+    [StringComparer]::OrdinalIgnoreCase
+} else {
+    [StringComparer]::Ordinal
+}
+
+$syncSource = Get-Content -LiteralPath (Join-Path $DotfilesRoot "script\sync-copilot.ps1") -Raw
+$resolverStart = $syncSource.IndexOf("function Get-NormalizedPath", [StringComparison]::Ordinal)
+$resolverEnd = $syncSource.IndexOf("function Remove-EmptyParents", [StringComparison]::Ordinal)
+if ($resolverStart -lt 0 -or $resolverEnd -le $resolverStart) {
+    throw "Could not load the path resolver under test"
+}
+Invoke-Expression $syncSource.Substring($resolverStart, $resolverEnd - $resolverStart)
 
 function Invoke-Git {
     & git @args
@@ -208,6 +226,40 @@ function Wait-ForLockTicket([string]$LockRoot) {
     throw "External extension lock ticket did not appear"
 }
 
+function Assert-ResolverRevisit(
+    [string]$Name,
+    [string]$SecondTarget,
+    [switch]$MultiHop,
+    [switch]$ExpectFailure
+) {
+    $root = Join-Path $TestRoot "resolver-$Name"
+    $target = Join-Path $root "b"
+    New-Item -ItemType Directory -Path $target -Force | Out-Null
+    [IO.File]::WriteAllText((Join-Path $target "y"), "resolved")
+    New-Item -ItemType SymbolicLink -Path (Join-Path $root "a") -Target "b" | Out-Null
+    if ($MultiHop) {
+        New-Item -ItemType SymbolicLink -Path (Join-Path $root "hop") -Target "a/y" | Out-Null
+    }
+    New-Item -ItemType SymbolicLink -Path (Join-Path $target "x") -Target $SecondTarget | Out-Null
+
+    $failed = $false
+    try {
+        $resolved = Resolve-LinkPath (Join-Path $root "a/x")
+        $expected = Get-NormalizedPath (Join-Path $target "y")
+        if (-not $resolved.Equals($expected, $PathComparison)) {
+            throw "Resolver revisit produced $resolved instead of $expected"
+        }
+    } catch {
+        $failed = $true
+        if (-not $ExpectFailure) {
+            throw
+        }
+    }
+    if ($ExpectFailure -and -not $failed) {
+        throw "Case-variant revisit unexpectedly resolved on a case-sensitive platform"
+    }
+}
+
 function New-ArchiveSafetyFixtureCommit([Collections.IDictionary]$Links) {
     Invoke-Git -C $FixtureRepository read-tree $commit
     foreach ($name in @(
@@ -269,6 +321,16 @@ New-Item -ItemType Directory -Path (
 ), $FakeBin, $CopilotHome, $CacheRoot, $ProjectsRoot -Force | Out-Null
 
 try {
+    if ($IsWindows) {
+        Assert-ResolverRevisit exact "..\a\y"
+        Assert-ResolverRevisit multihop "..\hop" -MultiHop
+        Assert-ResolverRevisit case-variant "..\A\y"
+    } else {
+        Assert-ResolverRevisit exact "../a/y"
+        Assert-ResolverRevisit multihop "../hop" -MultiHop
+        Assert-ResolverRevisit case-variant "../A/y" -ExpectFailure
+    }
+
     Set-Content -LiteralPath (
         Join-Path $FixtureRepository "extensions\sample\extension.mjs"
     ) -Value 'export const fixture = "pinned";' -Encoding utf8
