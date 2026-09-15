@@ -32,7 +32,8 @@ EXTENSIONS_DIR_NAME="extensions"
 EXTERNAL_EXTENSIONS_FILE="${EXTERNAL_EXTENSIONS_FILE:-$COPILOT_REPO/external-extensions}"
 EXT_CACHE_ROOT="${XDG_DATA_HOME:-$HOME/.local/share}/copilot-external-extensions"
 EXT_MATERIALIZED_ROOT="$EXT_CACHE_ROOT/.materialized"
-EXT_LOCK_ROOT="$EXT_CACHE_ROOT/.sync-lock"
+EXT_LOCK_PARENT="$COPILOT_HOME/.locks"
+EXT_LOCK_ROOT="$EXT_LOCK_PARENT/external-extensions"
 EXT_LOCK_TIMEOUT_SECONDS="${COPILOT_EXTERNAL_EXTENSIONS_LOCK_TIMEOUT_SECONDS:-30}"
 EXT_LOCK_TICKET=""
 EXT_LOCK_CHOOSING=""
@@ -485,8 +486,10 @@ acquire_external_extensions_lock() {
     rm -f "$marker"
   fi
 
-  _ensure_cache_directory "$EXT_LOCK_ROOT" "$EXT_CACHE_ROOT" ||
-    { echo "external extension lock root escapes its cache: $EXT_LOCK_ROOT" >&2; return 1; }
+  _ensure_cache_directory "$EXT_LOCK_PARENT" "$COPILOT_HOME" ||
+    { echo "external extension lock parent escapes Copilot home: $EXT_LOCK_PARENT" >&2; return 1; }
+  _ensure_cache_directory "$EXT_LOCK_ROOT" "$EXT_LOCK_PARENT" ||
+    { echo "external extension lock root escapes its parent: $EXT_LOCK_ROOT" >&2; return 1; }
 
   local identity=()
   while IFS= read -r value; do identity+=("$value"); done < <(_external_lock_process_identity) || return 1
@@ -593,6 +596,90 @@ release_external_extensions_lock() {
   EXT_LOCK_TOKEN=""
 }
 
+_resolve_materialized_path() {
+  local root="$1" path="$2"
+  local resolved_root relative component candidate target seen
+  local -a pending=() resolved=() visited=() target_parts=()
+
+  resolved_root=$(cd "$root" && pwd -P) || return 1
+  case "$path" in
+    "$resolved_root") relative="" ;;
+    "$resolved_root"/*) relative="${path#"$resolved_root"/}" ;;
+    *) return 1 ;;
+  esac
+  IFS='/' read -r -a pending <<< "$relative"
+
+  while (( ${#pending[@]} > 0 )); do
+    component="${pending[0]}"
+    pending=("${pending[@]:1}")
+    case "$component" in
+      ""|.) continue ;;
+      ..)
+        (( ${#resolved[@]} > 0 )) || return 1
+        unset 'resolved[${#resolved[@]}-1]'
+        resolved=("${resolved[@]}")
+        continue
+        ;;
+    esac
+
+    candidate="$resolved_root"
+    if (( ${#resolved[@]} > 0 )); then
+      candidate+="/$(IFS=/; printf '%s' "${resolved[*]}")"
+    fi
+    candidate+="/$component"
+
+    if [[ -L "$candidate" ]]; then
+      for seen in "${visited[@]}"; do
+        [[ "$seen" != "$candidate" ]] || return 1
+      done
+      visited+=("$candidate")
+      target=$(readlink "$candidate") || return 1
+      [[ "$target" != /* && "$target" != \\* && ! "$target" =~ ^[A-Za-z]: ]] ||
+        return 1
+      target="${target//\\//}"
+      IFS='/' read -r -a target_parts <<< "$target"
+      pending=("${target_parts[@]}" "${pending[@]}")
+      continue
+    fi
+
+    [[ -e "$candidate" ]] || return 1
+    if (( ${#pending[@]} > 0 )); then
+      [[ -d "$candidate" ]] || return 1
+    fi
+    resolved+=("$component")
+  done
+
+  if (( ${#resolved[@]} == 0 )); then
+    printf '%s\n' "$resolved_root"
+  else
+    printf '%s/%s\n' "$resolved_root" "$(IFS=/; printf '%s' "${resolved[*]}")"
+  fi
+}
+
+_validate_materialized_extension() {
+  local root="$1" resolved_root link target resolved
+  resolved_root=$(cd "$root" && pwd -P) || return 1
+
+  while IFS= read -r -d '' link; do
+    target=$(readlink "$link") || return 1
+    [[ "$target" != /* && "$target" != \\* && ! "$target" =~ ^[A-Za-z]: ]] ||
+      return 1
+    resolved=$(_resolve_materialized_path "$resolved_root" "$link") || return 1
+    case "$resolved/" in
+      "$resolved_root/"*) ;;
+      *) return 1 ;;
+    esac
+    [[ -e "$resolved" ]] || return 1
+  done < <(find "$resolved_root" -type l -print0)
+
+  resolved=$(_resolve_materialized_path "$resolved_root" "$resolved_root/extension.mjs") || return 1
+  case "$resolved/" in
+    "$resolved_root/"*) ;;
+    *) return 1 ;;
+  esac
+  [[ -f "$resolved" ]]
+}
+
 _materialize_external_extension() {
   local clone_dir="$1" commit="$2" subpath="$3" owner="$4" repo="$5" install_name="$6"
   local owner_root="$EXT_MATERIALIZED_ROOT/$owner"
@@ -656,7 +743,7 @@ _materialize_external_extension() {
     if ! tar -xf "$archive" -C "$temporary"; then
       exit 2
     fi
-    if [[ ! -f "$temporary/extension.mjs" ]]; then
+    if ! _validate_materialized_extension "$temporary"; then
       exit 1
     fi
 
@@ -768,7 +855,7 @@ install_external_extensions() (
     else
       materialize_status=$?
       if (( materialize_status == 1 )); then
-        yellow "  skip $owner/$repo (no extension.mjs at ${subpath})"
+        yellow "  skip $owner/$repo (invalid extension at ${subpath})"
         continue
       fi
       return "$materialize_status"

@@ -29,6 +29,50 @@ git -C "$FIXTURE_REPOSITORY" update-index \
 git -C "$FIXTURE_REPOSITORY" commit --quiet -m "Add fixture extension"
 COMMIT=$(git -C "$FIXTURE_REPOSITORY" rev-parse HEAD)
 
+create_archive_safety_commit() {
+  git -C "$FIXTURE_REPOSITORY" read-tree "$COMMIT"
+  local name path target blob
+  for name in absolute dotdot multihop dangling cycle directory; do
+    blob=$(printf 'export const fixture = "%s";\n' "$name" |
+      git -C "$FIXTURE_REPOSITORY" hash-object -w --stdin)
+    git -C "$FIXTURE_REPOSITORY" update-index \
+      --add --cacheinfo "100644,$blob,extensions/$name/extension.mjs"
+  done
+  blob=$(printf 'import "./module.mjs";\nexport const fixture = "valid";\n' |
+    git -C "$FIXTURE_REPOSITORY" hash-object -w --stdin)
+  git -C "$FIXTURE_REPOSITORY" update-index \
+    --add --cacheinfo "100644,$blob,extensions/valid/extension.mjs"
+  blob=$(printf 'export const dependency = "internal";\n' |
+    git -C "$FIXTURE_REPOSITORY" hash-object -w --stdin)
+  git -C "$FIXTURE_REPOSITORY" update-index \
+    --add --cacheinfo "100644,$blob,extensions/valid/lib/module.mjs"
+  while (( $# > 0 )); do
+    path="$1"
+    target="$2"
+    shift 2
+    blob=$(printf '%s' "$target" | git -C "$FIXTURE_REPOSITORY" hash-object -w --stdin)
+    git -C "$FIXTURE_REPOSITORY" update-index --add --cacheinfo "120000,$blob,$path"
+  done
+  local tree commit
+  tree=$(git -C "$FIXTURE_REPOSITORY" write-tree)
+  commit=$(printf 'Add archive safety fixtures\n' |
+    git -C "$FIXTURE_REPOSITORY" commit-tree "$tree" -p "$COMMIT")
+  git -C "$FIXTURE_REPOSITORY" update-ref refs/heads/archive-safety "$commit"
+  printf '%s\n' "$commit"
+}
+
+ARCHIVE_SAFETY_COMMIT=$(create_archive_safety_commit \
+  extensions/absolute/absolute.txt /outside \
+  extensions/dotdot/escape.txt ../outside \
+  extensions/multihop/hop-a lib/hop-b \
+  extensions/multihop/lib/hop-b ../../outside \
+  extensions/dangling/dangling.txt missing.txt \
+  extensions/cycle/cycle-a cycle-b \
+  extensions/cycle/cycle-b cycle-a \
+  extensions/entrypoint/extension.mjs ../outside.mjs \
+  extensions/directory/assets ../outside-dir \
+  extensions/valid/module.mjs lib/module.mjs)
+
 cat > "$FAKE_BIN/gh" <<'EOF'
 #!/bin/bash
 if [[ "$1" == "repo" && "$2" == "clone" ]]; then
@@ -67,7 +111,7 @@ run_sync() {
 assert_installed_tree() {
   local expected="$1" installed="$2"
   local expected_files installed_files
-  expected_files=$(cd "$expected" && find . -type f -print | sort)
+  expected_files=$(cd "$expected" && find -L . -type f -print | sort)
   installed_files=$(cd "$installed" && find -L . -type f -print | sort)
   [[ "$expected_files" == "$installed_files" ]]
   while IFS= read -r relative; do
@@ -99,6 +143,32 @@ assert_installed_tree "$EXPECTED" "$INSTALLED"
 
 MATERIALIZED="$DATA_ROOT/copilot-external-extensions/.materialized/fixture/repo/sample"
 [[ -L "$MATERIALIZED/link.txt" ]]
+{
+  printf 'fixture/repo@%s  extensions/sample  sample\n' "$COMMIT"
+  printf 'fixture/repo@%s  extensions/valid  valid-links\n' "$ARCHIVE_SAFETY_COMMIT"
+  for name in absolute dotdot multihop dangling cycle entrypoint directory; do
+    printf 'fixture/repo@%s  extensions/%s  rejected-%s\n' \
+      "$ARCHIVE_SAFETY_COMMIT" "$name" "$name"
+  done
+} > "$MANIFEST"
+run_sync > "$TEST_ROOT/rejected-links.log" 2>&1 || true
+assert_installed_tree "$EXPECTED" "$INSTALLED"
+assert_installed_tree "$EXPECTED" "$MATERIALIZED"
+VALID_EXPECTED="$TEST_ROOT/valid-expected"
+VALID_ARCHIVE="$TEST_ROOT/valid-expected.tar"
+mkdir -p "$VALID_EXPECTED"
+git -C "$FIXTURE_REPOSITORY" archive --format=tar --output="$VALID_ARCHIVE" \
+  "$ARCHIVE_SAFETY_COMMIT:extensions/valid"
+tar -xf "$VALID_ARCHIVE" -C "$VALID_EXPECTED"
+assert_installed_tree "$VALID_EXPECTED" "$HOME_ROOT/.copilot/extensions/valid-links"
+for name in absolute dotdot multihop dangling cycle entrypoint directory; do
+  [[ ! -e "$HOME_ROOT/.copilot/extensions/rejected-$name" ]]
+  grep -q "extensions/$name" "$TEST_ROOT/rejected-links.log"
+done
+printf 'fixture/repo@%s  extensions/sample  sample\n' "$COMMIT" > "$MANIFEST"
+run_sync >/dev/null
+assert_installed_tree "$EXPECTED" "$INSTALLED"
+
 mv "$MATERIALIZED" "${MATERIALIZED%/sample}/.sample.backup"
 printf 'fixture/repo@%s  extensions/missing  sample\n' "$COMMIT" > "$MANIFEST"
 run_sync
@@ -123,7 +193,7 @@ assert_installed_tree "$EXPECTED" "$INSTALLED"
 run_sync >/dev/null
 [[ ! -e "${MATERIALIZED%/sample}/.sample.backup" ]]
 
-LOCK_ROOT="$DATA_ROOT/copilot-external-extensions/.sync-lock"
+LOCK_ROOT="$HOME_ROOT/.copilot/.locks/external-extensions"
 for stage in after-choosing-owner after-ticket-directory after-ticket-owner; do
   if COPILOT_EXTERNAL_EXTENSIONS_TEST_FAIL_LOCK_STAGE="$stage" run_sync >/dev/null 2>&1; then
     echo "injected lock acquisition failure unexpectedly succeeded: $stage" >&2
@@ -176,7 +246,7 @@ wait "$BASH_TWO"
 assert_installed_tree "$EXPECTED" "$CONCURRENT_INSTALLED"
 [[ ! -e "$CONCURRENT_INSTALLED/drift.txt" ]]
 
-LOCK_ROOT="$CONCURRENT_DATA/copilot-external-extensions/.sync-lock"
+LOCK_ROOT="$CONCURRENT_HOME/.copilot/.locks/external-extensions"
 case "$(uname -s)" in
   MINGW*|MSYS*|CYGWIN*) STALE_PLATFORM=windows ;;
   *) STALE_PLATFORM=unix ;;

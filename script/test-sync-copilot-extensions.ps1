@@ -29,7 +29,10 @@ function Assert-InstalledTree([string]$Expected, [string]$Installed) {
         throw "Installed top-level entries differ from git archive"
     }
 
-    foreach ($expectedFile in Get-ChildItem -LiteralPath $Expected -File -Recurse -Force) {
+    $expectedTree = @(Get-ChildItem -LiteralPath $Expected -Recurse -Force)
+    foreach ($expectedFile in $expectedTree | Where-Object {
+        -not $_.PSIsContainer -and [string]::IsNullOrEmpty($_.LinkType)
+    }) {
         $relative = [IO.Path]::GetRelativePath($Expected, $expectedFile.FullName)
         $installedFile = Join-Path $Installed $relative
         if (-not (Test-Path -LiteralPath $installedFile -PathType Leaf)) {
@@ -37,6 +40,26 @@ function Assert-InstalledTree([string]$Expected, [string]$Installed) {
         }
         if ((Get-FileHash $expectedFile.FullName).Hash -ne (Get-FileHash $installedFile).Hash) {
             throw "Installed file differs from git archive: $relative"
+        }
+    }
+
+    foreach ($expectedLink in $expectedTree | Where-Object {
+        -not [string]::IsNullOrEmpty($_.LinkType)
+    }) {
+        $relative = [IO.Path]::GetRelativePath($Expected, $expectedLink.FullName)
+        $installedLink = Get-Item -LiteralPath (Join-Path $Installed $relative) -Force
+        $expectedTarget = $expectedLink.ResolveLinkTarget($true)
+        $installedTarget = $installedLink.ResolveLinkTarget($true)
+        $expectedDirectory = $expectedTarget -is [IO.DirectoryInfo]
+        $installedDirectory = $installedTarget -is [IO.DirectoryInfo]
+        if ($null -eq $expectedTarget -or $null -eq $installedTarget -or
+            $expectedDirectory -ne $installedDirectory) {
+            throw "Installed link target differs from git archive: $relative"
+        }
+        if (-not $expectedDirectory -and
+            (Get-FileHash $expectedTarget.FullName).Hash -ne
+                (Get-FileHash $installedTarget.FullName).Hash) {
+            throw "Installed linked file differs from git archive: $relative"
         }
     }
 }
@@ -63,12 +86,14 @@ function Start-SyncProcess(
     [double]$HoldSeconds = 0,
     [int]$TimeoutSeconds = 30,
     [double]$CloneDelaySeconds = 0,
-    [string]$LockRootBarrier = ""
+    [string]$LockRootBarrier = "",
+    [bool]$UseDefaultCache = $false
 ) {
     $stdout = Join-Path $TestRoot "$Name.stdout"
     $stderr = Join-Path $TestRoot "$Name.stderr"
     if ($Kind -eq "powershell") {
         $info = [Diagnostics.ProcessStartInfo]::new((Get-Process -Id $PID).Path)
+        $arguments = [Collections.Generic.List[string]]::new()
         foreach ($argument in @(
             "-NoLogo", "-NoProfile", "-File",
             (Join-Path $DotfilesRoot "script\sync-copilot.ps1"),
@@ -76,9 +101,15 @@ function Start-SyncProcess(
             "-DotfilesRoot", $DotfilesRoot,
             "-CopilotHome", $SharedCopilotHome,
             "-ProjectsRoot", $SharedProjectsRoot,
-            "-ExternalCacheRoot", $SharedCacheRoot,
             "-ExternalExtensionsFile", $Manifest
         )) {
+            $arguments.Add($argument)
+        }
+        if (-not $UseDefaultCache) {
+            $arguments.Add("-ExternalCacheRoot")
+            $arguments.Add($SharedCacheRoot)
+        }
+        foreach ($argument in $arguments) {
             [void]$info.ArgumentList.Add($argument)
         }
         $info.Environment["PATH"] = "$FakeBin$([IO.Path]::PathSeparator)$previousPath"
@@ -86,16 +117,21 @@ function Start-SyncProcess(
     } else {
         $info = [Diagnostics.ProcessStartInfo]::new((Get-Command bash).Source)
         $bashRoot = ConvertTo-BashPath $DotfilesRoot
-        $bashHome = ConvertTo-BashPath $SharedCopilotHome
+        if ((Split-Path -Leaf $SharedCopilotHome) -ne ".copilot") {
+            throw "Shared Bash Copilot home must end in .copilot: $SharedCopilotHome"
+        }
+        $bashHome = ConvertTo-BashPath (Split-Path -Parent $SharedCopilotHome)
         $bashData = ConvertTo-BashPath (Split-Path -Parent $SharedCacheRoot)
         $bashProjects = ConvertTo-BashPath $SharedProjectsRoot
         $bashManifest = ConvertTo-BashPath $Manifest
         $bashFakeBin = ConvertTo-BashPath $FakeBin
         $bashFixture = ConvertTo-BashPath $FixtureRepository
         [void]$info.ArgumentList.Add("-c")
+        $cacheEnvironment = if ($UseDefaultCache) { "" } else { "XDG_DATA_HOME='$bashData' " }
         [void]$info.ArgumentList.Add(
             "cd '$bashRoot' && PATH='$bashFakeBin':`"`$PATH`" " +
-            "HOME='$bashHome' XDG_DATA_HOME='$bashData' PROJECTS='$bashProjects' " +
+            "HOME='$bashHome' $cacheEnvironment" +
+            "PROJECTS='$bashProjects' " +
             "EXTERNAL_EXTENSIONS_FILE='$bashManifest' FIXTURE_REPOSITORY='$bashFixture' " +
             "MSYS=winsymlinks:nativestrict bash script/sync-copilot install"
         )
@@ -172,6 +208,53 @@ function Wait-ForLockTicket([string]$LockRoot) {
     throw "External extension lock ticket did not appear"
 }
 
+function New-ArchiveSafetyFixtureCommit([Collections.IDictionary]$Links) {
+    Invoke-Git -C $FixtureRepository read-tree $commit
+    foreach ($name in @("absolute", "dotdot", "multihop", "dangling", "cycle", "directory")) {
+        $contentFile = Join-Path $TestRoot "extension-$name.mjs"
+        [IO.File]::WriteAllText($contentFile, "export const fixture = `"$name`";`n")
+        $blob = (& git -C $FixtureRepository hash-object -w $contentFile).Trim()
+        if ($LASTEXITCODE -ne 0) {
+            throw "Could not create $name fixture extension blob"
+        }
+        Invoke-Git -C $FixtureRepository update-index `
+            --add --cacheinfo "100644,$blob,extensions/$name/extension.mjs"
+    }
+    $validEntrypoint = Join-Path $TestRoot "valid-extension.mjs"
+    [IO.File]::WriteAllText(
+        $validEntrypoint,
+        "import `"./module.mjs`";`nexport const fixture = `"valid`";`n"
+    )
+    $blob = (& git -C $FixtureRepository hash-object -w $validEntrypoint).Trim()
+    Invoke-Git -C $FixtureRepository update-index `
+        --add --cacheinfo "100644,$blob,extensions/valid/extension.mjs"
+    $validDependency = Join-Path $TestRoot "valid-module.mjs"
+    [IO.File]::WriteAllText($validDependency, "export const dependency = `"internal`";`n")
+    $blob = (& git -C $FixtureRepository hash-object -w $validDependency).Trim()
+    Invoke-Git -C $FixtureRepository update-index `
+        --add --cacheinfo "100644,$blob,extensions/valid/lib/module.mjs"
+    foreach ($path in $Links.Keys) {
+        $targetFile = Join-Path $TestRoot "link-$([Guid]::NewGuid().ToString('N'))"
+        [IO.File]::WriteAllText($targetFile, $Links[$path])
+        $blob = (& git -C $FixtureRepository hash-object -w $targetFile).Trim()
+        if ($LASTEXITCODE -ne 0) {
+            throw "Could not create fixture link blob"
+        }
+        Invoke-Git -C $FixtureRepository update-index `
+            --add --cacheinfo "120000,$blob,$path"
+    }
+    $tree = (& git -C $FixtureRepository write-tree).Trim()
+    if ($LASTEXITCODE -ne 0) {
+        throw "Could not write archive safety fixture tree"
+    }
+    $fixtureCommit = (& git -C $FixtureRepository commit-tree $tree -p $commit -m "Add archive safety fixtures").Trim()
+    if ($LASTEXITCODE -ne 0) {
+        throw "Could not create archive safety fixture commit"
+    }
+    Invoke-Git -C $FixtureRepository update-ref refs/heads/archive-safety $fixtureCommit
+    return $fixtureCommit
+}
+
 New-Item -ItemType Directory -Path (
     Join-Path $FixtureRepository "extensions\sample\lib"
 ), $FakeBin, $CopilotHome, $CacheRoot, $ProjectsRoot -Force | Out-Null
@@ -201,6 +284,18 @@ try {
     if ($LASTEXITCODE -ne 0) {
         throw "Could not resolve fixture commit"
     }
+    $archiveSafetyCommit = New-ArchiveSafetyFixtureCommit ([ordered]@{
+        "extensions/absolute/absolute.txt" = "/outside"
+        "extensions/dotdot/escape.txt" = "../outside"
+        "extensions/multihop/hop-a" = "lib/hop-b"
+        "extensions/multihop/lib/hop-b" = "../../outside"
+        "extensions/dangling/dangling.txt" = "missing.txt"
+        "extensions/cycle/cycle-a" = "cycle-b"
+        "extensions/cycle/cycle-b" = "cycle-a"
+        "extensions/entrypoint/extension.mjs" = "../outside.mjs"
+        "extensions/directory/assets" = "../outside-dir"
+        "extensions/valid/module.mjs" = "lib/module.mjs"
+    })
 
     @'
 @echo off
@@ -278,6 +373,56 @@ exit 1
         if ($materializedLink.LinkType -ne "SymbolicLink") {
             throw "Materialized extension did not preserve the archived symlink"
         }
+        $rejectedEntries = @("absolute", "dotdot", "multihop", "dangling", "cycle", "entrypoint", "directory")
+        $manifestLines = [Collections.Generic.List[string]]::new()
+        $manifestLines.Add("fixture/repo@$commit  extensions/sample  sample")
+        $manifestLines.Add("fixture/repo@$archiveSafetyCommit  extensions/valid  valid-links")
+        foreach ($name in $rejectedEntries) {
+            $manifestLines.Add("fixture/repo@$archiveSafetyCommit  extensions/$name  rejected-$name")
+        }
+        Set-Content -LiteralPath $Manifest -Value @($manifestLines) -Encoding utf8
+        $rejectedLog = Join-Path $TestRoot "rejected-links.log"
+        try {
+            & (Join-Path $DotfilesRoot "script\sync-copilot.ps1") install `
+                -DotfilesRoot $DotfilesRoot `
+                -CopilotHome $CopilotHome `
+                -ProjectsRoot $ProjectsRoot `
+                -ExternalCacheRoot $CacheRoot `
+                -ExternalExtensionsFile $Manifest *> $rejectedLog
+        } catch {
+        }
+        Assert-InstalledTree $expected $installed
+        Assert-InstalledTree $expected $materialized
+        $validExpected = Join-Path $TestRoot "valid-expected"
+        $validArchive = Join-Path $TestRoot "valid-expected.tar"
+        New-Item -ItemType Directory -Path $validExpected | Out-Null
+        Invoke-Git -c core.autocrlf=false -c core.eol=lf -C $FixtureRepository `
+            archive --format=tar "--output=$validArchive" "${archiveSafetyCommit}:extensions/valid"
+        & tar -xf $validArchive -C $validExpected
+        if ($LASTEXITCODE -ne 0) {
+            throw "Could not extract valid internal-link fixture archive"
+        }
+        Assert-InstalledTree $validExpected (Join-Path $CopilotHome "extensions\valid-links")
+        $rejectedOutput = Get-Content -LiteralPath $rejectedLog -Raw
+        foreach ($name in $rejectedEntries) {
+            if (Test-Path -LiteralPath (Join-Path $CopilotHome "extensions\rejected-$name")) {
+                throw "Unsafe $name fixture was published"
+            }
+            if ($rejectedOutput -notmatch [regex]::Escape("extensions/$name")) {
+                throw "Unsafe $name fixture was not exercised"
+            }
+        }
+        Set-Content -LiteralPath $Manifest `
+            -Value "fixture/repo@$commit  extensions/sample  sample" `
+            -Encoding utf8
+        & (Join-Path $DotfilesRoot "script\sync-copilot.ps1") install `
+            -DotfilesRoot $DotfilesRoot `
+            -CopilotHome $CopilotHome `
+            -ProjectsRoot $ProjectsRoot `
+            -ExternalCacheRoot $CacheRoot `
+            -ExternalExtensionsFile $Manifest *> $null
+        Assert-InstalledTree $expected $installed
+
         Move-Item -LiteralPath $materialized -Destination (
             Join-Path (Split-Path -Parent $materialized) ".sample.backup"
         )
@@ -360,7 +505,7 @@ exit 1
             throw "Backup cleanup remnant survived the next sync"
         }
 
-        $lockRoot = Join-Path $CacheRoot ".sync-lock"
+        $lockRoot = Join-Path $CopilotHome ".locks\external-extensions"
         foreach ($stage in @("after-choosing-owner", "after-ticket-directory", "after-ticket-owner")) {
             $env:COPILOT_EXTERNAL_EXTENSIONS_TEST_FAIL_LOCK_STAGE = $stage
             try {
@@ -386,7 +531,7 @@ exit 1
             }
         }
 
-        $concurrentHome = Join-Path $TestRoot "concurrent-copilot"
+        $concurrentHome = Join-Path $TestRoot "concurrent-home\.copilot"
         $concurrentData = Join-Path $TestRoot "concurrent-data"
         $concurrentCache = Join-Path $concurrentData "copilot-external-extensions"
         $concurrentProjects = Join-Path $TestRoot "concurrent-projects"
@@ -428,7 +573,7 @@ exit 1
         ) -Value "dirty untracked checkout" -Encoding utf8
         $one = Start-SyncProcess powershell "powershell-dirty-1" `
             $concurrentHome $concurrentCache $concurrentProjects 2
-        [void](Wait-ForLockTicket (Join-Path $concurrentCache ".sync-lock"))
+        [void](Wait-ForLockTicket (Join-Path $concurrentHome ".locks\external-extensions"))
         $two = Start-SyncProcess powershell "powershell-dirty-2" `
             $concurrentHome $concurrentCache $concurrentProjects
         foreach ($result in @((Wait-SyncProcess $one), (Wait-SyncProcess $two))) {
@@ -446,7 +591,7 @@ exit 1
         ) -Value "dirty untracked checkout" -Encoding utf8
         $bash = Start-SyncProcess bash "mixed-bash" `
             $concurrentHome $concurrentCache $concurrentProjects 5
-        [void](Wait-ForLockTicket (Join-Path $concurrentCache ".sync-lock"))
+        [void](Wait-ForLockTicket (Join-Path $concurrentHome ".locks\external-extensions"))
         $powershell = Start-SyncProcess powershell "mixed-powershell" `
             $concurrentHome $concurrentCache $concurrentProjects
         foreach ($result in @((Wait-SyncProcess $bash), (Wait-SyncProcess $powershell))) {
@@ -459,7 +604,7 @@ exit 1
             throw "Mixed concurrent install contains checkout drift"
         }
 
-        $mixedHome = Join-Path $TestRoot "mixed-fresh-copilot"
+        $mixedHome = Join-Path $TestRoot "mixed-fresh-home\.copilot"
         $mixedData = Join-Path $TestRoot "mixed-fresh-data"
         $mixedCache = Join-Path $mixedData "copilot-external-extensions"
         $mixedProjects = Join-Path $TestRoot "mixed-fresh-projects"
@@ -490,7 +635,75 @@ exit 1
         }
         Assert-InstalledTree $expected (Join-Path $mixedHome "extensions\sample")
 
-        $lockRoot = Join-Path $concurrentCache ".sync-lock"
+        $defaultHome = Join-Path $TestRoot "default-home\.copilot"
+        $defaultProjects = Join-Path $TestRoot "default-projects"
+        $defaultBashCache = Join-Path $TestRoot "default-home\.local\share\copilot-external-extensions"
+        $defaultPowerShellCache = Join-Path $defaultProjects ".copilot-external-extensions"
+        New-Item -ItemType Directory -Path $defaultHome, $defaultProjects -Force | Out-Null
+        $defaultBarrier = Join-Path $TestRoot "mixed-default-lock"
+        $bash = Start-SyncProcess bash "mixed-default-bash" `
+            $defaultHome $defaultBashCache $defaultProjects 2 30 1 $defaultBarrier $true
+        $powershell = Start-SyncProcess powershell "mixed-default-powershell" `
+            $defaultHome $defaultPowerShellCache $defaultProjects 0 30 1 $defaultBarrier $true
+        Release-LockBarrier $defaultBarrier 2
+        foreach ($result in @((Wait-SyncProcess $bash), (Wait-SyncProcess $powershell))) {
+            if ($result.ExitCode -ne 0) {
+                throw "Default-path mixed concurrent sync failed: $($result.Error)"
+            }
+        }
+        $defaultInstalled = Join-Path $defaultHome "extensions\sample"
+        Assert-InstalledTree $expected $defaultInstalled
+        if (-not (Test-Path -LiteralPath $defaultBashCache -PathType Container) -or
+            -not (Test-Path -LiteralPath $defaultPowerShellCache -PathType Container) -or
+            (Test-Path -LiteralPath (Join-Path $defaultInstalled ".copilot"))) {
+            throw "Default-path mixed sync did not keep separate caches and one exact install"
+        }
+
+        if (-not $IsWindows) {
+            $caseRoot = Join-Path $TestRoot "case-sensitive"
+            $upperCache = Join-Path $caseRoot "Cache"
+            $lowerCache = Join-Path $caseRoot "cache"
+            $upperOwner = Join-Path $upperCache "fixture"
+            $caseHome = Join-Path $caseRoot "home\.copilot"
+            New-Item -ItemType Directory -Path $upperOwner, $lowerCache, $caseHome -Force | Out-Null
+            Invoke-Git clone --quiet $FixtureRepository (Join-Path $upperOwner "repo")
+            New-Item -ItemType SymbolicLink `
+                -Path (Join-Path $lowerCache "fixture") `
+                -Target $upperOwner | Out-Null
+            $rejectedCaseEscape = $false
+            try {
+                & (Join-Path $DotfilesRoot "script\sync-copilot.ps1") install `
+                    -DotfilesRoot $DotfilesRoot `
+                    -CopilotHome $caseHome `
+                    -ProjectsRoot (Join-Path $caseRoot "projects") `
+                    -ExternalCacheRoot $lowerCache `
+                    -ExternalExtensionsFile $Manifest *> $null
+            } catch {
+                $rejectedCaseEscape = $_.Exception.Message -match "cache path escapes"
+            }
+            if (-not $rejectedCaseEscape) {
+                throw "PowerShell accepted a case-distinct sibling cache on a case-sensitive platform"
+            }
+        } else {
+            $caseRoot = Join-Path $TestRoot "case-insensitive"
+            $caseCache = Join-Path $caseRoot "cache"
+            $caseOwnerTarget = Join-Path $caseRoot "CACHE\fixture-real"
+            $caseHome = Join-Path $caseRoot "home\.copilot"
+            New-Item -ItemType Directory -Path $caseOwnerTarget, $caseHome -Force | Out-Null
+            Invoke-Git clone --quiet $FixtureRepository (Join-Path $caseOwnerTarget "repo")
+            New-Item -ItemType SymbolicLink `
+                -Path (Join-Path $caseCache "fixture") `
+                -Target $caseOwnerTarget | Out-Null
+            & (Join-Path $DotfilesRoot "script\sync-copilot.ps1") install `
+                -DotfilesRoot $DotfilesRoot `
+                -CopilotHome $caseHome `
+                -ProjectsRoot (Join-Path $caseRoot "projects") `
+                -ExternalCacheRoot $caseCache `
+                -ExternalExtensionsFile $Manifest *> $null
+            Assert-InstalledTree $expected (Join-Path $caseHome "extensions\sample")
+        }
+
+        $lockRoot = Join-Path $concurrentHome ".locks\external-extensions"
         $stalePlatform = if ($IsWindows) { "windows" } else { "unix" }
         $staleToken = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
         $stale = Join-Path $lockRoot (

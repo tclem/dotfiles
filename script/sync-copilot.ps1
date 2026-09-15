@@ -26,7 +26,17 @@ if (-not $ExternalCacheRoot) {
     $ExternalCacheRoot = Join-Path $ProjectsRoot ".copilot-external-extensions"
 }
 $ExternalMaterializedRoot = Join-Path $ExternalCacheRoot ".materialized"
-$ExternalLockRoot = Join-Path $ExternalCacheRoot ".sync-lock"
+$ExternalLockRoot = Join-Path (Join-Path $CopilotHome ".locks") "external-extensions"
+$PathComparison = if ($IsWindows) {
+    [StringComparison]::OrdinalIgnoreCase
+} else {
+    [StringComparison]::Ordinal
+}
+$PathComparer = if ($IsWindows) {
+    [StringComparer]::OrdinalIgnoreCase
+} else {
+    [StringComparer]::Ordinal
+}
 
 function Write-Green([string]$Message) {
     Write-Host $Message -ForegroundColor Green
@@ -46,10 +56,10 @@ function Get-NormalizedPath([string]$Path) {
 function Test-PathWithin([string]$Path, [string]$Root) {
     $normalizedPath = Get-NormalizedPath $Path
     $normalizedRoot = Get-NormalizedPath $Root
-    return $normalizedPath.Equals($normalizedRoot, [StringComparison]::OrdinalIgnoreCase) -or
+    return $normalizedPath.Equals($normalizedRoot, $PathComparison) -or
         $normalizedPath.StartsWith(
             $normalizedRoot + [IO.Path]::DirectorySeparatorChar,
-            [StringComparison]::OrdinalIgnoreCase
+            $PathComparison
         )
 }
 
@@ -92,7 +102,7 @@ function Resolve-LinkPath([string]$Path) {
         }
 
         $next = Get-NormalizedPath $current
-        if (-not $changed -or $next.Equals($resolved, [StringComparison]::OrdinalIgnoreCase)) {
+        if (-not $changed -or $next.Equals($resolved, $PathComparison)) {
             return $next
         }
         $resolved = $next
@@ -105,7 +115,7 @@ function Remove-EmptyParents([string]$Path, [string]$StopAt) {
     $current = Split-Path -Parent $Path
     $stop = Get-NormalizedPath $StopAt
 
-    while ($current -and -not (Get-NormalizedPath $current).Equals($stop, [StringComparison]::OrdinalIgnoreCase)) {
+    while ($current -and -not (Get-NormalizedPath $current).Equals($stop, $PathComparison)) {
         $children = @(Get-ChildItem -LiteralPath $current -Force -ErrorAction SilentlyContinue)
         if ($children.Count -ne 0) {
             break
@@ -122,7 +132,7 @@ function New-SymbolicLink([string]$Source, [string]$Destination, [switch]$SkipRe
     if ($null -ne $item) {
         $target = Get-LinkTarget $Destination
         if ($null -ne $target) {
-            if ($target.Equals($sourcePath, [StringComparison]::OrdinalIgnoreCase)) {
+            if ($target.Equals($sourcePath, $PathComparison)) {
                 return $false
             }
             Remove-Item -LiteralPath $Destination -Force
@@ -197,7 +207,7 @@ function Get-PortableFiles([string]$Root) {
 }
 
 function Prune-RemovedLinks([string[]]$ExpectedFiles) {
-    $expected = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+    $expected = [Collections.Generic.HashSet[string]]::new($PathComparer)
     foreach ($relativePath in $ExpectedFiles) {
         [void]$expected.Add($relativePath)
     }
@@ -234,7 +244,7 @@ function Link-TreeIntoExtensionsDirectory(
     }
     New-Item -ItemType Directory -Path $Destination -Force | Out-Null
 
-    $seen = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+    $seen = [Collections.Generic.HashSet[string]]::new($PathComparer)
     foreach ($entry in Get-ChildItem -LiteralPath $Source -Force) {
         if ($entry.Name -in @(".git", ".github", ".gitignore", ".gitattributes", "node_modules")) {
             continue
@@ -267,7 +277,7 @@ function Remove-UnlistedManagedExtensionDirectories(
         return
     }
 
-    $kept = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+    $kept = [Collections.Generic.HashSet[string]]::new($PathComparer)
     foreach ($name in $Keep) {
         [void]$kept.Add($name)
     }
@@ -606,8 +616,8 @@ function Acquire-ExternalExtensionsLock {
     if ($null -eq $lockItem -or -not $lockItem.PSIsContainer) {
         throw "External extension lock root is not a directory: $ExternalLockRoot"
     }
-    if (-not (Test-PathWithin (Resolve-LinkPath $ExternalLockRoot) (Resolve-LinkPath $ExternalCacheRoot))) {
-        throw "External extension lock root escapes its cache: $ExternalLockRoot"
+    if (-not (Test-PathWithin (Resolve-LinkPath $ExternalLockRoot) (Resolve-LinkPath $CopilotHome))) {
+        throw "External extension lock root escapes Copilot home: $ExternalLockRoot"
     }
 
     $identity = Get-ExternalLockProcessIdentity
@@ -659,7 +669,7 @@ function Acquire-ExternalExtensionsLock {
                     }
                 }
                 if ($null -ne $winner -and
-                    $winner.FullName.Equals($ticket, [StringComparison]::OrdinalIgnoreCase)) {
+                    $winner.FullName.Equals($ticket, $PathComparison)) {
                     return @{
                         Ticket = $ticket
                         Token = $token
@@ -711,6 +721,38 @@ function Release-ExternalExtensionsLock([hashtable]$Lock) {
         return
     }
     Remove-Item -LiteralPath $Lock.Ticket
+}
+
+function Test-MaterializedExtension([string]$Root) {
+    $resolvedRoot = Resolve-LinkPath $Root
+    try {
+        $links = @(
+            Get-ChildItem -LiteralPath $Root -Recurse -Force |
+                Where-Object { -not [string]::IsNullOrEmpty($_.LinkType) }
+        )
+        foreach ($link in $links) {
+            $target = @($link.Target)[0]
+            if ([string]::IsNullOrEmpty($target) -or
+                [IO.Path]::IsPathRooted($target) -or
+                $target -match '^[A-Za-z]:' -or
+                $target.StartsWith('\', [StringComparison]::Ordinal)) {
+                return $false
+            }
+
+            $resolved = Resolve-LinkPath $link.FullName
+            if (-not (Test-PathWithin $resolved $resolvedRoot) -or
+                $null -eq (Get-ExistingItem $resolved)) {
+                return $false
+            }
+        }
+
+        $entrypoint = Resolve-LinkPath (Join-Path $Root "extension.mjs")
+        return (Test-PathWithin $entrypoint $resolvedRoot) -and
+            (Test-Path -LiteralPath $entrypoint -PathType Leaf)
+    } catch {
+        Write-Yellow "  reject external extension archive ($($_.Exception.Message))"
+        return $false
+    }
 }
 
 function Materialize-ExternalExtension(
@@ -795,7 +837,7 @@ function Materialize-ExternalExtension(
         if ($LASTEXITCODE -ne 0) {
             throw "Could not extract external extension archive"
         }
-        if (-not (Test-Path -LiteralPath (Join-Path $temporary "extension.mjs") -PathType Leaf)) {
+        if (-not (Test-MaterializedExtension $temporary)) {
             return $null
         }
 
@@ -935,7 +977,7 @@ function Install-ExternalExtensions {
                 $repo `
                 $installName
             if (-not $source) {
-                Write-Yellow "  skip $owner/$repo (no extension.mjs at $subpath)"
+                Write-Yellow "  skip $owner/$repo (invalid extension at $subpath)"
                 continue
             }
 
