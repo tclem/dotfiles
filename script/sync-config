@@ -57,14 +57,14 @@ link_one() {
 cmd_install() {
   ensure_clone
 
-  # Walk the repo, skipping VCS/meta files. Everything else is sync target.
-  while IFS= read -r -d '' src; do
-    local rel="${src#$CONFIG_REPO_DIR/}"
+  # Walk tracked files, skipping VCS/meta files. Everything else is sync target.
+  while IFS= read -r -d '' rel; do
     case "$rel" in
       .git/*|.github/*|.gitignore|README.md|LICENSE) continue ;;
     esac
+    local src="$CONFIG_REPO_DIR/$rel"
     link_one "$src" "$rel"
-  done < <(find "$CONFIG_REPO_DIR" -type f -not -path "*/.git/*" -print0)
+  done < <(git -C "$CONFIG_REPO_DIR" ls-files -z)
 }
 
 cmd_import() {
