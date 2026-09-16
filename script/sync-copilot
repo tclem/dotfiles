@@ -227,7 +227,10 @@ _link_tree_into_extensions_dir() {
       .git|.github|.gitignore|.gitattributes|node_modules) continue ;;
     esac
     seen_entries+=("$base")
-    ln -sfn "$entry" "$dst/$base"
+    if [[ -L "$dst/$base" ]] || readlink "$dst/$base" >/dev/null 2>&1; then
+      rm "$dst/$base"
+    fi
+    ln -s "$entry" "$dst/$base"
   done
 
   for entry in "$dst"/* "$dst"/.[!.]*; do

@@ -17,6 +17,17 @@ $ErrorActionPreference = "Stop"
 $CopilotRepo = Join-Path $DotfilesRoot "copilot"
 $ExtensionsDirectoryName = "extensions"
 $ExternalSkillsFile = Join-Path $CopilotRepo "external-skills"
+$MaxLinkExpansions = 40
+$PathComparison = if ($IsWindows) {
+    [StringComparison]::OrdinalIgnoreCase
+} else {
+    [StringComparison]::Ordinal
+}
+$PathComparer = if ($IsWindows) {
+    [StringComparer]::OrdinalIgnoreCase
+} else {
+    [StringComparer]::Ordinal
+}
 
 function Write-Green([string]$Message) {
     Write-Host $Message -ForegroundColor Green
@@ -36,10 +47,10 @@ function Get-NormalizedPath([string]$Path) {
 function Test-PathWithin([string]$Path, [string]$Root) {
     $normalizedPath = Get-NormalizedPath $Path
     $normalizedRoot = Get-NormalizedPath $Root
-    return $normalizedPath.Equals($normalizedRoot, [StringComparison]::OrdinalIgnoreCase) -or
+    return $normalizedPath.Equals($normalizedRoot, $PathComparison) -or
         $normalizedPath.StartsWith(
             $normalizedRoot + [IO.Path]::DirectorySeparatorChar,
-            [StringComparison]::OrdinalIgnoreCase
+            $PathComparison
         )
 }
 
@@ -62,8 +73,12 @@ function Get-LinkTarget([string]$Path) {
 
 function Resolve-LinkPath([string]$Path) {
     $resolved = Get-NormalizedPath $Path
+    $visitedStates = [Collections.Generic.HashSet[string]]::new($PathComparer)
 
-    for ($pass = 0; $pass -lt 40; $pass++) {
+    for ($pass = 0; $pass -lt $MaxLinkExpansions; $pass++) {
+        if (-not $visitedStates.Add($resolved)) {
+            throw "Link cycle detected while resolving: $Path"
+        }
         $root = [IO.Path]::GetPathRoot($resolved)
         $current = $root
         $changed = $false
@@ -82,20 +97,23 @@ function Resolve-LinkPath([string]$Path) {
         }
 
         $next = Get-NormalizedPath $current
-        if (-not $changed -or $next.Equals($resolved, [StringComparison]::OrdinalIgnoreCase)) {
+        if (-not $changed) {
             return $next
+        }
+        if ($visitedStates.Contains($next)) {
+            throw "Link cycle detected while resolving: $Path"
         }
         $resolved = $next
     }
 
-    throw "Could not resolve link path after 40 passes: $Path"
+    throw "Could not resolve link path after $MaxLinkExpansions expansions: $Path"
 }
 
 function Remove-EmptyParents([string]$Path, [string]$StopAt) {
     $current = Split-Path -Parent $Path
     $stop = Get-NormalizedPath $StopAt
 
-    while ($current -and -not (Get-NormalizedPath $current).Equals($stop, [StringComparison]::OrdinalIgnoreCase)) {
+    while ($current -and -not (Get-NormalizedPath $current).Equals($stop, $PathComparison)) {
         $children = @(Get-ChildItem -LiteralPath $current -Force -ErrorAction SilentlyContinue)
         if ($children.Count -ne 0) {
             break
@@ -112,7 +130,7 @@ function New-SymbolicLink([string]$Source, [string]$Destination, [switch]$SkipRe
     if ($null -ne $item) {
         $target = Get-LinkTarget $Destination
         if ($null -ne $target) {
-            if ($target.Equals($sourcePath, [StringComparison]::OrdinalIgnoreCase)) {
+            if ($target.Equals($sourcePath, $PathComparison)) {
                 return $false
             }
             Remove-Item -LiteralPath $Destination -Force
@@ -187,7 +205,7 @@ function Get-PortableFiles([string]$Root) {
 }
 
 function Prune-RemovedLinks([string[]]$ExpectedFiles) {
-    $expected = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+    $expected = [Collections.Generic.HashSet[string]]::new($PathComparer)
     foreach ($relativePath in $ExpectedFiles) {
         [void]$expected.Add($relativePath)
     }
@@ -224,7 +242,7 @@ function Link-TreeIntoExtensionsDirectory(
     }
     New-Item -ItemType Directory -Path $Destination -Force | Out-Null
 
-    $seen = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+    $seen = [Collections.Generic.HashSet[string]]::new($PathComparer)
     foreach ($entry in Get-ChildItem -LiteralPath $Source -Force) {
         if ($entry.Name -in @(".git", ".github", ".gitignore", ".gitattributes", "node_modules")) {
             continue
@@ -257,7 +275,7 @@ function Remove-UnlistedManagedExtensionDirectories(
         return
     }
 
-    $kept = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+    $kept = [Collections.Generic.HashSet[string]]::new($PathComparer)
     foreach ($name in $Keep) {
         [void]$kept.Add($name)
     }
