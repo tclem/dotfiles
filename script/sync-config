@@ -6,8 +6,10 @@
 #   script/sync-config import P  — move ~/.config/P into the repo at the matching path, symlink back
 #
 # Layout convention: tclem/config mirrors ~/.config/. A file at
-# <repo>/<app>/<file> is symlinked to ~/.config/<app>/<file>. Pre-existing
-# non-symlink files are moved to <path>.pre-config-sync rather than overwritten.
+# <repo>/<app>/<file> is symlinked to ~/.config/<app>/<file>. Only git-tracked
+# files are linked, so the repo's .gitignore decides what counts as config.
+# A pre-existing real file is never overwritten: it is replaced only when its
+# content already matches, and otherwise left in place and reported.
 
 set -euo pipefail
 
@@ -30,7 +32,15 @@ ensure_clone() {
   fi
 }
 
-# Symlink one repo file into ~/.config, backing up any pre-existing real file.
+# Paths that diverged from the repo copy and were left alone. Reported at the end.
+CONFLICTS=()
+
+# Symlink one repo file into ~/.config.
+#
+# A pre-existing real file is only replaced when its content already matches the
+# repo copy, where linking loses nothing. When it differs we cannot tell which
+# side is authoritative -- the live file may be months of edits the repo never
+# saw -- so it stays put and gets reported.
 link_one() {
   local src="$1" rel="$2"
   local dest="$TARGET_ROOT/$rel"
@@ -45,26 +55,51 @@ link_one() {
     yellow "replacing symlink $dest (was → $current)"
     rm "$dest"
   elif [ -e "$dest" ]; then
-    local backup="$dest.pre-config-sync"
-    yellow "backing up existing $dest → $backup"
-    mv "$dest" "$backup"
+    if ! cmp -s "$dest" "$src"; then
+      CONFLICTS+=("$rel")
+      red "kept $rel (differs from repo copy)"
+      return 0
+    fi
+    rm "$dest"
   fi
 
   ln -s "$src" "$dest"
   green "linked $rel"
 }
 
+report_conflicts() {
+  [ ${#CONFLICTS[@]} -eq 0 ] && return 0
+
+  echo
+  red "─── ${#CONFLICTS[@]} file(s) not linked ───"
+  echo "These exist in ~/.config with content that differs from $CONFIG_REPO_SLUG."
+  echo "Nothing was overwritten. Pick a side for each:"
+  echo
+  for rel in "${CONFLICTS[@]}"; do
+    echo "  $rel"
+    echo "    diff \"$TARGET_ROOT/$rel\" \"$CONFIG_REPO_DIR/$rel\""
+  done
+  echo
+  echo "Live file wins:  cp \"$TARGET_ROOT/<rel>\" \"$CONFIG_REPO_DIR/<rel>\"  then commit, and re-run"
+  echo "Repo file wins:  rm \"$TARGET_ROOT/<rel>\"                            then re-run"
+}
+
 cmd_install() {
   ensure_clone
 
-  # Walk the repo, skipping VCS/meta files. Everything else is sync target.
-  while IFS= read -r -d '' src; do
-    local rel="${src#$CONFIG_REPO_DIR/}"
+  # Tracked files only, so the repo's .gitignore decides what counts as config.
+  # A plain directory walk sweeps up .DS_Store, editor droppings, and ignored
+  # runtime state, then symlinks them into ~/.config as though they were config.
+  while IFS= read -r -d '' rel; do
     case "$rel" in
-      .git/*|.github/*|.gitignore|README.md|LICENSE) continue ;;
+      .github/*|.gitignore|README.md|LICENSE) continue ;;
     esac
+    local src="$CONFIG_REPO_DIR/$rel"
+    [ -f "$src" ] || continue
     link_one "$src" "$rel"
-  done < <(find "$CONFIG_REPO_DIR" -type f -not -path "*/.git/*" -print0)
+  done < <(git -C "$CONFIG_REPO_DIR" ls-files -z)
+
+  report_conflicts
 }
 
 cmd_import() {
