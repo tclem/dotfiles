@@ -6,10 +6,8 @@
 #   script/sync-config import P  — move ~/.config/P into the repo at the matching path, symlink back
 #
 # Layout convention: tclem/config mirrors ~/.config/. A file at
-# <repo>/<app>/<file> is symlinked to ~/.config/<app>/<file>. Only git-tracked
-# files are linked, so the repo's .gitignore decides what counts as config.
-# A pre-existing real file is never overwritten: it is replaced only when its
-# content already matches, and otherwise left in place and reported.
+# <repo>/<app>/<file> is symlinked to ~/.config/<app>/<file>. Only tracked files
+# are linked, and a differing pre-existing file is kept rather than overwritten.
 
 set -euo pipefail
 
@@ -35,12 +33,8 @@ ensure_clone() {
 # Paths that diverged from the repo copy and were left alone. Reported at the end.
 CONFLICTS=()
 
-# Symlink one repo file into ~/.config.
-#
-# A pre-existing real file is only replaced when its content already matches the
-# repo copy, where linking loses nothing. When it differs we cannot tell which
-# side is authoritative -- the live file may be months of edits the repo never
-# saw -- so it stays put and gets reported.
+# Replaces a pre-existing real file only when content already matches. When it
+# differs, neither side is knowably authoritative, so keep it and report.
 link_one() {
   local src="$1" rel="$2"
   local dest="$TARGET_ROOT/$rel"
@@ -71,25 +65,18 @@ report_conflicts() {
   [ ${#CONFLICTS[@]} -eq 0 ] && return 0
 
   echo
-  red "─── ${#CONFLICTS[@]} file(s) not linked ───"
-  echo "These exist in ~/.config with content that differs from $CONFIG_REPO_SLUG."
-  echo "Nothing was overwritten. Pick a side for each:"
-  echo
+  red "${#CONFLICTS[@]} file(s) differ from $CONFIG_REPO_SLUG and were left alone:"
   for rel in "${CONFLICTS[@]}"; do
     echo "  $rel"
-    echo "    diff \"$TARGET_ROOT/$rel\" \"$CONFIG_REPO_DIR/$rel\""
   done
-  echo
-  echo "Live file wins:  cp \"$TARGET_ROOT/<rel>\" \"$CONFIG_REPO_DIR/<rel>\"  then commit, and re-run"
-  echo "Repo file wins:  rm \"$TARGET_ROOT/<rel>\"                            then re-run"
+  echo "Resolve with: diff \$HOME/.config/<rel> $CONFIG_REPO_DIR/<rel>"
+  echo "Then copy the winner into the other side and re-run."
 }
 
 cmd_install() {
   ensure_clone
 
-  # Tracked files only, so the repo's .gitignore decides what counts as config.
-  # A plain directory walk sweeps up .DS_Store, editor droppings, and ignored
-  # runtime state, then symlinks them into ~/.config as though they were config.
+  # Tracked files only: a directory walk also links .DS_Store and ignored state.
   while IFS= read -r -d '' rel; do
     case "$rel" in
       .github/*|.gitignore|README.md|LICENSE) continue ;;
