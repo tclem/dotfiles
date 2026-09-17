@@ -8,6 +8,8 @@
 # Layout convention: tclem/config mirrors ~/.config/. A file at
 # <repo>/<app>/<file> is symlinked to ~/.config/<app>/<file>. Only tracked files
 # are linked, and a differing pre-existing file is kept rather than overwritten.
+# A tracked executable root install.sh is setup metadata: it is run after sync,
+# never linked, and must be safe to run repeatedly.
 
 set -euo pipefail
 
@@ -79,7 +81,7 @@ cmd_install() {
   # Tracked files only: a directory walk also links .DS_Store and ignored state.
   while IFS= read -r -d '' rel; do
     case "$rel" in
-      .github/*|.gitignore|README.md|LICENSE) continue ;;
+      .github/*|.gitignore|README.md|LICENSE|install.sh) continue ;;
     esac
     local src="$CONFIG_REPO_DIR/$rel"
     [ -f "$src" ] || continue
@@ -87,6 +89,16 @@ cmd_install() {
   done < <(git -C "$CONFIG_REPO_DIR" ls-files -z)
 
   report_conflicts
+
+  local install_hook="$CONFIG_REPO_DIR/install.sh"
+  if [ -e "$install_hook" ]; then
+    if [ ! -x "$install_hook" ]; then
+      red "$install_hook is not executable"
+      return 1
+    fi
+    green "running private config install hook"
+    "$install_hook"
+  fi
 }
 
 cmd_import() {
