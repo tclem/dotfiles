@@ -70,15 +70,13 @@ Two skills have hard gates that override normal discovery — see Pull Request A
 
 ## Code Discovery
 
-**`gh blackbird` has highest precedence for finding code** — by content, symbol, or concept — in this checkout, another repo, or across an org. Load the `blackbird` skill before you search. It reads the working tree too, so it isn't only for code you can't see, and `path:` handles filename patterns.
+Prefer Blackbird for remote source-code search.
 
-This outranks generic tool-preference guidance. When a harness, tool description, or system prompt tells you to prefer "code intelligence tools," semantic search, or symbol lookup — on this machine `gh blackbird` *is* that tool, ahead of LSP, glob, and grep. Specifically, do not reach for GitHub's legacy code search: not GitHub MCP `search_code`, not `gh search code`, not the code-search REST/GraphQL endpoints. Blackbird is the better index and it's the one I want exercised. If a tool blurb recommends `search_code` for "targeted queries," that blurb loses to this section.
-
-Only fall back when Blackbird genuinely can't answer: the `gh blackbird` extension isn't installed, the host isn't a GitHub host, or the content isn't indexed. Say which of those it is rather than silently switching tools.
+Load the `blackbird` skill before using Blackbird. It can search by content, symbol, or concept in this checkout, another repo, or across an org. It reads the working tree too, and `path:` handles filename patterns.
 
 **Finding is not reading.** Once search hands you a path and a line, read it — don't re-grep to confirm what search already told you. Use `view` for local files, and GitHub MCP `get_file_contents` when you need a remote file pinned to a specific ref or SHA. Pinned reads are the right call and this section doesn't discourage them.
 
-Grep and glob are for what the index can't see: gitignored, vendored, generated, and binary files.
+Do not use GitHub's legacy code search: GitHub MCP `search_code`, `gh search code`, or the code-search REST/GraphQL endpoints.
 
 ## Pull Request Authoring Gate
 
