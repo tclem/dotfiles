@@ -14,7 +14,7 @@ Iterate on the live PR body, not on draft text in chat. Create or update it, the
 
 A PR body answers one question: **why does this diff exist?** The reviewer learns *what* changed from the code; the body supplies the *why* they can't — the bug, the constraint, the decision.
 
-**Start at one sentence.** Write the shortest statement of why the diff exists and stop there. Expanding is the exception, and it needs a reason you can name: without this, the purpose of the diff is unclear. "The reviewer might wonder" is not that reason. Most bodies are one sentence plus the issue link.
+**Start at one sentence.** Write the shortest statement of why the diff exists and stop there. Expanding is the exception, and it needs a reason you can name: without this, the purpose of the diff is unclear. "The reviewer might wonder" is not that reason. Most bodies are one sentence plus the issue link. A second sentence can be ok if it expands on the why and says what is changing concisely.
 
 - **"Explains why" is not a license.** Implementation rationale, comparisons against alternatives, compatibility arguments, taxonomy of neighboring concepts, and context that preempts reviewer questions all pass the why test, and are all still cuts. They make a body feel complete, which is the tell — completeness is not the goal.
 - **Never restate the diff, at any length.** Not a file-by-file recap, not one compressed sentence naming what was added. Being short doesn't redeem a sentence the reviewer can read straight off the diff.
