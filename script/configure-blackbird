@@ -4,7 +4,7 @@ set -euo pipefail
 
 DOTFILES_ROOT="${DOTFILES_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}"
 COPILOT_HOME="${COPILOT_HOME:-$HOME/.copilot}"
-COMMAND="${1:-remote-only}"
+COMMAND="${1:-off}"
 
 SOURCE_INSTRUCTIONS="$DOTFILES_ROOT/copilot/copilot-instructions.md"
 REMOTE_INSTRUCTIONS_SOURCE="$DOTFILES_ROOT/copilot/blackbird-remote-only.md"

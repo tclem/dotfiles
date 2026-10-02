@@ -49,7 +49,7 @@ When in doubt, **stop and ask** before staging. This includes edits invited by a
 
 - **`bin/gh-log`** — Query GitHub Issues/PRs you're involved with since a given date.
 - **`script/sync-copilot` / `script/sync-copilot.ps1`** — Sync copilot config (instructions, agents, skills) between this repo and `~/.copilot`. `install` symlinks, `import` copies new files back.
-- **`script/configure-blackbird` / `script/configure-blackbird.ps1`** — Select full, remote-only, or disabled Blackbird code discovery. Remote-only is the default.
+- **`script/configure-blackbird` / `script/configure-blackbird.ps1`** — Select full, remote-only, or disabled Blackbird code discovery. Off is the default; Copilot sync removes both skills and the custom Code Discovery instructions.
 
 ## Copilot Setup
 

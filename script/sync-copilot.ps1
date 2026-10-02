@@ -383,17 +383,7 @@ function Install-ExternalSkills {
 }
 
 function Configure-Blackbird {
-    if ($null -eq (Get-Command gh -ErrorAction SilentlyContinue)) {
-        return
-    }
-
-    & gh blackbird skills install --help *> $null
-    if ($LASTEXITCODE -ne 0) {
-        Write-Yellow "  skip Blackbird configuration (gh blackbird not installed)"
-        return
-    }
-
-    & (Join-Path $DotfilesRoot "script\configure-blackbird.ps1") remote-only `
+    & (Join-Path $DotfilesRoot "script\configure-blackbird.ps1") off `
         -DotfilesRoot $DotfilesRoot `
         -CopilotHome $CopilotHome
 }

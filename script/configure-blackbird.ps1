@@ -4,7 +4,7 @@
 param(
     [Parameter(Position = 0)]
     [ValidateSet("on", "remote-only", "off", "status")]
-    [string]$Command = "remote-only",
+    [string]$Command = "off",
 
     [string]$DotfilesRoot = (Split-Path -Parent $PSScriptRoot),
     [string]$CopilotHome = (Join-Path $HOME ".copilot")

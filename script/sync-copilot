@@ -156,14 +156,8 @@ install_external_skills() {
 }
 
 configure_blackbird() {
-  command -v gh >/dev/null 2>&1 || return 0
-  if ! gh blackbird skills install --help >/dev/null 2>&1; then
-    yellow "  skip Blackbird configuration (gh blackbird not installed)"
-    return 0
-  fi
-
   DOTFILES_ROOT="$DOTFILES_ROOT" COPILOT_HOME="$COPILOT_HOME" \
-    bash "$DOTFILES_ROOT/script/configure-blackbird" remote-only
+    bash "$DOTFILES_ROOT/script/configure-blackbird" off
 }
 
 cmd_install() {
