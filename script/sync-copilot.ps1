@@ -3,7 +3,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Position = 0)]
-    [ValidateSet("install", "import")]
+    [ValidateSet("install", "import", "status")]
     [string]$Command,
 
     [string]$DotfilesRoot = (Split-Path -Parent $PSScriptRoot),
@@ -17,6 +17,8 @@ $ErrorActionPreference = "Stop"
 $CopilotRepo = Join-Path $DotfilesRoot "copilot"
 $ExtensionsDirectoryName = "extensions"
 $ExternalSkillsFile = Join-Path $CopilotRepo "external-skills"
+$PrivateMcpSource = Join-Path $ProjectsRoot "config/copilot/mcp-config.json"
+$PrivateMcpDestination = Join-Path $CopilotHome "mcp-config.json"
 $MaxLinkExpansions = 40
 $PathComparison = if ($IsWindows) {
     [StringComparison]::OrdinalIgnoreCase
@@ -35,6 +37,10 @@ function Write-Green([string]$Message) {
 
 function Write-Yellow([string]$Message) {
     Write-Host $Message -ForegroundColor Yellow
+}
+
+function Write-Red([string]$Message) {
+    Write-Host $Message -ForegroundColor Red
 }
 
 function Get-NormalizedPath([string]$Path) {
@@ -398,6 +404,62 @@ function Configure-Blackbird {
         -CopilotHome $CopilotHome
 }
 
+function Get-PrivateMcpStatus {
+    if (-not (Test-Path -LiteralPath $PrivateMcpSource -PathType Leaf)) {
+        return "unavailable"
+    }
+
+    $destination = Get-ExistingItem $PrivateMcpDestination
+    if ($null -eq $destination) {
+        return "missing"
+    }
+
+    if ($null -ne (Get-LinkTarget $PrivateMcpDestination)) {
+        $actual = Resolve-LinkPath $PrivateMcpDestination
+        $expected = Resolve-LinkPath $PrivateMcpSource
+        if ($actual.Equals($expected, $PathComparison)) {
+            return "linked"
+        }
+        return "wrong-link"
+    }
+
+    if (-not $destination.PSIsContainer) {
+        $sourceHash = (Get-FileHash -LiteralPath $PrivateMcpSource -Algorithm SHA256).Hash
+        $destinationHash = (Get-FileHash -LiteralPath $PrivateMcpDestination -Algorithm SHA256).Hash
+        if ($sourceHash -eq $destinationHash) {
+            return "not-linked"
+        }
+    }
+
+    return "divergent"
+}
+
+function Install-PrivateMcpConfig {
+    $status = Get-PrivateMcpStatus
+    switch ($status) {
+        "unavailable" {
+            Write-Yellow "  private MCP unavailable: $PrivateMcpSource"
+            return $true
+        }
+        "linked" {
+            Write-Green "  private MCP linked"
+            return $true
+        }
+        "divergent" {
+            Write-Red "  private MCP conflict: $PrivateMcpDestination differs; left untouched"
+            return $false
+        }
+        { $_ -in @("missing", "not-linked", "wrong-link") } {
+            if ($null -ne (Get-ExistingItem $PrivateMcpDestination)) {
+                Remove-Item -LiteralPath $PrivateMcpDestination -Force
+            }
+            [void](New-SymbolicLink $PrivateMcpSource $PrivateMcpDestination)
+            Write-Green "  linked mcp-config.json -> $PrivateMcpSource"
+            return $true
+        }
+    }
+}
+
 function Install-CopilotConfig {
     Write-Host "Installing copilot config: $CopilotRepo -> $CopilotHome"
     New-Item -ItemType Directory -Path $CopilotHome -Force | Out-Null
@@ -422,6 +484,7 @@ function Install-CopilotConfig {
     Install-Extensions
     Install-ExternalSkills
     Configure-Blackbird
+    $privateMcpInstalled = Install-PrivateMcpConfig
 
     if ($skipped.Count -gt 0) {
         Write-Host
@@ -429,6 +492,10 @@ function Install-CopilotConfig {
         foreach ($relativePath in $skipped) {
             Write-Yellow "  $($relativePath.Replace('\', '/'))"
         }
+    }
+
+    if (-not $privateMcpInstalled) {
+        throw "Copilot install incomplete: resolve the private MCP conflict and re-run."
     }
 }
 
@@ -482,11 +549,45 @@ function Import-CopilotConfig {
     }
 }
 
+function Get-CopilotConfigStatus {
+    $status = Get-PrivateMcpStatus
+    switch ($status) {
+        "unavailable" {
+            Write-Yellow "private MCP: unavailable ($PrivateMcpSource)"
+        }
+        "linked" {
+            Write-Green "private MCP: linked"
+        }
+        "missing" {
+            Write-Red "private MCP: missing destination"
+            return $false
+        }
+        "divergent" {
+            Write-Red "private MCP: divergent destination"
+            return $false
+        }
+        "not-linked" {
+            Write-Red "private MCP: destination matches but is not linked"
+            return $false
+        }
+        "wrong-link" {
+            Write-Red "private MCP: linked to the wrong source"
+            return $false
+        }
+    }
+    return $true
+}
+
 if (-not $Command) {
-    throw "Usage: script\sync-copilot.ps1 {install|import}"
+    throw "Usage: script\sync-copilot.ps1 {install|import|status}"
 }
 
 switch ($Command) {
     "install" { Install-CopilotConfig }
     "import" { Import-CopilotConfig }
+    "status" {
+        if (-not (Get-CopilotConfigStatus)) {
+            exit 1
+        }
+    }
 }
