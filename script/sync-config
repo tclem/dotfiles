@@ -7,7 +7,8 @@
 #
 # Layout convention: tclem/config mirrors ~/.config/. A file at
 # <repo>/<app>/<file> is symlinked to ~/.config/<app>/<file>. Only tracked files
-# are linked, and a differing pre-existing file is kept rather than overwritten.
+# are linked, except copilot/mcp-config.json, which sync-copilot installs into
+# ~/.copilot. A differing pre-existing file is kept rather than overwritten.
 
 set -euo pipefail
 
@@ -79,7 +80,7 @@ cmd_install() {
   # Tracked files only: a directory walk also links .DS_Store and ignored state.
   while IFS= read -r -d '' rel; do
     case "$rel" in
-      .github/*|.gitignore|README.md|LICENSE) continue ;;
+      .github/*|.gitignore|README.md|LICENSE|copilot/mcp-config.json) continue ;;
     esac
     local src="$CONFIG_REPO_DIR/$rel"
     [ -f "$src" ] || continue

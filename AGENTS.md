@@ -48,7 +48,7 @@ When in doubt, **stop and ask** before staging. This includes edits invited by a
 ## Key Scripts
 
 - **`bin/gh-log`** — Query GitHub Issues/PRs you're involved with since a given date.
-- **`script/sync-copilot` / `script/sync-copilot.ps1`** — Sync copilot config (instructions, agents, skills) between this repo and `~/.copilot`. `install` symlinks, `import` copies new files back.
+- **`script/sync-copilot` / `script/sync-copilot.ps1`** — Sync public Copilot config between this repo and `~/.copilot`; `install` also links the private `$PROJECTS/config/copilot/mcp-config.json` when available, and `status` checks that link without requiring the private checkout.
 - **`script/configure-blackbird` / `script/configure-blackbird.ps1`** — Select full, remote-only, or disabled Blackbird code discovery. Off is the default; Copilot sync removes both skills and the custom Code Discovery instructions.
 
 ## Copilot Setup
@@ -75,6 +75,7 @@ Keep repo-specific workflows in the repo where they apply. Do not promote one re
 | `pr-author` | User-level | Personal PR authoring workflow — create new PRs or rewrite an existing PR's title/body so it matches the final diff, with template handling, review-before-posting, and GitHub Posting Protocol. |
 | `copy-editor` | User-level | Minimal copy edits that preserve Tim's voice, quirks, and nonstandard phrasing. |
 | `skill-author` | User-level | Guidance for creating, editing, and reviewing dotfiles Copilot skills. |
+| `exp-operations` | User-level | Safely inspect, repair, mutate, verify, and read scorecards for live Microsoft ExP experiments; never mirror into repos. |
 | `planning-multi-agent-projects` | User-level, narrow | Durable repo-tracked multi-agent planning PRs, including the two-lane WIP/extraction model; not normal app plan mode. |
 | `refresh-plan` | User-level, narrow | Reconcile a repo-tracked plan with reality after work merges or a session reports back — phase docs, README, context, and PR body in one pass. |
 | `delegating-plan-work` | User-level, narrow | Readiness checks and the plan-specific context a kickoff prompt needs; `orchestrate` owns the spawning. |

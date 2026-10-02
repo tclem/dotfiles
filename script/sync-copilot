@@ -4,6 +4,7 @@
 #
 #   script/sync-copilot install   — symlink repo files into ~/.copilot
 #   script/sync-copilot import    — copy new files from ~/.copilot into the repo, then symlink
+#   script/sync-copilot status    — check the private MCP config link
 
 set -euo pipefail
 
@@ -31,9 +32,12 @@ EXTENSIONS_DIR_NAME="extensions"
 # skills themselves stay wherever they are.
 EXTERNAL_SKILLS_FILE="$COPILOT_REPO/external-skills"
 PROJECTS_ROOT="${PROJECTS:-$HOME/github}"
+PRIVATE_MCP_SOURCE="$PROJECTS_ROOT/config/copilot/mcp-config.json"
+PRIVATE_MCP_DESTINATION="$COPILOT_HOME/mcp-config.json"
 
 green()  { printf "\033[32m%s\033[0m\n" "$1"; }
 yellow() { printf "\033[33m%s\033[0m\n" "$1"; }
+red()    { printf "\033[31m%s\033[0m\n" "$1"; }
 
 # Return 0 if the SKILL.md at $1 has `disabled: true` in its frontmatter, else 1.
 # Frontmatter is the leading `---`-delimited YAML block. Anything outside is ignored.
@@ -160,6 +164,57 @@ configure_blackbird() {
     bash "$DOTFILES_ROOT/script/configure-blackbird" off
 }
 
+private_mcp_status() {
+  if [[ ! -f "$PRIVATE_MCP_SOURCE" ]]; then
+    printf 'unavailable\n'
+  elif [[ -L "$PRIVATE_MCP_DESTINATION" ]]; then
+    local actual expected
+    expected="$(resolve_path "$PRIVATE_MCP_SOURCE")"
+    if actual="$(resolve_path "$PRIVATE_MCP_DESTINATION")" &&
+       [[ "$actual" == "$expected" ]]; then
+      printf 'linked\n'
+    else
+      printf 'wrong-link\n'
+    fi
+  elif [[ ! -e "$PRIVATE_MCP_DESTINATION" ]]; then
+    printf 'missing\n'
+  elif [[ -f "$PRIVATE_MCP_DESTINATION" ]] &&
+       cmp -s "$PRIVATE_MCP_DESTINATION" "$PRIVATE_MCP_SOURCE"; then
+    printf 'not-linked\n'
+  else
+    printf 'divergent\n'
+  fi
+}
+
+install_private_mcp_config() {
+  local status
+  status="$(private_mcp_status)"
+
+  case "$status" in
+    unavailable)
+      yellow "  private MCP unavailable: $PRIVATE_MCP_SOURCE"
+      return 0
+      ;;
+    linked)
+      green "  private MCP linked"
+      return 0
+      ;;
+    divergent)
+      red "  private MCP conflict: $PRIVATE_MCP_DESTINATION differs; left untouched"
+      return 1
+      ;;
+    missing|not-linked|wrong-link)
+      if [[ -L "$PRIVATE_MCP_DESTINATION" || -e "$PRIVATE_MCP_DESTINATION" ]]; then
+        rm "$PRIVATE_MCP_DESTINATION"
+      fi
+      mkdir -p "$(dirname "$PRIVATE_MCP_DESTINATION")"
+      ln -s "$PRIVATE_MCP_SOURCE" "$PRIVATE_MCP_DESTINATION"
+      green "  linked mcp-config.json → $PRIVATE_MCP_SOURCE"
+      return 0
+      ;;
+  esac
+}
+
 cmd_install() {
   echo "Installing copilot config: $COPILOT_REPO → $COPILOT_HOME"
   local files filtered=() skipped=()
@@ -188,6 +243,8 @@ cmd_install() {
   install_extensions
   install_external_skills
   configure_blackbird
+  local private_mcp_installed=1
+  install_private_mcp_config || private_mcp_installed=0
 
   if (( ${#skipped[@]} > 0 )); then
     echo
@@ -195,6 +252,11 @@ cmd_install() {
     for rel in "${skipped[@]}"; do
       yellow "  $rel"
     done
+  fi
+
+  if (( !private_mcp_installed )); then
+    red "Copilot install incomplete: resolve the private MCP conflict and re-run."
+    return 1
   fi
 }
 
@@ -345,11 +407,42 @@ cmd_import() {
   done <<< "$files"
 }
 
+cmd_status() {
+  local status
+  status="$(private_mcp_status)"
+
+  case "$status" in
+    unavailable)
+      yellow "private MCP: unavailable ($PRIVATE_MCP_SOURCE)"
+      ;;
+    linked)
+      green "private MCP: linked"
+      ;;
+    missing)
+      red "private MCP: missing destination"
+      return 1
+      ;;
+    divergent)
+      red "private MCP: divergent destination"
+      return 1
+      ;;
+    not-linked)
+      red "private MCP: destination matches but is not linked"
+      return 1
+      ;;
+    wrong-link)
+      red "private MCP: linked to the wrong source"
+      return 1
+      ;;
+  esac
+}
+
 case "${1:-}" in
   install) cmd_install ;;
   import)  cmd_import ;;
+  status)  cmd_status ;;
   *)
-    echo "Usage: script/sync-copilot {install|import}"
+    echo "Usage: script/sync-copilot {install|import|status}"
     exit 1
     ;;
 esac
