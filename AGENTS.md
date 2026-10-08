@@ -84,7 +84,6 @@ Keep repo-specific workflows in the repo where they apply. Do not promote one re
 | `design-doc-author` | User-level | Writing long-form design docs that explain a subsystem's shape, contract, and mechanism — the companion to an ADR's terse decision record. |
 | `debug` | User-level | Evidence-first bug, regression, and failure investigation. |
 | `fixing-root-causes` | User-level | Rejecting defense-in-depth backstops, fallbacks, and "just in case" layers alongside a real fix. |
-| `test-before-coding` | User-level | Test/verification-first implementation discipline. |
 | `verify-before-claiming` | User-level | Fresh verification before completion claims. |
 | `pr-merge-readiness` | User-level | Get a pull request ready to merge by addressing review threads, CI failures, or conflicts, without performing the merge. |
 | `pr-risk-check` | User-level, fallback | Assess the risk profile of a PR — what could break, blast-radius, revertibility — independent of whether merge means immediate deploy. Repo-local equivalent wins. |

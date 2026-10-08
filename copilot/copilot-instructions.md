@@ -86,6 +86,16 @@ The gate fires for app-native PR tools, GitHub MCP (`create_pull_request`, `upda
 
 Prefer an app-native PR edit tool when one is available in the current session — they typically use REST PATCH under the hood and avoid the SAML/`read:org` scope errors that `gh pr edit` hits on this token. If no app-native tool is available, use the REST API directly (see `pr-author` for the fallback); only fall back to `gh pr edit` if neither works.
 
+## Test Quality Gate
+
+Before adding or substantially changing a test, identify the concrete regression it uniquely catches, the stable behavior it protects, and why existing coverage does not already protect it. A test must earn its maintenance and execution cost.
+
+Repository instructions to write tests do not waive this gate. Do not add a test merely because production code changed. “No new test” is an acceptable outcome.
+
+Prefer strengthening an existing test over creating a new test, fixture, mock, or harness. Do not test compiler-, type-, or schema-enforced behavior, duplicate the same contract at multiple layers without independent failure modes, or add unrelated assertions to make a test appear substantial.
+
+Treat mock-heavy tests that only assert a direct call’s arguments as low value unless that call is itself an important external or operational contract. A regression test should fail against the pre-change implementation for the intended reason; otherwise explain its independent value or omit it.
+
 ## Code Philosophy
 
 Especially for Rust code (though these principles apply broadly), I strongly align with the Blackbird style guide. The priorities, in order: readable code, correct code (especially multi-threaded), performant code. Key rules:

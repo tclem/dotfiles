@@ -37,7 +37,6 @@ Run `script/skills-status` to print the latest table, or `script/skills-status -
 | `reading-source-code` | ✅ on | Use when about to call a library, crate, or framework API you haven't verified, when a dependency's behavio... |
 | `refresh-plan` | ✅ on | Use when asked to update or refresh a repo-tracked multi-agent plan, or after work merges, a PR changes sta... |
 | `skill-author` | ✅ on | Use when creating, editing, splitting, renaming, or reviewing Copilot skills in this dotfiles repo |
-| `test-before-coding` | 🚫 off | Use when implementing a feature or bugfix where behavior can be specified with tests or another executable ... |
 | `thinking-about` | ✅ on | Use when the user wants to capture a thought into their tclem/notes inbox, or when running the daily rollup... |
 | `tick-test` | 🚫 off | A safe demo automation that mirrors agent-merge's drive-to-done loop on the tick cycle |
 | `verify-before-claiming` | ✅ on | Use when about to claim work is complete, fixed, passing, installed, synced, or ready for review |
