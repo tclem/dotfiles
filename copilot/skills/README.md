@@ -14,6 +14,7 @@ Run `script/skills-status` to print the latest table, or `script/skills-status -
 |---|---|---|
 | `adr-author` | ✅ on | Use when proposing or recording a significant technical decision (architecture change, new dependency patte... |
 | `alert-investigator` | 🚫 off | Use when investigating an alert, monitor, incident, error spike, degraded service, or production anomaly, a... |
+| `batch-pr-review` | ✅ on | Use when coordinating reviews for many pull requests, especially a stack or batch that needs shared researc... |
 | `choosing-workflow` | 🚫 off | Use when deciding which workflow or skill should handle a task, especially when repo-local, dotfiles, proce... |
 | `code-go` | 🚫 off | Use when editing or reviewing Go files (*.go) and the repository has no go-coding-skill of its own |
 | `code-rust` | 🚫 off | Use when editing or reviewing Rust files (*.rs) and the repository has no rust-coding-skill of its own |
