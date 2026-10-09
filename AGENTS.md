@@ -79,6 +79,7 @@ Keep repo-specific workflows in the repo where they apply. Do not promote one re
 | `planning-multi-agent-projects` | User-level, narrow | Durable repo-tracked multi-agent planning PRs, including the two-lane WIP/extraction model; not normal app plan mode. |
 | `refresh-plan` | User-level, narrow | Reconcile a repo-tracked plan with reality after work merges or a session reports back — phase docs, README, context, and PR body in one pass. |
 | `delegating-plan-work` | User-level, narrow | Readiness checks and the plan-specific context a kickoff prompt needs; `orchestrate` owns the spawning. |
+| `batch-pr-review` | User-level, narrow | Coordinate large PR review batches with shared research, cited handoffs, bounded fan-out, staged comments, and live GitHub reconciliation. |
 | `design-before-coding` | User-level | Lightweight design gate before behavior or architecture changes. |
 | `adr-author` | User-level | Writing or amending Architecture Decision Records — filename conventions, header template, status lifecycle, ADR-as-separate-PR rule. |
 | `design-doc-author` | User-level | Writing long-form design docs that explain a subsystem's shape, contract, and mechanism — the companion to an ADR's terse decision record. |
