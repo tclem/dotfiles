@@ -16,9 +16,9 @@ Before starting work, inventory the batch:
 - PR URL, repository, current head SHA, base, author, draft state, and stack/dependency order.
 - Shared domains and related repositories that may establish contracts, history, or invariants.
 - Validation cost, risky domains, and likely review depth.
-- Requested model diversity, concurrency limit, and review authority policy.
+- Model diversity, safe concurrency, complete review scope, and authority policy.
 
-Clarify the batch policy once. Default to staged review comments with no submitted review. Approval submission is a separate authority tier, never an implied consequence of a clean agent report.
+Review every requested PR unless the user narrows scope. Default to staged comments, not submitted reviews. Approval is a separate authority tier, never implied by a clean report.
 
 ## Research before fan-out
 
@@ -36,7 +36,7 @@ Keep citations useful to a reviewer; do not paste research transcripts. Every in
 
 ## Fan-out
 
-Set an explicit concurrency cap before starting reviews. Default to three active review sessions; lower it when validation is expensive, PRs overlap heavily, or the coordinator cannot promptly inspect results. Increase it only when work is independent and supervision remains credible.
+Set concurrency before starting. Default to at most three active review sessions; lower it when validation is expensive, PRs overlap, or supervision would suffer. Queue the rest and refill slots until every requested PR is complete. Raise the cap only for independent work that remains credibly supervised.
 
 When the user requests model diversity, assign at least two frontier model families across the batch. Distribution across the batch is sufficient unless a PR needs a second opinion. Route risky, ambiguous, or representative PRs to the stronger or independent model; do not spend two models on every routine PR by reflex.
 
@@ -74,7 +74,7 @@ Link only sessions that require attention:
 - Blocked validation or missing evidence.
 - Stale heads, reconciliation conflicts, or an approval decision reserved for the human.
 
-Omit clean, reconciled sessions that need no decision. Give a compact batch count separately if useful; do not make the user open every session to discover that nothing happened.
+Omit clean, reconciled sessions that need no decision. Report a compact count if useful, but account for every requested PR before declaring completion.
 
 ## Common mistakes
 
@@ -82,7 +82,7 @@ Omit clean, reconciled sessions that need no decision. Give a compact batch coun
 - Sending raw research instead of a compact cited brief.
 - Treating one child session's summary as GitHub's live review state.
 - Using the same model for the whole batch after model diversity was requested.
-- Letting concurrency outrun the coordinator's ability to inspect and steer.
+- Treating the concurrency cap as a review-count limit or stopping after the first wave.
 - Submitting comments or approvals when the policy only authorized staging.
 - Auto-approving a clean-looking PR with blocked validation, a stale head, or a risky domain.
 - Listing every completed session in the final report instead of only attention items.

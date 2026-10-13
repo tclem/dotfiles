@@ -13,3 +13,18 @@ Cases: targets `batch-research-before-fanout-target`, `batch-authority-and-model
 The selected candidate passed all 8/8 behavior hard assertions, improved aggregate targets from 0.33 to 1.00, preserved the sentinel, and improved combined discovery from 0.25 to 0.75. The smaller ablation lost live-reconciliation behavior, regressed the sentinel, and regressed discovery.
 
 Diagnostics exposed brittle prose-substring assertions before the final gate; the frozen cases now assert structured decision boundaries rather than exact wording. The pinned evaluator was locally compatibility-patched and tested to recognize successful project-skill telemetry emitted by Copilot CLI 1.0.94, equivalent to its legacy `session.skills_loaded` event.
+
+## Complete-set follow-up
+
+Pinned `eval-skill` v1 at the same commit; behavior mode; `gpt-5.6-sol` author and blind judge, low effort, two trials per case, seed `20261016`.
+
+Cases: targets `five-pr-queue-target` and `refill-after-clean-wave-target`; sentinel `concurrency-safety-sentinel`. The five-PR target requires rolling slot refill rather than waiting for the full first wave. Evidence is synthetic and contains no repository or review content.
+
+| Variant | SHA-256 | Chars | Targets | Sentinel | Hard assertions | Rolling refill | Decision |
+|---|---|---:|---:|---:|---:|---:|---|
+| baseline | `122e69421ca01cefe9591336a27f141f76338f8bc80d0ca1f467757b0246ec2c` | 6,126 | 2/4 | 2/2 | 5/6 | 0/2 | reject |
+| candidate | `e6841193392fe2e9e348491d87eaef0c76cad8c80ca194130db9041ce4313f1b` | 6,123 | 4/4 | 2/2 | 6/6 | 2/2 | select |
+
+The candidate improved aggregate targets from 0.50 to 1.00, preserved the sentinel, passed every hard assertion, and was three characters shorter. Discovery was not rerun because frontmatter and description did not change.
+
+Three diagnostic gates failed before the selected run: the first exposed a brittle `queue` substring; the second showed the baseline already covered eventual completion but not rolling refill; the third exposed assertions coupled to PR naming and a rejected phrase. The frozen gate uses structured set coverage plus a blind qualitative rubric for the rolling-refill boundary.
