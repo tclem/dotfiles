@@ -181,22 +181,30 @@ Then:
 
 - Append the required signature block at the very end of the body, separated by a blank line.
 - Do not include the `Co-authored-by` trailer; that trailer is only for git commit messages.
-- Verify the final body ends with the required signature block before sending.
-- If the signature is missing, do not post.
+- Verify the final body ends with the required signature block, including valid provenance JSON with no unresolved placeholders, before sending.
+- If the visible signature or provenance comment is missing, do not post.
 
 Required signature block:
 
 ```
+<!-- copilot-provenance: {"version":1,"contribution":"generated","model_id":"<model ID>","session_id":"<session ID>","session_id_kind":"<copilot-app|copilot-cli>"} -->
 <sub><em><img src="https://raw.githubusercontent.com/tclem/dotfiles/main/copilot/assets/copilot-signature.svg" alt="" align="absmiddle" style="display: inline;">&nbsp;&nbsp;Generated via Copilot (<model name>) <a href="https://adaptivepatchwork.com/ai-attribution/">on behalf</a> of @tclem</em></sub>
 ```
 
-Replace `<model name>` with the model you are currently running as (e.g., "Claude Opus 4.7", "GPT-5.2"). This does **not** apply to commit messages, code changes, or terminal output.
+The comment is hidden when rendered, **not private**: it remains in raw Markdown and API responses. It is self-reported provenance, not proof of authorship, a license, or permission to train on the content. This protocol does **not** apply to commit messages, code changes, or terminal output.
+
+- `version` versions this metadata format. `contribution` is `generated` for agent-composed text; `assisted` is reserved for the hand-authored variant below.
+- Replace `<model name>` with the contributing model's display name and `<model ID>` with its exact runtime-supplied identifier. Use the model and session that produced the agent contribution, not a coordinator that merely posts it.
+- Choose session provenance from the producing author, not the interface running or posting this task. If that author has a supplied `project_session_id`, use it as `session_id` with `session_id_kind: "copilot-app"`, even when a CLI session ID is also supplied or the task runs through CLI. Only when `project_session_id` is absent may an explicitly supplied CLI session ID be used with `"copilot-cli"`. If neither is supplied, omit both session fields. Never substitute a project, request, process, or parent session ID. Omit unavailable `model_id` rather than guessing, copying placeholders, or searching local history.
+- A GitHub draft includes its body and one complete signature block. Relay both unchanged for an unchanged draft. When rewriting, return the rewritten body followed by one refreshed complete block for the rewriting author, replacing the old block. Refresh both the visible model attribution and provenance JSON. The block records the current agent contribution, not an edit history.
+- Do not add prompts, transcripts, local paths, private URLs, or credentials. GitHub already records posting/edit timestamps and account context; do not duplicate them here.
 
 ### Hand-authored variant (do not post on my behalf)
 
 When I write content myself but use a model for copy editing, review, or brainstorming, I sometimes attach a different signature signalling that the content is mine and the model only assisted. **Agents must not use this signature.** It's documented here so you recognize it and so I can copy it when posting my own content:
 
 ```
+<!-- copilot-provenance: {"version":1,"contribution":"assisted","model_id":"<model ID>","session_id":"<session ID>","session_id_kind":"<copilot-app|copilot-cli>"} -->
 <sub><em><img src="https://raw.githubusercontent.com/tclem/dotfiles/main/copilot/assets/copilot-signature.svg" alt="" align="absmiddle" style="display: inline;">&nbsp;&nbsp;Written by @tclem <a href="https://adaptivepatchwork.com/ai-attribution/">with assistance from</a> Copilot (<model name>)</em></sub>
 ```
 
