@@ -90,6 +90,16 @@ resolve_path() {
   printf '%s/%s\n' "$dir" "$base"
 }
 
+require_main_checkout() {
+  local git_dir common_dir
+  git_dir="$(git -C "$DOTFILES_ROOT" rev-parse --absolute-git-dir)"
+  common_dir="$(git -C "$DOTFILES_ROOT" rev-parse --path-format=absolute --git-common-dir)"
+  if [[ "$(resolve_path "$git_dir")" != "$(resolve_path "$common_dir")" ]]; then
+    red "Refusing to sync from a linked worktree; run sync-copilot in the main checkout." >&2
+    return 1
+  fi
+}
+
 prune_removed_links() {
   local files="$1"
   local installed
@@ -216,6 +226,7 @@ install_private_mcp_config() {
 }
 
 cmd_install() {
+  require_main_checkout
   echo "Installing copilot config: $COPILOT_REPO → $COPILOT_HOME"
   local files filtered=() skipped=()
   files=$(expand_globs "$COPILOT_REPO" "${PORTABLE_GLOBS[@]}")
@@ -364,6 +375,7 @@ install_extensions() {
 }
 
 cmd_import() {
+  require_main_checkout
   echo "Importing copilot config: $COPILOT_HOME → $COPILOT_REPO"
   local files
   files=$(expand_globs "$COPILOT_HOME" "${PORTABLE_GLOBS[@]}")

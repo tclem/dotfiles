@@ -112,4 +112,6 @@ Keep project-specific operational, app-runtime, UI, and repo-style skills in the
 
 **Any edit under `copilot/skills/`, `copilot/agents/`, or `copilot/copilot-instructions.md` is not done until Copilot sync has run and reported success.**
 
+Run sync from the main checkout after the changes are present there. Both `install` and `import` refuse linked worktrees: global symlinks must survive worktree removal. Check this guard with `python3 script/test-sync-copilot.py` (also exercises PowerShell when `pwsh` is installed).
+
 Secrets and personal overrides go in `~/.localrc` (not versioned).

@@ -115,6 +115,18 @@ function Resolve-LinkPath([string]$Path) {
     throw "Could not resolve link path after $MaxLinkExpansions expansions: $Path"
 }
 
+function Assert-MainCheckout {
+    $paths = @(& git -C $DotfilesRoot rev-parse --path-format=absolute --git-dir --git-common-dir)
+    if ($LASTEXITCODE -ne 0) {
+        throw "Could not identify the Git checkout at $DotfilesRoot"
+    }
+    $gitDirectory = Resolve-LinkPath $paths[0]
+    $commonDirectory = Resolve-LinkPath $paths[1]
+    if (-not $gitDirectory.Equals($commonDirectory, $PathComparison)) {
+        throw "Refusing to sync from a linked worktree; run sync-copilot in the main checkout."
+    }
+}
+
 function Remove-EmptyParents([string]$Path, [string]$StopAt) {
     $current = Split-Path -Parent $Path
     $stop = Get-NormalizedPath $StopAt
@@ -451,6 +463,7 @@ function Install-PrivateMcpConfig {
 }
 
 function Install-CopilotConfig {
+    Assert-MainCheckout
     Write-Host "Installing copilot config: $CopilotRepo -> $CopilotHome"
     New-Item -ItemType Directory -Path $CopilotHome -Force | Out-Null
     $installed = [Collections.Generic.List[string]]::new()
@@ -490,6 +503,7 @@ function Install-CopilotConfig {
 }
 
 function Import-CopilotConfig {
+    Assert-MainCheckout
     Write-Host "Importing copilot config: $CopilotHome -> $CopilotRepo"
     foreach ($relativePath in Get-PortableFiles $CopilotHome) {
         if ($relativePath -in @("skills\blackbird\SKILL.md", "skills\blackbird-fileset\SKILL.md")) {
