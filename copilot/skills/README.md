@@ -28,6 +28,7 @@ Run `script/skills-status` to print the latest table, or `script/skills-status -
 | `design-doc-author` | ✅ on | Use when authoring or substantially editing a design doc, architecture doc, or subsystem explanation — the ... |
 | `exp-operations` | ✅ on | Use when inspecting, repairing, starting, advancing, stopping, or reading scorecards for a live Microsoft E... |
 | `fixing-root-causes` | ✅ on | Use when fixing a bug, regression, or unexpected behavior — especially when tempted to add a defensive laye... |
+| `gws-sheets` | 🚫 off | Use when reading or editing Google Sheets cells through the Google Workspace CLI (gws) |
 | `incident-postmortem` | 🚫 off | Use when assembling, updating, or reviewing an incident postmortem, and the repository has no postmortem sk... |
 | `planning-multi-agent-projects` | ✅ on | Use when creating a repo-tracked multi-agent planning PR for a large project, especially when phases, livin... |
 | `pr-author` | ✅ on | Use when creating a GitHub pull request, or when updating an existing PR's title or body so it matches what... |

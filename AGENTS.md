@@ -76,6 +76,7 @@ Keep repo-specific workflows in the repo where they apply. Do not promote one re
 | `copy-editor` | User-level | Minimal copy edits that preserve Tim's voice, quirks, and nonstandard phrasing. |
 | `skill-author` | User-level | Guidance for creating, editing, and reviewing dotfiles Copilot skills. |
 | `exp-operations` | User-level | Safely inspect, repair, mutate, verify, and read scorecards for live Microsoft ExP experiments; never mirror into repos. |
+| `gws-sheets` | User-level, disabled | Scoped Google Sheets cell editing through `gws`; pending behavioral promotion. |
 | `planning-multi-agent-projects` | User-level, narrow | Durable repo-tracked multi-agent planning PRs, including the two-lane WIP/extraction model; not normal app plan mode. |
 | `refresh-plan` | User-level, narrow | Reconcile a repo-tracked plan with reality after work merges or a session reports back — phase docs, README, context, and PR body in one pass. |
 | `delegating-plan-work` | User-level, narrow | Readiness checks and the plan-specific context a kickoff prompt needs; `orchestrate` owns the spawning. |
