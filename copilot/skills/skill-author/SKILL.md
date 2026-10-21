@@ -152,7 +152,7 @@ An edit is behavioral if it can change skill discovery/invocation, decisions/act
 
 Behavioral edits must pass pinned [`eval-skill` v1](https://github.com/tclem/agent-retro/blob/149fc4430c5066b002442f704b2a124eb1f12a0c/docs/skill-eval-v1.md). Freeze target regressions/sentinels; compare baseline and candidate with identical explicit model/effort/trials/tools, adding compressed/ablation when growing. Require behavior mode, every hard assertion, configured target improvement, and no sentinel regression; require discovery without regression for description/frontmatter changes. Failed gates or no selection block promotion. Default no growth. Growth needs rationale and a smaller ablation; shortest equivalent wins. Remove obsolete/redundant text instead of appending exceptions. Changing this pin/policy is behavioral.
 
-PR body/review artifact records hashes/sizes, case IDs, model/settings/trials, target/sentinel/discovery results, failed gates honestly, and decision; omit full/private transcripts.
+Record hashes/sizes, case IDs, trial settings, gate results, and the decision in a durable review artifact or targeted review comment; omit full/private transcripts. Never put that evidence or a Validation section in a PR body: destination-specific authoring skills such as `pr-author` control its content.
 
 ## Attribution
 
