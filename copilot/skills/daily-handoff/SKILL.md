@@ -106,7 +106,7 @@ Nest PR bullets under the theme bullet they support. Use **four leading spaces**
 
 **A PR that needs no narrative goes bare.** Put it as a top-level `:merged:`/`:review:` bullet near the end, with no theme sentence above it and no "Misc" header. Never manufacture a grouping to justify a link — if the only sentence you can write is "housekeeping — dependency PRs are automated now", drop the sentence and keep the links. Bare bullets can still carry inline commentary.
 
-**When in doubt, cut the link.** A tight handoff has noticeably fewer PR links than the set of PRs you touched. Every link should be one the reader might open.
+**When in doubt, cut the link, not the work stream.**
 
 ### What to drop
 
