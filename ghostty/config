@@ -1,7 +1,10 @@
 theme = GitHub Dark Dimmed
 cursor-style = block
 cursor-style-blink = false
-shell-integration-features = no-cursor
+shell-integration-features = no-cursor,no-title
+scrollback-limit-bytes = unlimited
+macos-non-native-fullscreen = true
+copy-on-select = clipboard
 
 font-family = SFMono Nerd Font
 font-size = 14
