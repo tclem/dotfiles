@@ -4,15 +4,13 @@ Pinned `eval-skill` v1 at `tclem/agent-retro@149fc4430c5066b002442f704b2a124eb1f
 
 The v1 harness accepts only `review_feedback_v1`, so these synthetic cases evaluate review decisions about Datadog CLI selection, auth, and mutation safety. They do not measure CLI task execution, live Datadog access, or full feature parity.
 
-Cases: target `pup-auth-refresh-is-not-automatic`; sentinels `pup-auth-status-avoids-keychain`, `pup-events-aggregate-gap`, and `pup-logs-flex-fallback-limits-claim`. The facts pin Pup 2.4.1 command help and source behavior; they contain no account data or credentials.
+Cases: target `pup-change-stories-is-supported`; sentinels `pup-auth-status-avoids-keychain`, `pup-auth-refresh-is-not-automatic`, `pup-events-aggregate-gap`, and `pup-logs-flex-fallback-limits-claim`. These cover operations observed in the 30-day usage audit; the facts pin Pup 2.4.1 command help and contain no account data or credentials.
 
 | Variant | SHA-256 | Chars | Targets | Sentinel | Discovery | Decision |
 |---|---|---:|---:|---:|---:|---|
-| baseline | `7ac927770667adab61fd407d39167210b3ae963cde44c5c8111e7a820589579f` | 8,921 | 2/2 | 6/6 | 0/8 success; 1/8 discovered, 3/8 invoked | reference |
-| candidate | `e16a602d0546c62a8ce9c67968166f472e28a46e7120bda4446a85545938fbf1` | 2,629 | 2/2 | 6/6 | 1/8 success; 1/8 discovered, 6/8 invoked | reject: target gain 0.00 |
+| baseline (`upstream-pup-241`) | `7ac927770667adab61fd407d39167210b3ae963cde44c5c8111e7a820589579f` | 8,921 | 0/2 | 7/8 | 0/10 success; 0/10 discovered, 6/10 invoked | reference |
+| candidate (`dotfiles`) | `d9b3b9b902c92bd1d1f9b4b63c2a3d7b9a183e068306416a31708ff3aca8f986` | 3,048 | 2/2 | 8/8 | 0/10 success; 1/10 discovered, 8/10 invoked | selected |
 
-Final run `94b014e0-185e-4ea7-8c31-a72be43f7a89`: all hard assertions passed in behavior mode, with no sentinel regression. The auth-refresh target passed 2/2 for both variants, below the required 0.20 improvement. Discovery success improved from 0/8 to 1/8; direct skill invocation increased from 3/8 to 6/8. The candidate was not selected and is marked disabled in this branch to prevent activation. The hash above is the evaluated enabled candidate; the final file adds only the `disabled: true` promotion gate.
-
-Earlier diagnostics exposed two assertion problems, which were corrected before this run: an exact proposed-change count rejected valid multi-part answers, and requiring the literal word "incomplete" rejected correct wording. The final cases avoid those constraints.
+Final run `d887b5db-f721-43ef-88e4-b819aaf0489d`: pinned `eval-skill` v1, behavior and discovery modes, `gpt-5.6-sol` at low effort for author and judge, two trials per case, two fixed distractors, seed `17795688054449247468`. The target passed 2/2 versus 0/2 baseline, every candidate sentinel and hard assertion passed, and discovery did not regress: skill invocation rose from 6/10 to 8/10 and discovery from 0/10 to 1/10. The candidate was selected. A preceding run exposed a 1/10 discovery regression; narrowing the skill description to include safe authentication checks resolved it. This synthetic evaluation does not establish full Pup/MCP parity or live account coverage.
 
 Bounded live read-only checks succeeded: `pup metrics query --query 'avg:system.cpu.user{*}' --from 5m --to now --read-only` returned one series; `pup logs search --query 'status:error' --from 5m --to now --limit 1 --read-only` returned zero indexed records. Pup warned that Flex storage was unavailable and retried against indexed logs, so that empty result does not cover Flex data. No Datadog writes or credential changes were made. The MCP must remain enabled because Pup 2.4.1 does not provide the observed `aggregate_events` operation, and broader parity remains unverified.

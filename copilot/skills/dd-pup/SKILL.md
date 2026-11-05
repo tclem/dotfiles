@@ -1,33 +1,33 @@
 ---
 name: dd-pup
-disabled: true
-description: Use when querying Datadog with Pup or reviewing whether a proposed Pup command supports a Datadog workflow.
+description: Use when querying Datadog with Pup, checking Pup authentication safely, or reviewing whether a proposed Pup command supports a Datadog workflow.
 ---
 
 # Datadog with Pup
 
-Use the official Pup CLI for Datadog work. Verify the exact command and its read/write behavior before running it; never infer that Pup has complete parity with another Datadog client.
+Use Pup for the Datadog workflows observed in the session history below. This is a deliberately bounded migration guide, not a catalog of Pup features or a claim of full MCP parity.
 
 ## Workflow
 
-1. Confirm `pup` is installed. If a command or subcommand is unfamiliar, inspect `pup --help` and `pup <group> --help` rather than guessing.
-2. Keep the requested scope: use the stated org/site, query, and time window. If a needed value is missing, ask instead of broadening the query silently.
-3. Prefer read-only commands and add `--read-only` when the selected command supports it. Do not create, update, delete, submit, post, or otherwise mutate Datadog state unless the user explicitly asked for that change.
-4. Report the exact query and time window with findings. Distinguish an empty result from an access or command error.
+1. Keep the requested scope: use the stated service, metric, filters, and time window. If a needed value is missing, ask instead of broadening the query silently.
+2. Prefer read-only commands and add `--read-only` where supported. Do not change credentials or mutate Datadog state unless the user explicitly asked.
+3. Use `pup <group> --help` to verify options before relying on an unfamiliar flag. Report the query and time window, and distinguish an empty result from an access or command error.
 
-## Common read workflows
+## Observed workflows
 
-- Metrics: `pup metrics query` for time series; `pup metrics list` or `pup metrics search` to discover metrics.
-- Logs: `pup logs search` and `pup logs aggregate`.
-- If a logs query warns that Flex storage is unavailable and falls back to indexed logs, report that limitation; a successful empty result does not establish that the broader Flex-backed time range is empty.
-- Traces and spans: `pup traces search`, `pup traces get`, and `pup traces aggregate`.
-- Events: `pup events list`, `pup events search`, and `pup events get`. Pup 2.4.1 has no `events aggregate` command; do not substitute a different dataset's aggregation or claim parity.
-- Dashboards, notebooks, monitors, and incidents: inspect their group help, then use the available list/search/get operations for the requested resource.
+| Observed Datadog work | Pup command or gap |
+|---|---|
+| Metric queries, metric discovery, and metric context | `pup metrics query`, `pup metrics search`, and `pup metrics metadata get`. Metadata lookup is not verified as a replacement for context responses containing scoped tag values or related assets. |
+| Log search | `pup logs search`. If Flex is unavailable and Pup falls back to indexed logs, report that the result may not cover the full requested range. |
+| Span search/aggregation and trace retrieval | `pup traces search`, `pup traces aggregate`, and `pup traces get`. |
+| Event search and aggregation | `pup events search` is available; Pup 2.4.1 has no `events aggregate` command. Keep the existing alternative for event aggregation. |
+| Monitor search, dashboard retrieval, and notebook retrieval | `pup monitors search`, `pup dashboards get`, and `pup notebooks get`. The observed dashboard-search operation has no corresponding Pup search subcommand; do not treat `dashboards list` as equivalent without verifying the requested behavior. |
+| APM change stories | `pup change-stories list --service <SERVICE> --from <START> --to <END>`. |
+| Dashboard upsert and widget guidance | Pup has dashboard create/update and widget-schema commands, but these do not establish parity with the MCP widget expert. Mutate dashboards only when explicitly requested. |
+| Datadog MCP skill listing/loading | This skill provides focused query guidance; it does not replace the MCP's Datadog skill registry. |
 
-Use `--help` to confirm options for time ranges, filters, pagination, output, and read-only mode. Do not put credentials in command arguments or output.
-
-## Authentication and gaps
+## Authentication and reporting gaps
 
 Do not run `pup auth login`, refresh credentials, or trigger Keychain/OAuth prompts to test access. If a query lacks credentials, stop and report that authentication requires the user's action. `DD_TOKEN_STORAGE=file pup auth status` avoids Keychain but checks only file-backed credentials; a negative result does not establish that no other credential store is configured.
 
-If Pup does not expose the requested operation, say so and use an already-authorized alternative only if it remains available and the user has not asked to retire it. Do not claim that installing Pup proves live account access or complete MCP parity.
+For a missing or only partially matched workflow above, state the gap and use an already-authorized alternative if available. Do not infer parity from a similarly named command or from Pup being installed.
