@@ -17,3 +17,19 @@ After the failed promotion gate, the source was marked disabled. Its current SHA
 An earlier diagnostic run used two invalid assertions: one rejected a correct explanation for why `az login` must not run, and another paired facts describing a missing response check with a reviewer comment to remove that check. The cases were corrected before this final run; the failed promotion result above uses the corrected cases.
 
 The pinned harness checkout needed a local compatibility patch removing obsolete `--no-remote` and `--no-remote-export` CLI flags; no evaluator or case files are part of this repository change. Representative bounded read-only KQL and metadata requests were separately verified through Azure CLI REST using the existing login, without starting authentication. The skill covers the observed inventory, Redis, and documentation paths at a high level, but it does not replace the broad Azure MCP's other service-specific tools.
+
+## Description recheck
+
+Pinned `eval-skill` v1 at the same commit; behavior and discovery modes; `gpt-5.6-sol` author and blind judge, low effort, two trials per case, seed `20261105`, and the same two fixed distractors.
+
+Cases: targets `kusto-auth-audience`, `kusto-management-severity`, `kusto-management-endpoint`, `kusto-no-auth-prompt`, and `kusto-partial-query-error`; sentinel `kusto-complete-request-sentinel`. The candidate used the focused Azure CLI/Kusto REST trigger shown in its frontmatter. The compressed alternative used the same trigger.
+
+| Variant | SHA-256 | Chars | Targets | Sentinel | Hard assertions | Rubric | Discovery success | Decision |
+|---|---|---:|---:|---:|---:|---:|---:|---|
+| baseline | `d91ccea9b2c5afb00a322fd871b6c39cde207a0568cda96814c73b5694201d33` | 92 | 8/10 | 2/2 | 10/12 | 12/12 | 2/12 | reject |
+| full | `5af13b837c8afd1ae3d4e8f05f94235e9acd357271d7f8203b3a1c8a962d8764` | 2,643 | 8/10 | 2/2 | 12/12 | 10/12 | 1/12 | reject |
+| compressed | `cab04eddfe415470b71400ac80d877faf233b0446709bd86e38698c5307c593f` | 1,586 | 7/10 | 2/2 | 12/12 | 9/12 | 0/12 | reject |
+
+No candidate was selected. The full candidate matched baseline target success (0.80), below the required 0.20 improvement, and discovery success regressed from 0.167 to 0.083. The compressed variant performed worse on targets and discovery. Keep the candidate disabled; neither the evaluation nor this iteration authorizes activation or Azure MCP removal.
+
+The harness again required the local compatibility patch described above. These structured review-feedback cases are synthetic proxies; they do not evaluate live Kusto execution or Azure CLI workflows.

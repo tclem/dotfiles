@@ -1,7 +1,7 @@
 ---
 name: azure-kusto
 disabled: true
-description: Use when querying Azure Data Explorer/Kusto, inspecting its databases, tables, and schemas, or reviewing code that uses the Kusto REST API.
+description: Use when querying Azure Data Explorer/Kusto clusters or inspecting databases, tables, and schemas through Azure CLI and Kusto REST.
 ---
 
 # Azure Kusto
@@ -29,3 +29,5 @@ Use the Kusto REST API for data-plane KQL. `az kusto` manages Azure resources; i
 - If the response shape is unexpected, incomplete, or reports errors, say so plainly and do not present partial results as successful.
 
 References: [Kusto REST authentication](https://learn.microsoft.com/en-us/kusto/api/rest/authentication?view=azure-data-explorer), [request format](https://learn.microsoft.com/en-us/kusto/api/rest/request?view=azure-data-explorer), [v1 response](https://learn.microsoft.com/en-us/kusto/api/rest/response?view=azure-data-explorer), and [v2 response](https://learn.microsoft.com/en-us/kusto/api/rest/response-v2?view=azure-data-explorer).
+
+When reviewing Kusto REST feedback, keep proposed changes limited to the defect raised. Do not add adjacent endpoint, response-parsing, or result-shaping work unless it is required to fix that defect.
