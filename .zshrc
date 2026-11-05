@@ -75,13 +75,14 @@ FPATH="$HOME/.docker/completions:${FPATH}"
 FPATH="$ZSH/zsh/functions:${FPATH}"
 autoload -U $ZSH/zsh/functions/*(:t)
 
-# Do this once
+# Check completion directories once a day, with a separate dump per zsh version.
 autoload -Uz compinit
-zcompdump_file=${ZDOTDIR:-$HOME}/.zcompdump
-if [[ -n ${zcompdump_file}(#qN.mh+24) ]]; then
-  compinit
+zcompdump_file="${ZDOTDIR:-$HOME}/.zcompdump-$ZSH_VERSION"
+zcompdump_fresh=("$zcompdump_file"(N.mh-24))
+if (( $#zcompdump_fresh )); then
+  compinit -C -d "$zcompdump_file"
 else
-  compinit -C
+  compinit -d "$zcompdump_file" && touch "$zcompdump_file"
 fi
 
 # zsh options
@@ -148,7 +149,8 @@ zstyle ':completion:*:*:*:*:processes' command "ps -u $(whoami) -o pid,user,comm
 hosts_cache_dir="${XDG_CACHE_HOME:-$HOME/.cache}/zsh"
 hosts_cache_file="$hosts_cache_dir/hosts"
 mkdir -p "$hosts_cache_dir"
-if [[ ! -r "$hosts_cache_file" || -n ${hosts_cache_file}(#qN.mh+24) || ( -r ~/.ssh/known_hosts && ~/.ssh/known_hosts -nt "$hosts_cache_file" ) || /etc/hosts -nt "$hosts_cache_file" ]]; then
+hosts_cache_stale=($hosts_cache_file(N.mh+24))
+if [[ ! -r "$hosts_cache_file" || $#hosts_cache_stale -gt 0 || ( -r ~/.ssh/known_hosts && ~/.ssh/known_hosts -nt "$hosts_cache_file" ) || /etc/hosts -nt "$hosts_cache_file" ]]; then
   [ -r ~/.ssh/known_hosts ] && _ssh_hosts=(${${${${(f)"$(<$HOME/.ssh/known_hosts)"}:#[\|]*}%%\ *}%%,*}) || _ssh_hosts=()
   [ -r /etc/hosts ] && : ${(A)_etc_hosts:=${(s: :)${(ps:\t:)${${(f)~~"$(</etc/hosts)"}%%\#*}##[:blank:]#[^[:blank:]]#}}} || _etc_hosts=()
   typeset -Ua _all_hosts
@@ -175,8 +177,10 @@ command -v direnv >/dev/null 2>&1 && eval "$(direnv hook zsh)"
 command -v rbenv >/dev/null 2>&1 && eval "$(rbenv init -)"
 command -v fnm >/dev/null 2>&1 && eval "$(fnm env --use-on-cd --shell zsh)"
 
-test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
-# Put dirname in the iTerm window title
+if [[ "$TERM_PROGRAM" == "iTerm.app" && -e "${HOME}/.iterm2_shell_integration.zsh" ]]; then
+  source "${HOME}/.iterm2_shell_integration.zsh"
+fi
+# Put dirname in the terminal window title
 DISABLE_AUTO_TITLE="true"
 function precmd () {
   echo -ne "\033]0;${PWD##*/}\007"
