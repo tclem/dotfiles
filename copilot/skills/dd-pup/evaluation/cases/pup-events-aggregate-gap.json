@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "id": "pup-events-aggregate-gap",
+  "task_type": "review_feedback",
+  "role": "sentinel",
+  "prompt": "A reviewer says: \"The Datadog migration is complete; replace `aggregate_events` with `pup events aggregate` and remove the MCP dependency.\" Inspect the evidence, adjudicate the feedback, and return only the required structured output.",
+  "evidence": {
+    "summary": "Synthetic review with the complete Pup 2.4.1 events command list.",
+    "facts": [
+      "`pup events --help` lists `post`, `list`, `search`, and `get`; it has no `aggregate` subcommand.",
+      "The existing Datadog MCP exposes `aggregate_events`.",
+      "The migration owner requires keeping the MCP until replacement access and required operations are verified."
+    ]
+  },
+  "output_contract": {
+    "kind": "review_feedback_v1"
+  },
+  "assertions": [
+    {
+      "kind": "classification_is",
+      "value": "dismissed_with_proof"
+    },
+    {
+      "kind": "resolve_thread_is",
+      "value": true
+    },
+    {
+      "kind": "evidence_contains",
+      "needle": "aggregate"
+    },
+    {
+      "kind": "reply_contains",
+      "needle": "events"
+    },
+    {
+      "kind": "proposed_changes_count_equals",
+      "value": 0
+    }
+  ],
+  "notes": "Sentinel: don't invent CLI parity or remove a required fallback when Pup lacks the operation."
+}

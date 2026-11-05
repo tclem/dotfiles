@@ -23,7 +23,7 @@ If the input is ambiguous, ask for the missing identifier or affected service.
 ## Workflow
 
 1. **Parse the input.** Extract service names, environment, monitor IDs, issue numbers, trace IDs, error messages, and timestamps.
-2. **Load domain guidance before querying.** If Datadog tools are available, load the relevant Datadog skill guide before using logs, metrics, traces, RUM, incidents, or dashboards.
+2. **Load domain guidance before querying.** For Datadog, load the `dd-pup` skill and use Pup for supported reads. Do not assume complete feature parity; if Pup lacks a required operation or access is unverified, report the gap and keep an already-authorized alternative until replacement access is verified.
 3. **Read source context.**
    - For GitHub issues, read the issue body and comments.
    - For Datadog monitors/incidents, read the monitor query, thresholds, status, timeline, tags, and linked resources.
@@ -90,4 +90,3 @@ Omit sections that do not apply, but every claim should be verifiable through a 
 - Prefer aggregate queries for scale questions and raw events for examples.
 - Include enough query detail that another engineer can reproduce the finding.
 - Do not post findings to GitHub unless the user asks; if posting, follow the GitHub Posting Protocol in the global instructions.
-
