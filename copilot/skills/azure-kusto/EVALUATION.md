@@ -33,3 +33,20 @@ Cases: targets `kusto-auth-audience`, `kusto-management-severity`, `kusto-manage
 No candidate was selected. The full candidate matched baseline target success (0.80), below the required 0.20 improvement, and discovery success regressed from 0.167 to 0.083. The compressed variant performed worse on targets and discovery. Keep the candidate disabled; neither the evaluation nor this iteration authorizes activation or Azure MCP removal.
 
 The harness again required the local compatibility patch described above. These structured review-feedback cases are synthetic proxies; they do not evaluate live Kusto execution or Azure CLI workflows.
+
+## Review-scope promotion run
+
+Pinned `eval-skill` v1 at `149fc4430c5066b002442f704b2a124eb1f12a0c`; behavior and discovery modes; `gpt-5.6-sol` author and blind judge at low effort; two trials per case; seed `20261105`; two fixed distractors. Run `e3308708-5b52-41a9-8467-6f25f4d1fbe2`.
+
+The target cases are `kusto-management-endpoint` and `kusto-partial-query-error`; sentinels are `kusto-auth-audience`, `kusto-complete-request-sentinel`, `kusto-management-severity-contract`, and `kusto-no-auth-prompt`. The endpoint target now asserts exactly one proposed change, because an endpoint fix does not independently require response parsing or test edits.
+
+| Variant | SHA-256 | Chars | Targets | Sentinels | Hard assertions | Rubric | Discovery success (discovered, invoked) | Decision |
+|---|---|---:|---:|---:|---:|---:|---:|---|
+| baseline | `d91ccea9b2c5afb00a322fd871b6c39cde207a0568cda96814c73b5694201d33` | 92 | 1/4 | 8/8 | 9/12 | 9/12 | 6/12 (8/12, 8/12) | reject |
+| full | `9e0888f76842a98399ce1f70510025edfb5a27d53ca0baafa1950308acb8e702` | 2,709 | 3/4 | 8/8 | 12/12 | 11/12 | 11/12 (12/12, 12/12) | reject; equivalent smaller variant |
+| compressed | `4bacc0c7c6ed8ac55859a27e55d4e8b1487ed17443e577a2ad37f4a5bcd146d2` | 1,705 | 3/4 | 8/8 | 12/12 | 11/12 | 9/12 (11/12, 11/12) | select |
+| minimal | `0ae53b064d4494e1cd5be21f6123a53a02c3a0994154cb375b0af1bc7790c732` | 839 | 2/4 | 7/8 | 9/12 | 10/12 | 12/12 (12/12, 12/12) | reject; hard assertion and sentinel regression |
+
+The compressed candidate improved target success from 0.25 to 0.75, passed every hard assertion, preserved all sentinel results, and improved discovery success from 0.50 to 0.75. Its smaller ablation was not equivalent: it failed a hard assertion and regressed a sentinel. The pinned gate selected the compressed candidate; the full version was rejected as equivalent to the smaller selected candidate. The selected candidate's exact evaluated content is committed with only `disabled: true` added afterward to keep activation separate from authoring.
+
+The pinned evaluator checkout required local-only compatibility edits for the current CLI flags and skill-load telemetry; its telemetry parser tests and formatting check passed. The evaluator checkout and local edits are not part of this repository change. This synthetic review-feedback suite does not validate live query execution or cover all Azure MCP service-specific capabilities.
