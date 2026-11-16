@@ -94,24 +94,22 @@ If a new skill overlaps an existing skill, either:
 
 1. Narrow the new skill's trigger.
 2. Merge the durable rule into the existing skill.
-3. Add routing guidance to `choosing-workflow`.
 
 ## Fallback skills
 
-Some user-level skills exist as **explicit fallbacks** for tasks the user does across many repos but where individual repos may provide a specialized version (Rust coding, alert investigation, postmortems, dependency updates). When both layers exist, the repo-local skill always wins.
+Some user-level skills exist as **explicit fallbacks** for tasks the user does across many repos but where individual repos may provide a specialized version (for example, `pr-risk-check`). When both layers exist, the repo-local skill always wins.
 
 When creating or editing a user-level skill that could plausibly have a repo-level specialization:
 
 - Phrase the description as `"Use when ... and the repository has no equivalent skill of its own."` This signals fallback intent at discovery time. Current tooling can't enumerate other skills to enforce it, but the phrasing sets the expectation.
-- Add the skill to the **Fallback skills** table in `choosing-workflow/SKILL.md`.
 - Note in the skill body that a repo-local equivalent, if present, supersedes this one.
 - If a starter template would help repos bootstrap their own specialized version, put it under `copilot/templates/<name>/SKILL.md` (not `copilot/skills/`). The template is scaffolding; the user-level skill is the live fallback.
 
 ## Skills that should never be mirrored into a repo
 
-Some user-level skills are pure cross-repo personal workflow with no repo-level specialization (e.g. `pr-author`, `thinking-about`, `daily-handoff`, `copy-editor`, `delegating-plan-work`, `planning-multi-agent-projects`, `skill-author`, `choosing-workflow`). They should not be copied into any project's `.copilot/skills/` or `.github/skills/`.
+Some user-level skills are pure cross-repo personal workflow with no repo-level specialization (e.g. `pr-author`, `thinking-about`, `daily-handoff`, `copy-editor`, `delegating-plan-work`, `planning-multi-agent-projects`, `skill-author`). They should not be copied into any project's `.copilot/skills/` or `.github/skills/`.
 
-When authoring one of these, note in the body that the skill is user-level only. The "Skills that should never be mirrored" list in `choosing-workflow/SKILL.md` is the canonical roster.
+When authoring one of these, note in the body that the skill is user-level only.
 
 ## Disabling a skill without deleting it
 
@@ -119,7 +117,7 @@ To temporarily suppress a skill from `~/.copilot/skills/` without deleting the s
 
 ```yaml
 ---
-name: pr-merge-readiness
+name: example-skill
 disabled: true
 description: '...'
 ---
@@ -128,7 +126,7 @@ description: '...'
 `script/sync-copilot install` skips disabled skills and prunes any existing symlink. Remove the line to re-enable. Use this when:
 
 - A skill is in draft and you don't want it discoverable yet.
-- A repo-local or app-bundled skill genuinely replaces yours (not the case for `pr-merge-readiness` vs `agent-merge` — those are deliberately distinct: `pr-merge-readiness` drives to green and stops, `agent-merge` keeps going through the merge).
+- A repo-local or app-bundled skill genuinely replaces yours.
 - You want to A/B test removing a skill before deleting it.
 
 Find disabled skills with `script/skills-status`, or grep for `^disabled: true` under `copilot/skills/`.

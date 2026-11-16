@@ -62,7 +62,7 @@ Status advances on evidence, never on a report:
 - **In progress** — work exists but is open, draft, or partial. An open PR with green validation is still In progress; unmerged work can still change. Some todos landing is not a complete phase.
 - **Not started** / **Deferred** — unchanged, or deliberately dropped with a stated reason.
 
-A child session saying "done" is a lead. Check whether the PR merged; `verify-before-claiming` applies to the plan's claims about itself. Carry the evidence inline, as `Complete - [#1234](...)`, so the next reader doesn't re-derive it.
+A child session saying "done" is a lead. Check whether the PR merged; the plan's claims about itself need evidence too. Carry the evidence inline, as `Complete - [#1234](...)`, so the next reader doesn't re-derive it.
 
 Don't downgrade without evidence either — an unrecorded merge looks like no progress.
 

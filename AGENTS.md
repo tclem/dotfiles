@@ -20,7 +20,7 @@ When in doubt, **stop and ask** before staging. This includes edits invited by a
 - **Do not auto-commit.** Default is: make the edits, show the diff, and stop. Only commit (and push) when I've explicitly said so for this batch ("commit", "commit and push", "ship it"). A prior "yes" is not standing consent.
 - **Prefer logically-grouped commits** over one blob when a batch of changes spans unrelated concerns. Ask if grouping is unclear.
 - **"Evaluate", "review", "compare", "look at" ≠ "create".** When I ask for a review or comparison, the deliverable is a report in chat. Do not scaffold files, create skills, or edit anything unless the review explicitly turns into a "now do it" ask.
-- **Propose skill names before creating the directory.** Renames ripple through the symlink, the README status table, `copilot-instructions.md` index, `choosing-workflow`, and often this file. Getting the name right the first time is cheap; renaming is not.
+- **Propose skill names before creating the directory.** Renames ripple through the symlink, the README status table, `copilot-instructions.md` index, and often this file. Getting the name right the first time is cheap; renaming is not.
 
 ## Repo Layout
 
@@ -71,12 +71,10 @@ Keep repo-specific workflows in the repo where they apply. Do not promote one re
 
 | Skill | Scope | Notes |
 |---|---|---|
-| `choosing-workflow` | User-level | Router for choosing repo-local skills, dotfiles process skills, or app-native workflows. |
 | `pr-author` | User-level | Personal PR authoring workflow — create new PRs or rewrite an existing PR's title/body so it matches the final diff, with template handling, review-before-posting, and GitHub Posting Protocol. |
 | `copy-editor` | User-level | Minimal copy edits that preserve Tim's voice, quirks, and nonstandard phrasing. |
 | `skill-author` | User-level | Guidance for creating, editing, and reviewing dotfiles Copilot skills. |
 | `exp-operations` | User-level | Safely inspect, repair, mutate, verify, and read scorecards for live Microsoft ExP experiments; never mirror into repos. |
-| `gws-sheets` | User-level, disabled | Scoped Google Sheets cell editing through `gws`; pending behavioral promotion. |
 | `planning-multi-agent-projects` | User-level, narrow | Durable repo-tracked multi-agent planning PRs, including the two-lane WIP/extraction model; not normal app plan mode. |
 | `refresh-plan` | User-level, narrow | Reconcile a repo-tracked plan with reality after work merges or a session reports back — phase docs, README, context, and PR body in one pass. |
 | `delegating-plan-work` | User-level, narrow | Readiness checks and the plan-specific context a kickoff prompt needs; `orchestrate` owns the spawning. |
@@ -87,17 +85,9 @@ Keep repo-specific workflows in the repo where they apply. Do not promote one re
 | `debug` | User-level | Evidence-first bug, regression, and failure investigation. |
 | `fixing-root-causes` | User-level | Rejecting defense-in-depth backstops, fallbacks, and "just in case" layers alongside a real fix. |
 | `verify-before-claiming` | User-level | Fresh verification before completion claims. |
-| `pr-merge-readiness` | User-level | Get a pull request ready to merge by addressing review threads, CI failures, or conflicts, without performing the merge. |
 | `pr-risk-check` | User-level, fallback | Assess the risk profile of a PR — what could break, blast-radius, revertibility — independent of whether merge means immediate deploy. Repo-local equivalent wins. |
 | `pr-review-reply` | User-level | Review feedback triage, fixes, and replies. |
-| `pr-update-base-branch` | User-level | Merge a PR's actual base ref (not hardcoded `main`), with stacked-PR conflict resolution and `git rerere`. |
-| `alert-investigator` | User-level, fallback | General alert/incident investigation when the repo has no equivalent skill. |
-| `incident-postmortem` | User-level, fallback | General postmortem assembly when the repo has no equivalent skill. |
-| `deps-update` | User-level, fallback | Generic dependency update workflow when the repo has no equivalent skill. |
-| `code-rust` | User-level, fallback | Generic Rust style and discipline when the repo has no `rust-coding-skill` of its own. Template at `copilot/templates/rust-coding-skill/` for new repos. |
-| `code-go` | User-level, fallback | Generic Go style and discipline when the repo has no `go-coding-skill` of its own. Template at `copilot/templates/go-coding-skill/` for new repos. |
 | `reading-source-code` | User-level | Source-first discipline for unfamiliar or possibly-stale dependency APIs. |
-| `deprecating-and-removing` | User-level, fallback | Deprecation and removal workflow for decoupled consumers; lockstep-deployed code skips the ceremony. Repo-local deprecation runbook wins. |
 | `thinking-about` | User-level | Capture thoughts into `tclem/notes` and run the daily rollup that re-themes `top-of-mind.md` and prunes resolved/stale entries. |
 
 Keep project-specific operational, app-runtime, UI, and repo-style skills in their owning repositories. Runtime orchestration such as session execution, subagent dispatch, worktree setup, branch finishing, and PR orchestration should be app behavior rather than dotfiles prompt skills.
