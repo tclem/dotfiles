@@ -64,9 +64,9 @@ A regression test should fail when the *real* invariant is violated, not when a 
 
 Pin the user-observable behavior instead ("rendering mode X then mode Y produces the correct rows"). That test fails for the right reason if the root cause regresses, and doesn't care which layer enforced the invariant.
 
-### 7. Surface the decision in the PR
+### 7. Record the invariant where the next agent will look
 
-When you've made a root-cause fix and decided *not* to add a defensive layer that was tempting, say so in the PR body: "Considered also doing B because of <scenario>, but the manifest cache key already segregates by mode, so the scenario isn't reachable." This makes the choice reviewable and prevents the next agent from "fixing the gap" later.
+If a future reader is likely to "fix the gap" by adding the backstop you rejected, leave a short comment at the site stating the invariant that makes it unnecessary: "Cache key includes mode, so entries can't cross modes." Don't argue the rejected alternative in the PR body; it won't be read where the next change happens.
 
 ## Common mistakes
 
