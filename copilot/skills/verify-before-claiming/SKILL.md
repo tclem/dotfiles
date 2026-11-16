@@ -1,5 +1,6 @@
 ---
 name: verify-before-claiming
+disabled: true
 description: Use when about to claim work is complete, fixed, passing, installed, synced, or ready for review.
 ---
 

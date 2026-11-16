@@ -1,5 +1,6 @@
 ---
 name: design-before-coding
+disabled: true
 description: Use when creating features, changing behavior, adding components, or making design-affecting implementation choices before editing code.
 ---
 

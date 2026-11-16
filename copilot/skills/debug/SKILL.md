@@ -1,5 +1,6 @@
 ---
 name: debug
+disabled: true
 description: Use when investigating a bug, failing test, production issue, unexpected behavior, flaky behavior, regression, or unclear root cause.
 ---
 

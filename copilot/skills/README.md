@@ -16,9 +16,9 @@ Run `script/skills-status` to print the latest table, or `script/skills-status -
 | `batch-pr-review` | ✅ on | Use when coordinating reviews for many pull requests, especially a stack or batch that needs shared researc... |
 | `copy-editor` | ✅ on | Use when copy editing user-written prose while preserving quirky voice, style, phrasing, and minor imperfec... |
 | `daily-handoff` | ✅ on | Use when authoring a daily Slack handoff for the Blackbird team - status-first narrative with indented PR b... |
-| `debug` | ✅ on | Use when investigating a bug, failing test, production issue, unexpected behavior, flaky behavior, regressi... |
+| `debug` | 🚫 off | Use when investigating a bug, failing test, production issue, unexpected behavior, flaky behavior, regressi... |
 | `delegating-plan-work` | ✅ on | Use when handing a repo-tracked multi-agent plan phase or todo to another session or agent |
-| `design-before-coding` | ✅ on | Use when creating features, changing behavior, adding components, or making design-affecting implementation... |
+| `design-before-coding` | 🚫 off | Use when creating features, changing behavior, adding components, or making design-affecting implementation... |
 | `design-doc-author` | ✅ on | Use when authoring or substantially editing a design doc, architecture doc, or subsystem explanation — the ... |
 | `exp-operations` | ✅ on | Use when inspecting, repairing, starting, advancing, stopping, or reading scorecards for a live Microsoft E... |
 | `fixing-root-causes` | ✅ on | Use when fixing a bug, regression, or unexpected behavior — especially when tempted to add a defensive laye... |
@@ -30,7 +30,7 @@ Run `script/skills-status` to print the latest table, or `script/skills-status -
 | `refresh-plan` | ✅ on | Use when asked to update or refresh a repo-tracked multi-agent plan, or after work merges, a PR changes sta... |
 | `skill-author` | ✅ on | Use when creating, editing, splitting, renaming, or reviewing Copilot skills in this dotfiles repo |
 | `thinking-about` | ✅ on | Use when the user wants to capture a thought into their tclem/notes inbox, or when running the daily rollup... |
-| `verify-before-claiming` | ✅ on | Use when about to claim work is complete, fixed, passing, installed, synced, or ready for review |
+| `verify-before-claiming` | 🚫 off | Use when about to claim work is complete, fixed, passing, installed, synced, or ready for review |
 
 <!-- skills-status:end -->
 

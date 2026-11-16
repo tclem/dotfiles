@@ -79,12 +79,12 @@ Keep repo-specific workflows in the repo where they apply. Do not promote one re
 | `refresh-plan` | User-level, narrow | Reconcile a repo-tracked plan with reality after work merges or a session reports back — phase docs, README, context, and PR body in one pass. |
 | `delegating-plan-work` | User-level, narrow | Readiness checks and the plan-specific context a kickoff prompt needs; `orchestrate` owns the spawning. |
 | `batch-pr-review` | User-level, narrow | Coordinate large PR review batches with shared research, cited handoffs, bounded fan-out, staged comments, and live GitHub reconciliation. |
-| `design-before-coding` | User-level | Lightweight design gate before behavior or architecture changes. |
+| `design-before-coding` | User-level, disabled | Lightweight design gate before behavior or architecture changes. |
 | `adr-author` | User-level | Writing or amending Architecture Decision Records — filename conventions, header template, status lifecycle, ADR-as-separate-PR rule. |
 | `design-doc-author` | User-level | Writing long-form design docs that explain a subsystem's shape, contract, and mechanism — the companion to an ADR's terse decision record. |
-| `debug` | User-level | Evidence-first bug, regression, and failure investigation. |
+| `debug` | User-level, disabled | Evidence-first bug, regression, and failure investigation. |
 | `fixing-root-causes` | User-level | Rejecting defense-in-depth backstops, fallbacks, and "just in case" layers alongside a real fix. |
-| `verify-before-claiming` | User-level | Fresh verification before completion claims. |
+| `verify-before-claiming` | User-level, disabled | Fresh verification before completion claims. |
 | `pr-risk-check` | User-level, fallback | Assess the risk profile of a PR — what could break, blast-radius, revertibility — independent of whether merge means immediate deploy. Repo-local equivalent wins. |
 | `pr-review-reply` | User-level | Review feedback triage, fixes, and replies. |
 | `reading-source-code` | User-level | Source-first discipline for unfamiliar or possibly-stale dependency APIs. |
