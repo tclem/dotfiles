@@ -189,5 +189,6 @@
   "@azure.argTenant": "",
   "security.promptForLocalFileProtocolHandling": false,
   "chat.viewSessions.orientation": "stacked",
-  "githubPullRequests.openPullLinks": false
+  "githubPullRequests.openPullLinks": false,
+  "chat.sessionSync.enabled": true
 }
