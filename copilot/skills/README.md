@@ -13,6 +13,7 @@ Run `script/skills-status` to print the latest table, or `script/skills-status -
 | Skill | Status | Trigger |
 |---|---|---|
 | `adr-author` | ✅ on | Use when proposing or recording a significant technical decision (architecture change, new dependency patte... |
+| `azure-kusto` | ✅ on | Use when querying Azure Data Explorer/Kusto clusters or inspecting databases, tables, and schemas |
 | `batch-pr-review` | ✅ on | Use when coordinating reviews for many pull requests, especially a stack or batch that needs shared researc... |
 | `copy-editor` | ✅ on | Use when copy editing user-written prose while preserving quirky voice, style, phrasing, and minor imperfec... |
 | `daily-handoff` | ✅ on | Use when authoring a daily Slack handoff for the Blackbird team - status-first narrative with indented PR b... |
