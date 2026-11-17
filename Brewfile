@@ -24,6 +24,7 @@ cask "font-sf-mono-nerd-font"
 
 # Development tools
 cask "divvy"
+cask "ghostty"
 cask "github"
 cask "iterm2"
 cask "visual-studio-code"

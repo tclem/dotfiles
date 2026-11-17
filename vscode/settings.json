@@ -188,5 +188,6 @@
   "github.copilot.chat.advanced.workspace.codeSearchExternalIngest.enabled": "force",
   "@azure.argTenant": "",
   "security.promptForLocalFileProtocolHandling": false,
-  "chat.viewSessions.orientation": "stacked"
+  "chat.viewSessions.orientation": "stacked",
+  "githubPullRequests.openPullLinks": false
 }
