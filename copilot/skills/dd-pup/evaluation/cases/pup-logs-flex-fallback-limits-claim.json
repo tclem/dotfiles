@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "id": "pup-logs-flex-fallback-limits-claim",
+  "task_type": "review_feedback",
+  "role": "sentinel",
+  "prompt": "A reviewer says: \"The 30-day Datadog error-log query succeeded with zero results, so we can report that no errors occurred in the last 30 days.\" The query output says Flex log storage is unavailable and the command retried with indexed logs; results may be incomplete when the requested range exceeds indexed-log retention. Inspect the evidence, adjudicate the feedback, and return only the required structured output.",
+  "evidence": {
+    "summary": "Synthetic review of a successful but storage-limited Pup log search.",
+    "facts": [
+      "The Datadog log search completed successfully and returned zero indexed records for the requested 30-day range.",
+      "Pup warned that Flex storage was unavailable and retried with indexed logs.",
+      "Pup warned that results may be incomplete when the requested range exceeds indexed-log retention, often 7-15 days."
+    ]
+  },
+  "output_contract": {
+    "kind": "review_feedback_v1"
+  },
+  "assertions": [
+    {
+      "kind": "resolve_thread_is",
+      "value": false
+    },
+    {
+      "kind": "proposed_change_contains",
+      "needle": "indexed"
+    },
+    {
+      "kind": "reply_contains",
+      "needle": "indexed"
+    }
+  ],
+  "notes": "Target: don't generalize an empty indexed fallback result to the complete Flex-backed time range."
+}

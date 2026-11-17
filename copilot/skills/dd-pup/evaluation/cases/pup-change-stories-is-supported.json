@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "id": "pup-change-stories-is-supported",
+  "task_type": "review_feedback",
+  "role": "target",
+  "prompt": "A reviewer says: \"Keep the Datadog MCP because Pup cannot retrieve APM change stories.\" The user has used the MCP change-story lookup and wants to migrate observed Datadog work where Pup supports it. Inspect the evidence, adjudicate the feedback, and return only the required structured output.",
+  "evidence": {
+    "summary": "Synthetic review of a used APM change-story workflow.",
+    "facts": [
+      "The Datadog MCP change-story operation retrieves APM service changes over a time range.",
+      "The migration should use verified Pup equivalents for observed workflows and retain alternatives only for real gaps."
+    ]
+  },
+  "output_contract": {
+    "kind": "review_feedback_v1"
+  },
+  "assertions": [
+    {
+      "kind": "classification_is",
+      "value": "dismissed_with_proof"
+    },
+    {
+      "kind": "resolve_thread_is",
+      "value": true
+    },
+    {
+      "kind": "reply_contains",
+      "needle": "pup change-stories list --service"
+    }
+  ],
+  "notes": "Target: identify a supported replacement for the observed change-story operation rather than retaining MCP without checking the CLI."
+}

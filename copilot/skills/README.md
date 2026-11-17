@@ -16,6 +16,7 @@ Run `script/skills-status` to print the latest table, or `script/skills-status -
 | `batch-pr-review` | ✅ on | Use when coordinating reviews for many pull requests, especially a stack or batch that needs shared researc... |
 | `copy-editor` | ✅ on | Use when copy editing user-written prose while preserving quirky voice, style, phrasing, and minor imperfec... |
 | `daily-handoff` | ✅ on | Use when authoring a daily Slack handoff for the Blackbird team - status-first narrative with indented PR b... |
+| `dd-pup` | ✅ on | Use when querying Datadog with Pup, checking Pup authentication safely, or reviewing whether a proposed Pup... |
 | `debug` | 🚫 off | Use when investigating a bug, failing test, production issue, unexpected behavior, flaky behavior, regressi... |
 | `delegating-plan-work` | ✅ on | Use when handing a repo-tracked multi-agent plan phase or todo to another session or agent |
 | `design-before-coding` | 🚫 off | Use when creating features, changing behavior, adding components, or making design-affecting implementation... |
@@ -59,6 +60,13 @@ The `reading-source-code` skill adapts ideas from Addy Osmani's `agent-skills` p
 - Copyright: Copyright (c) 2025 Addy Osmani
 
 `reading-source-code` keeps the version-pinning discipline, the source-over-docs hierarchy, the surface-conflicts-explicitly rule, and the anti-pattern of citing Stack Overflow or training memory. It's reframed around reading the *actual source* (cargo cache, `GOMODCACHE`, gem path, `node_modules`, `gh blackbird`) rather than only official docs, and the "STACK DETECTED" ceremony is dropped.
+
+The `dd-pup` skill is informed by the official Datadog Pup skill:
+
+- Source: https://github.com/DataDog/pup/tree/v2.4.1/skills/dd-pup
+- License: Apache-2.0
+
+It limits its command guidance to Datadog workflows observed in session history, while documenting verified Pup mappings, partial replacements, unsupported operations, nonprompting authentication checks, and read-only investigations.
 
 The `go-coding-skill` template adapts the Go style and discipline rules from `github/blackbird-mw`'s `.github/skills/go-coding-skill/SKILL.md`:
 
