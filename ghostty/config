@@ -1,7 +1,7 @@
 theme = GitHub Dark Dimmed
 cursor-style = block
 cursor-style-blink = false
-shell-integration-features = no-cursor,no-title
+shell-integration-features = no-cursor,no-title,ssh-env,ssh-terminfo
 scrollback-limit-bytes = unlimited
 macos-non-native-fullscreen = true
 copy-on-select = clipboard
