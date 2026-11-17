@@ -144,24 +144,13 @@ Handoff:
 
 ## Save the handoff
 
-After producing the fenced block, always save the handoff to the `tclem/notes` repo without asking first.
-
-Use the user's notes checkout even when the current session is running in another repo. Handoffs live at the repo root:
+After producing the block, save it without asking in the user's notes checkout, regardless of the current repo:
 
 ```text
 ~/github/notes/YYYY-MM-DD-handoff-NN.md
 ```
 
-Determine `NN` by finding the highest existing handoff number and incrementing it:
-
-```bash
-find ~/github/notes -maxdepth 1 -name '*-handoff-*.md' -print |
-  sed -E 's/.*-handoff-([0-9]+)\.md$/\1/' |
-  sort -n |
-  tail -1
-```
-
-If the latest file is `2026-05-11-handoff-53.md`, the next file is `YYYY-MM-DD-handoff-54.md` using today's date.
+Set `NN` to one more than the highest existing handoff number and use today's date.
 
 Saved file format:
 
@@ -173,9 +162,11 @@ Tags: #handoff #project-tag
 <handoff fenced block, verbatim>
 ```
 
-The H1 repeats the date and number from the filename — older files use a bare `# Handoff NN`, but don't copy that.
+The H1 repeats the filename's date and number; don't copy the older bare `# Handoff NN` form.
 
 Infer project tags from the handoff content, e.g. `#blackbird`, `#github-app`, `#copilot`, or other obvious project names. Keep tags lowercase and hyphenated when needed. Preserve the fenced block verbatim in the saved file so the note exactly matches what the user can paste into Slack.
+
+Before returning the current draft, commit and push only the immediately prior note (`NN-1`) when it has tracked or untracked changes or its commit is local-only. Never stage, commit, or push current `NN`, another note, unrelated changes, or unrelated outgoing commits. Do nothing when the prior note is already upstream; on failure, report its actual state and preserve the current draft.
 
 ## Style notes
 
