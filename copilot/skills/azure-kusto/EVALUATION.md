@@ -1,5 +1,11 @@
 # Evaluation
 
+The review-scope run below does not evaluate the operational investigation workflow this skill is for. Its selection is not evidence that the operational skill passed the pinned promotion gate. The current candidate removes the review-only trigger and guidance; the pinned evaluator supports only `review_feedback` cases and cannot run operational tasks.
+
+For a separate diagnostic, isolated Copilot CLI 1.0.113-1 trials compared the previous skill (SHA-256 `4bacc0c7c6ed8ac55859a27e55d4e8b1487ed17443e577a2ad37f4a5bcd146d2`) with the operational candidate (`7cc280b36fec731ae860a33d22a70e753b6e1151d14e9402a0f2a5315c11e6a1`), both with `disabled` removed for project-skill discovery. With `gpt-5.6-sol` at low effort and one trial per case, both invoked the intended skill and produced a read-only schema request and correctly rejected a synthetic HTTP 200 response with `HasErrors: true`. Only read-only tools were available; no Azure request or authentication was attempted. This small, unjudged diagnostic is not the pinned promotion gate or proof of a behavioral improvement.
+
+On November 17, 2026, bounded read-only requests through the existing Azure CLI session returned one KQL primary-result row with `DataSetCompletion.HasErrors: false`, one discovered table, and one valid JSON schema row. An invalid KQL request produced a nonzero exit and `BadRequest`; synthetic checks rejected v2 error or missing completion and v1 severity 2 while accepting severity 4. No sign-in was started. tclem approved activation as a one-time exception to the pinned gate based on these checks because `eval-skill` v1 cannot run operational tasks.
+
 Evaluated against pinned [`eval-skill` v1](https://github.com/tclem/agent-retro/blob/149fc4430c5066b002442f704b2a124eb1f12a0c/docs/skill-eval-v1.md), using behavior and discovery modes, `gpt-5.6-sol` author and judge at low effort, two trials per case, seed `20261105`, and two fixed distractors.
 
 Cases: targets `kusto-management-endpoint`, `kusto-no-auth-prompt`, and `kusto-partial-query-error`; sentinel `kusto-complete-request-sentinel`. The harness only supports structured `review_feedback` cases, so these synthetic code-review scenarios are a proxy for Kusto REST guidance, not an evaluation of live query execution or Azure CLI workflows.
