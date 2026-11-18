@@ -64,6 +64,21 @@ A handoff covers activity since the last one — typically the last 24 hours, bu
 
 Prefer what you already know from the current session over re-fetching.
 
+### Coverage ledger
+
+Before drafting, make a private ledger of every candidate work stream from every source above. For each one, record:
+
+- the work stream, not every individual artifact;
+- its strongest evidence link;
+- whether it is `include` (its own theme bullet), `supporting-link` (a nested link under another theme), or `omit`;
+- a concrete reason, if omitted.
+
+Bulleting every merged PR doesn't mean every work stream is covered. Ledger every authored organization PR updated in the window, even when it is still open or already mentioned in Slack. Ledger substantive issues, discussions, reviewed or assisted work, sessions, Slack threads, and on-call categories even when they produced no user-authored artifact.
+
+When the user is on-call, read each day's section of the weekly on-call tracking issue within the handoff window — ask for the issue if it wasn't provided — and ledger every nonempty category: incidents/alerts, support, security or Fundamentals, releases/deploys, investigations, and blockers.
+
+The draft is incomplete while any substantive work stream lacks a ledger disposition. A source failure is a coverage gap, not evidence of no activity; use the remaining sources and tell the user about the gap in chat, outside the handoff block, rather than silently dropping that category.
+
 ## Structure the handoff
 
 The handoff is **status-first**, with PRs as supporting evidence — not the other way around. Each top-level bullet is one sentence about a work stream or blocker; PR bullets nest underneath.
@@ -107,6 +122,8 @@ Nest PR bullets under the theme bullet they support. Use **four leading spaces**
 **A PR that needs no narrative goes bare.** Put it as a top-level `:merged:`/`:review:` bullet near the end, with no theme sentence above it and no "Misc" header. Never manufacture a grouping to justify a link — if the only sentence you can write is "housekeeping — dependency PRs are automated now", drop the sentence and keep the links. Bare bullets can still carry inline commentary.
 
 **When in doubt, cut the link, not the work stream.**
+
+Before finalizing, check the draft against the coverage ledger. Concision may remove redundant links or detail, never a substantive outcome, blocker, ask, incident, or investigation.
 
 ### What to drop
 
