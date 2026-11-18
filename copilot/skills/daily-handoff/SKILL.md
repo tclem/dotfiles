@@ -132,7 +132,7 @@ Before finalizing, check the draft against the coverage ledger. Concision may re
 - **Dependabot / auto-generated / trivial chore PRs**, unless the user flags them.
 - **PRs you only reviewed or approved.** GitHub's `commenter:` search qualifier includes approvals, so `gh-log`'s "commented on" bucket conflates real discussion with routine approvals — use it only as narrative hints, never as bullets. Verify with `gh pr view <url> --comments` before framing anything as "discussing."
 - **Meta work about the user's own tooling or agent environment** — their Copilot setup, MCP bugs, skill maintenance. The team can't act on it. Include only when the user flags it.
-- **Anything already said in-channel.** If Slack search shows the user already posted it where the handoff goes, don't restate it — link the thread or cut it. Slack is a cut-reason as well as a source.
+- **Anything already said in-channel.** Link rather than retell it; cut redundant detail or PR links, never the distinct work stream.
 
 ## Output format
 
