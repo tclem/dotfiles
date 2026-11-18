@@ -17,6 +17,7 @@ $ErrorActionPreference = "Stop"
 $CopilotRepo = Join-Path $DotfilesRoot "copilot"
 $ExtensionsDirectoryName = "extensions"
 $ExternalSkillsFile = Join-Path $CopilotRepo "external-skills"
+$ToolOwnedSkillsFile = Join-Path $CopilotRepo "tool-owned-skills"
 $PrivateMcpSource = Join-Path $ProjectsRoot "config/copilot/mcp-config.json"
 $PrivateMcpDestination = Join-Path $CopilotHome "mcp-config.json"
 $MaxLinkExpansions = 40
@@ -185,6 +186,19 @@ function Test-DisabledSkill([string]$Path) {
         return $false
     }
     return $Matches.frontmatter -match '(?m)^disabled:[ \t]*true[ \t]*\r?$'
+}
+
+function Get-ToolOwnedSkillInstaller([string]$Name) {
+    if (-not (Test-Path -LiteralPath $ToolOwnedSkillsFile -PathType Leaf)) {
+        return $null
+    }
+    foreach ($rawLine in Get-Content -LiteralPath $ToolOwnedSkillsFile) {
+        $fields = @(($rawLine -replace '#.*$', '').Trim() -split '\s+', 2)
+        if ($fields.Count -eq 2 -and $fields[0] -eq $Name) {
+            return $fields[1]
+        }
+    }
+    return $null
 }
 
 function Get-PortableFiles([string]$Root) {
@@ -506,9 +520,13 @@ function Import-CopilotConfig {
     Assert-MainCheckout
     Write-Host "Importing copilot config: $CopilotHome -> $CopilotRepo"
     foreach ($relativePath in Get-PortableFiles $CopilotHome) {
-        if ($relativePath -in @("skills\blackbird\SKILL.md", "skills\blackbird-fileset\SKILL.md")) {
-            Write-Yellow "  skip $($relativePath.Replace('\', '/')) (installed by gh blackbird)"
-            continue
+        $parts = $relativePath -split '[\\/]'
+        if ($parts.Count -eq 3 -and $parts[0] -eq "skills" -and $parts[2] -eq "SKILL.md") {
+            $installer = Get-ToolOwnedSkillInstaller $parts[1]
+            if ($installer) {
+                Write-Yellow "  skip $($parts -join '/') (installed by $installer)"
+                continue
+            }
         }
 
         $source = Join-Path $CopilotHome $relativePath

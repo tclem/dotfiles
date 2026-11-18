@@ -1,0 +1,12 @@
+# Skills that a tool embeds and installs into ~/.copilot/skills/ itself.
+#
+# One skill per line: `<name> <installer command>`. `#` comments and blank
+# lines are ignored.
+#
+# These are neither ours nor external roots: the tool writes real files and
+# its own `skills list` checks them against what it embeds. `script/sync-copilot
+# import` skips them so dotfiles never becomes their source.
+
+blackbird          gh blackbird skills install
+blackbird-fileset  gh blackbird skills install
+agent-retro        gh agent-retro skills install

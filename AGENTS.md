@@ -61,9 +61,9 @@ This repo owns Tim's **user-level** Copilot skills. Add or edit personal skills 
 
 Skills too personal to publish here live in another repo and are listed by path in `copilot/external-skills`. `install` links them the same way; only the path is public. `import` never copies them back — it skips anything whose real path resolves outside `~/.copilot`.
 
-A third kind isn't ours at all: a tool can embed its own skills and install them directly. `gh blackbird skills install` writes `blackbird` and `blackbird-fileset` into `~/.copilot/skills/` as real files, and `gh blackbird skills list` compares them against what the binary embeds. The configure scripts manage these files without making dotfiles their source.
+A third kind isn't ours at all: a tool can embed its own skills and install them directly. `gh blackbird skills install` and `gh agent-retro skills install` write real files into `~/.copilot/skills/`, and each tool's `skills list` compares them against what the binary embeds. The configure scripts manage the Blackbird files without making dotfiles their source.
 
-Both sync scripts skip these tool-owned skills during import so dotfiles never becomes their source.
+`copilot/tool-owned-skills` lists each of these skills with its installer. Both sync scripts skip them during import so dotfiles never becomes their source; add a line there when a new tool ships its own skill.
 
 Keep repo-specific workflows in the repo where they apply. Do not promote one repo's labels, bots, branches, runbooks, dashboards, deployment scripts, app harnesses, or style rules into dotfiles unless they are genuinely useful across repos.
 

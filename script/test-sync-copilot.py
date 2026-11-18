@@ -44,6 +44,7 @@ class SyncWorktreeTests(unittest.TestCase):
             (repo / "copilot/copilot-instructions.md").write_text(
                 "# Instructions\n\n## Code Discovery\nRemove this.\n\n## Keep\nKeep this.\n"
             )
+            (repo / "copilot/tool-owned-skills").write_text("tool  gh tool skills install\n")
 
             def git(*args):
                 return subprocess.run(
@@ -78,6 +79,9 @@ class SyncWorktreeTests(unittest.TestCase):
             local = home / ".copilot/skills/local/SKILL.md"
             local.parent.mkdir()
             local.write_text("---\nname: local\n---\nLocal skill.\n")
+            tool = home / ".copilot/skills/tool/SKILL.md"
+            tool.parent.mkdir()
+            tool.write_text("---\nname: tool\n---\nTool skill.\n")
 
             for command in ("install", "import"):
                 with self.subTest(backend=backend, command=command):
@@ -92,6 +96,8 @@ class SyncWorktreeTests(unittest.TestCase):
             result = sync(repo, "import")
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
             self.assertEqual(local.resolve(), repo / "copilot/skills/local/SKILL.md")
+            self.assertFalse(tool.is_symlink())
+            self.assertFalse((repo / "copilot/skills/tool").exists())
             git("worktree", "remove", "--force", str(worktree))
             self.assertEqual(installed.read_bytes(), source.read_bytes())
 

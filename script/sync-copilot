@@ -31,6 +31,7 @@ EXTENSIONS_DIR_NAME="extensions"
 # directory of `<name>/SKILL.md`. Only the path lives in this public repo; the
 # skills themselves stay wherever they are.
 EXTERNAL_SKILLS_FILE="$COPILOT_REPO/external-skills"
+TOOL_OWNED_SKILLS_FILE="$COPILOT_REPO/tool-owned-skills"
 PROJECTS_ROOT="${PROJECTS:-$HOME/github}"
 PRIVATE_MCP_SOURCE="$PROJECTS_ROOT/config/copilot/mcp-config.json"
 PRIVATE_MCP_DESTINATION="$COPILOT_HOME/mcp-config.json"
@@ -50,6 +51,17 @@ is_disabled_skill() {
     in_fm && /^disabled:[[:space:]]*true[[:space:]]*$/ { found=1; exit }
     END { exit !found }
   ' "$file"
+}
+
+# Print the installer command for skill $1 from $TOOL_OWNED_SKILLS_FILE, or
+# return 1 if it isn't listed there.
+tool_owned_skill_installer() {
+  [[ -f "$TOOL_OWNED_SKILLS_FILE" ]] || return 1
+  awk -v name="$1" '
+    { sub(/#.*/, "") }
+    $1 == name && NF > 1 { $1 = ""; sub(/^[[:space:]]+/, ""); print; found=1; exit }
+    END { exit !found }
+  ' "$TOOL_OWNED_SKILLS_FILE"
 }
 
 # Expand globs against a root directory, returning paths relative to that root.
@@ -383,9 +395,12 @@ cmd_import() {
   while IFS= read -r rel; do
     [[ -z "$rel" ]] && continue
     case "$rel" in
-      skills/blackbird/SKILL.md|skills/blackbird-fileset/SKILL.md)
-        yellow "  skip $rel (installed by gh blackbird)"
-        continue
+      skills/*/SKILL.md)
+        local installer
+        if installer="$(tool_owned_skill_installer "$(basename "$(dirname "$rel")")")"; then
+          yellow "  skip $rel (installed by $installer)"
+          continue
+        fi
         ;;
     esac
 
