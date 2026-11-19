@@ -1,5 +1,6 @@
 ---
 name: dd-pup
+disabled: true
 description: Use when querying Datadog with Pup, checking Pup authentication safely, or reviewing whether a proposed Pup command supports a Datadog workflow.
 ---
 
