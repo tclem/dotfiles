@@ -10,8 +10,9 @@ Use Pup for the Datadog workflows observed in the session history below. This is
 ## Workflow
 
 1. Keep the requested scope: use the stated service, metric, filters, and time window. If a needed value is missing, ask instead of broadening the query silently.
-2. Prefer read-only commands and add `--read-only` where supported. Do not change credentials or mutate Datadog state unless the user explicitly asked.
-3. Use `pup <group> --help` to verify options before relying on an unfamiliar flag. Report the query and time window, and distinguish an empty result from an access or command error.
+2. Never open Datadog in a browser (browser canvas or Playwright), including to verify a UI link; query Datadog only through Pup. If something can only be confirmed in the UI, report it as unverified.
+3. Prefer read-only commands and add `--read-only` where supported. Do not change credentials or mutate Datadog state unless the user explicitly asked.
+4. Use `pup <group> --help` to verify options before relying on an unfamiliar flag. Report the query and time window, and distinguish an empty result from an access or command error.
 
 ## Observed workflows
 
