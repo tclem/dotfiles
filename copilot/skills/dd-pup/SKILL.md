@@ -28,6 +28,6 @@ Use Pup for the Datadog workflows observed in the session history below. This is
 
 ## Authentication and reporting gaps
 
-Do not run `pup auth login`, refresh credentials, or trigger Keychain/OAuth prompts to test access. If a query lacks credentials, stop and report that authentication requires the user's action. `DD_TOKEN_STORAGE=file pup auth status` avoids Keychain but checks only file-backed credentials; a negative result does not establish that no other credential store is configured.
+Do not run `pup auth login`, refresh credentials, or trigger Keychain/OAuth prompts to test access. If a query lacks credentials, stop and report that authentication requires the user's action. Run queries with Pup as configured, e.g. `pup metrics query --read-only ...`; never set `DD_TOKEN_STORAGE` or otherwise override token storage for queries or to judge access. Forcing file storage hides the configured credentials and reports a false authentication failure. Judge access by a real read-only query. Only when the user requests a status check but forbids Keychain, use `DD_TOKEN_STORAGE=file pup auth status`; it checks only file-backed credentials, so a negative result does not mean Datadog access is missing.
 
 For a missing or only partially matched workflow above, state the gap and use an already-authorized alternative if available. Do not infer parity from a similarly named command or from Pup being installed.
