@@ -1,5 +1,6 @@
 ---
 name: azure-kusto
+disabled: true
 description: Use when querying Azure Data Explorer/Kusto clusters or inspecting databases, tables, and schemas.
 ---
 
