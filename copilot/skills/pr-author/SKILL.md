@@ -14,10 +14,10 @@ Iterate on the live PR body, not on draft text in chat. Create or update it, the
 
 A PR body answers one question: **why does this diff exist?** The reviewer learns *what* changed from the code; the body supplies the *why* they can't — the bug, the constraint, the decision.
 
-**Start at one sentence.** Write the shortest statement of why the diff exists and stop there. Expanding is the exception, and it needs a reason you can name: without this, the purpose of the diff is unclear. "The reviewer might wonder" is not that reason. Most bodies are one sentence plus the issue link. A second sentence can be ok if it expands on the why and says what is changing concisely.
+**Aim for a short paragraph.** Lead with why the diff exists, then the context a reviewer needs to read it: the problem or constraint, the approach at a high level, and the one decision they'd otherwise question. Most bodies are two to four sentences plus the issue link; when the why is obvious, one sentence is the whole body. Past a paragraph, name the reason — "the reviewer might wonder" isn't one.
 
-- **"Explains why" is not a license.** Implementation rationale, comparisons against alternatives, compatibility arguments, taxonomy of neighboring concepts, and context that preempts reviewer questions all pass the why test, and are all still cuts. They make a body feel complete, which is the tell — completeness is not the goal.
-- **Never restate the diff, at any length.** Not a file-by-file recap, not one compressed sentence naming what was added. Being short doesn't redeem a sentence the reviewer can read straight off the diff.
+- **Context, not completeness.** Keep the decision that shapes the diff and why. Cut surveys of alternatives, compatibility arguments, taxonomy of neighboring concepts, and answers to every question a reviewer might ask. They make a body feel complete, which is the tell.
+- **Describe the approach, never recap the diff.** One sentence on the shape of the change is fine ("moves retries into the client so callers stop double-retrying"); a file-by-file list of what was added is not, at any length.
 - **Never narrate the dev journey.** No "tried X then Y", no "fixup after review", no changelog of iterations. State a decision as its current rationale ("uses Y because Z"), not as a fix-up story or a contrast with an earlier proposal — fix the stale doc instead of making the reader chase it.
 - **Route nuance to where the reviewer meets it.** Only why the *whole* diff exists belongs in the body. Why one line reads as it does goes in a **code comment**; a point preempting a question about one hunk goes in a **PR review comment**. A thin body is usually finished, not incomplete.
 - **Carry the causal chain with inline links.** Attach each link to its noun phrase so context rides along at zero length — the link replaces backstory, it doesn't add to it. Link to the thing's **canonical resource** (a flag to its flag page, a service to its catalog), not the PR that created it unless the PR *is* the canonical thing. Never a bare `#1234` or a trailing "Related PRs" line.
@@ -51,7 +51,7 @@ From the branch, run `gh pr view --json number,title,body,baseRefName 2>/dev/nul
    ```
 
    If stacked, pass `--base <stacked-branch>` to `gh pr create`; retarget after the upstream merges via [an API edit](#applying-edits).
-6. **Write it.** Title: concise, following repo conventions (`feat:`, `fix:`). Body: start at one sentence per the gate above, and justify to yourself anything beyond it. Reference an issue if context suggests one (`Fixes #123`). Don't add boilerplate "Non-goals"/"Follow-ups" sections — call a non-goal out only when its absence would mislead. Append the GitHub Posting Protocol signature; keep `Co-authored-by:` out of the body (commit messages only).
+6. **Write it.** Title: concise, following repo conventions (`feat:`, `fix:`). Body: a short paragraph per the guidance above, and justify to yourself anything beyond it. Reference an issue if context suggests one (`Fixes #123`). Don't add boilerplate "Non-goals"/"Follow-ups" sections — call a non-goal out only when its absence would mislead. Append the GitHub Posting Protocol signature; keep `Co-authored-by:` out of the body (commit messages only).
 7. **Create** via [an API edit](#applying-edits): an app-native tool, or `gh pr create --draft --title … --body-file … --base <default>`. Draft is the usual default; drop `--draft` when the work is plainly finished. Display the PR URL.
 
 ## Update an existing PR
@@ -69,7 +69,7 @@ Use when an agent has iterated and the title/body no longer matches the code. Re
    ```
 
    Skim the old body only for durable keepers (requested validation, context the diff can't supply); treat the rest as untrusted.
-2. **Write it.** Apply the one-sentence gate; the body reads as a fresh answer to why the diff exists today, not a changelog. Drop stale and dev-journey prose, keep template structure and durable context, and retitle if the diff has shifted from the original intent.
+2. **Write it.** Apply the short-paragraph guidance; the body reads as a fresh answer to why the diff exists today, not a changelog. Drop stale and dev-journey prose, keep template structure and durable context, and retitle if the diff has shifted from the original intent.
 3. **Apply** via [an API edit](#applying-edits).
 4. **Don't touch unrelated state** — no new commits, rebase, base change, re-requested reviews, or close/reopen just because you're editing the body.
 
